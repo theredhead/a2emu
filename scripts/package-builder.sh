@@ -60,6 +60,8 @@ cp "$repo_root/build/Player-Source.zip" "$player/Contents/Resources/Player-Sourc
 codesign --force --deep --sign - "$player"
 verify_app "$player" 'Apple II Player'
 cp "$repo_root/Assets/Builder.icns" "$resources/Builder.icns"
+cp "$repo_root/Assets/BuilderIcon.png" "$resources/BuilderIcon.png"
+cp "$repo_root/build/Player-Source.zip" "$resources/Player-Source.zip"
 cp "$repo_root/LICENSE" "$resources/LICENSE.txt"
 codesign --force --deep --sign - "$builder"
 verify_app "$builder" 'Apple II Wrapper Builder'
@@ -71,16 +73,20 @@ Choose disk images, edit the app name and disk labels, and select available driv
 Assign initial disks and choose the startup slot. A single drive is selected automatically.
 Slot 6: 5.25-inch floppy. Slot 5: 3.5-inch floppy. Slot 7: hard disk / SmartPort.
 Choose an initial speed and optionally Start in full screen, then Create Player.
+Drop an existing player on the builder (or File > Open Player) to edit it, then Save.
+Quit the player before saving. Its saved disk data and application identity are preserved.
 
 Player menus:
 Emulation > Speed changes and saves the CPU speed.
 Emulation > Disks swaps or ejects images in available drives; hidden for one disk/drive.
 View > Resize in Integer Multiples snaps the window size while resizing.
-ROM setup is offered on first launch. No firmware ROM is bundled in the template.
+ROM setup is offered if no compatible shared ROM is installed. No firmware ROM is bundled.
+ROMs are shared in Application Support/nl.theredhead.a2emu.player/ROMs.
+Each player can choose its own ROM through Emulation > Change ROM.
 
 Choose Player Icon searches DuckDuckGo for apple ][ and the first disk name.
 Select a result or local image, drag and zoom the square crop, then Use This Crop.
-Gamepad mapping remains pending.
+Emulation > Controls configures classic analog joystick or numeric-keypad/Apple-key mappings.
 GPL source, licenses and credits are embedded in the player (About > More).
 README
 ditto -c -k --sequesterRsrc --keepParent "$release_stage" "$release_stage.zip"

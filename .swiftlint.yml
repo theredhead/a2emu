@@ -1,0 +1,24 @@
+# swift-format owns layout. Keep this allowlist focused on likely mistakes,
+# without enforcing naming/size limits on AppKit and C-bridge code.
+included:
+  - Sources
+only_rules:
+  - duplicate_imports
+  - duplicate_enum_cases
+  - duplicate_conditions
+  - orphaned_doc_comment
+  - unused_closure_parameter
+  - unused_optional_binding
+  - valid_ibinspectable
+  - custom_rules
+custom_rules:
+  detached_documentation:
+    name: Detached documentation
+    regex: '(?m)^\h*///[^\n]*\n(?:\h*\n)+\h*(?:///|@|(?:(?:public|internal|private|fileprivate|open|final|static|class|override|mutating|required|convenience)\h+)*(?:func|var|let|class|struct|enum|protocol|extension|init|subscript|typealias)\b)'
+    message: 'Put blank lines before documentation, never between it and its declaration or attributes.'
+    severity: error
+  documentation_below_attribute:
+    name: Documentation below attribute
+    regex: '(?m)^\h*@[^\n]+\n\h*///'
+    message: 'Place documentation above declaration attributes.'
+    severity: error

@@ -9,7 +9,7 @@ source_stage="$(mktemp -d "${TMPDIR:-/tmp}/a2-source.XXXXXX")"
 trap 'rm -rf "$source_stage"' EXIT
 source_root="$source_stage/Apple-II-Player-Source"
 mkdir -p "$source_root/Assets" "$source_root/Vendor"
-for name in CMakeLists.txt SOURCE-README.md LICENSE MODIFICATIONS.txt Sources scripts Vendor/gsplus; do
+for name in .gitignore .swift-format .swiftlint.yml README.md CMakeLists.txt SOURCE-README.md LICENSE MODIFICATIONS.txt Sources scripts Vendor/gsplus; do
   if [[ ! -e "$repo_root/$name" ]]; then
     printf 'Missing source dependency: %s\n' "$name" >&2
     exit 1
