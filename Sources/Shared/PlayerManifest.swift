@@ -1,0 +1,92 @@
+import Foundation
+enum EmulationSpeed: Int, Codable, CaseIterable {
+    case oneMHz = 1, twoPointEightMHz = 2, eightMHz = 3, unlimited = 0
+    var label: String {
+        switch self { case .oneMHz: return "1.0 MHz"; case .twoPointEightMHz: return "2.8 MHz"; case .eightMHz: return "8 MHz"; case .unlimited: return "Unlimited" }
+    }
+}
+struct DriveAddress: Codable, Hashable {
+    let slot: Int
+    let drive: Int
+    static var all: [DriveAddress] {
+        [5, 6, 7].flatMap { slot in (0..<(slot == 7 ? 16 : 2)).map { DriveAddress(slot: slot, drive: $0) } }
+    }
+    var label: String { slot == 7 ? "SmartPort Drive \(drive + 1)" : "\(slot == 6 ? "5.25-inch" : "3.5-inch") Drive \(drive + 1)" }
+}
+struct DiskMount: Codable {
+    let diskIndex: Int
+    let address: DriveAddress
+}
+struct PlayerManifest: Codable {
+    let startInFullScreen: Bool?
+    let initialSpeed: EmulationSpeed?
+    let availableDrives: [DriveAddress]?
+    let diskNames: [String]?
+    let initialMounts: [DiskMount]?
+    let version: Int
+    let diskFiles: [String]
+    let bootSlot: Int
+    let bram1: [UInt8]
+    let bram3: [UInt8]
+    static func make(disks: [String], slot: Int, mounts: [DiskMount]? = nil, diskNames: [String]? = nil, availableDrives: [DriveAddress]? = nil, initialSpeed: EmulationSpeed = .oneMHz, startInFullScreen: Bool = false) throws -> PlayerManifest {
+        let slot = availableDrives?.count == 1 ? availableDrives![0].slot : slot
+        guard [5, 6, 7].contains(slot), !disks.isEmpty else { throw failure("Choose slot 5, 6 or 7 and at least one disk.") }
+        return PlayerManifest(startInFullScreen: startInFullScreen, initialSpeed: initialSpeed, availableDrives: availableDrives, diskNames: diskNames, initialMounts: mounts ?? Array(disks.indices.prefix(slot == 7 ? 16 : 2)).map { DiskMount(diskIndex: $0, address: DriveAddress(slot: slot, drive: $0)) }, version: 1, diskFiles: disks, bootSlot: slot, bram1: batteryRAM(slot: slot, rom3: false), bram3: batteryRAM(slot: slot, rom3: true))
+    }
+    static var displayName: String { (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? "Apple II Player" }
+    static func checkedName(_ name: String) throws -> String {
+        let value = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, value.rangeOfCharacter(from: .controlCharacters) == nil, !value.contains("/"), !value.contains(":") else { throw failure("Enter an app name without slashes, colons or control characters.") }
+        return value
+    }
+    static func failure(_ message: String) -> NSError { NSError(domain: "AppleIIPlayer", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+    static func batteryRAM(slot: Int, rom3: Bool) -> [UInt8] {
+        // Factory settings observed from ROM 03's normal initialization.
+        let header = "00 00 00 01 00 00 0d 06 02 01 01 00 01 00 00 00 00 00 07 06 02 01 01 00 00 00 0f 06 06 00 05 06 01 00 00 00 00 00 00 01 00 00 00 00 05 02 02 00 00 00 2d 2d 00 00 00 00 00 00 02 02 02 06 08 00 01 02 03 04 05 06 07 0a 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 00 00"
+        var bytes = header.split(separator: " ").map { UInt8($0, radix: 16)! }
+        bytes += Array(repeating: 0xff, count: 256 - bytes.count)
+        bytes[0x28] = UInt8(slot)
+        if slot == 7 { bytes[0x27] = 1 }
+        if !rom3 { bytes[0x32] = 0; bytes[0x33] = 0 }
+        var checksum: UInt16 = 0
+        for offset in stride(from: 250, through: 0, by: -1) {
+            checksum = (checksum << 1) | (checksum >> 15)
+            checksum = checksum &+ UInt16(bytes[offset]) &+ (UInt16(bytes[offset + 1]) << 8)
+        }
+        let complement = checksum ^ 0xaaaa
+        bytes[252] = UInt8(truncatingIfNeeded: checksum)
+        bytes[253] = UInt8(truncatingIfNeeded: checksum >> 8)
+        bytes[254] = UInt8(truncatingIfNeeded: complement)
+        bytes[255] = UInt8(truncatingIfNeeded: complement >> 8)
+        return bytes
+    }
+    func validate() throws {
+        guard version == 1, [5, 6, 7].contains(bootSlot), !diskFiles.isEmpty, bram1.count == 256, bram3.count == 256,
+              diskFiles.allSatisfy({ !$0.isEmpty && ($0 as NSString).lastPathComponent == $0 && !$0.contains("\n") && !$0.contains("\r") }),
+              bram1[0x28] == bootSlot, bram3[0x28] == bootSlot else { throw Self.failure("The player machine configuration is invalid.") }
+        if let names = diskNames {
+            guard names.count == diskFiles.count, names.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.rangeOfCharacter(from: .controlCharacters) == nil }) else { throw Self.failure("Give each disk a name without control characters.") }
+        }
+        guard !drives.isEmpty, Set(drives).count == drives.count, drives.allSatisfy({ DriveAddress.all.contains($0) }), mounts.allSatisfy({ drives.contains($0.address) }) else { throw Self.failure("Initial disks must use an available drive.") }
+        guard mounts.allSatisfy({ diskFiles.indices.contains($0.diskIndex) && DriveAddress.all.contains($0.address) }),
+              Set(mounts.map { $0.address }).count == mounts.count,
+              Set(mounts.map { $0.diskIndex }).count == mounts.count,
+              mounts.contains(where: { $0.address == DriveAddress(slot: bootSlot, drive: 0) }) else { throw Self.failure("Mount a boot disk in drive 1 of the startup slot, and assign each image to a separate drive.") }
+
+    }
+    var drives: [DriveAddress] { availableDrives ?? DriveAddress.all.filter { address in mounts.contains(where: { $0.address == address }) } }
+    func diskName(at index: Int) -> String { diskNames?[index] ?? diskFiles[index] }
+    var mounts: [DiskMount] { initialMounts ?? Array(diskFiles.indices.prefix(2)).map { DiskMount(diskIndex: $0, address: DriveAddress(slot: bootSlot, drive: $0)) } }
+    var batteryConfiguration: String {
+        [(1, bram1), (3, bram3)].flatMap { bank, bytes in
+            stride(from: 0, to: 256, by: 16).map { offset in
+                String(format: "bram%d[%02x] = ", bank, offset) + bytes[offset..<offset+16].map { String(format: "%02x", $0) }.joined(separator: " ")
+            }
+        }.joined(separator: "\n")
+    }
+    static func normalizedName(_ name: String) -> String {
+        let text = name.folding(options: [.diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "en_US_POSIX")).lowercased()
+        let normalized = text.components(separatedBy: CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789").inverted).filter { !$0.isEmpty }.joined(separator: "-")
+        return normalized.isEmpty ? "disk" : normalized
+    }
+}

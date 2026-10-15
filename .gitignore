@@ -1,0 +1,9 @@
+/build/
+/Vendor/
+/TestAssets/
+/releases/
+.DS_Store
+
+# Historical prototype artwork and machine profile
+/Assets/Columns*
+/Assets/Player.json

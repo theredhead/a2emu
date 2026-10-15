@@ -1,0 +1,4 @@
+Apple II Player integration by theredhead, 2026-10-14.
+AppDelegate.swift and MainView.swift are modified GSplus frontend files.
+Player additions, build scripts and source packaging are distributed under GPL-3.0.
+Original copyright notices are retained. Firmware and wrapped software are separate.
