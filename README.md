@@ -11,7 +11,7 @@ The player seeds config.kegs on first launch and preserves later edits. The ROM 
 
 Sources adapted from GSplus revision 41e71031debbde98e66ea5c5c67498e9b4726a6d. Modifications by theredhead, 2026-10-14. GPL-3.0; see LICENSE and preserved notices. Generic fallback artwork comes from KEGS/GSplus.
 
-Build with CMake/Ninja, Xcode tools, Python 3 and SDL3 for upstream configuration. See the build instructions below and scripts/package-builder.py.
+Build with CMake/Ninja, Xcode tools, SDL3 for upstream configuration. See the build instructions below and scripts/package-builder.sh.
 
 The builder selects the initial CPU speed (1.0 MHz, 2.8 MHz, 8 MHz, or Unlimited). Players can change and save speed from Emulation > Speed.
 
@@ -19,16 +19,14 @@ Players can be exported to start in full screen. View > Resize in Integer Multip
 
 ## Build a universal release
 
-Requires Xcode command line tools, CMake, Ninja, Python 3 and SDL3. The native player does not link SDL; upstream configuration requires it.
+Requires Xcode command line tools, CMake, Ninja and SDL3. The native player does not link SDL; upstream configuration requires it.
 
 ```sh
 git clone https://github.com/digarok/gsplus.git Vendor/gsplus
 git -C Vendor/gsplus checkout 41e71031debbde98e66ea5c5c67498e9b4726a6d
-for arch in arm64 x86_64; do
-  cmake -G Ninja -B "build/release-$arch" -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/sdl3 "-DCMAKE_Swift_FLAGS=-module-cache-path /tmp/a2-swift-module-cache-$arch"
-  cmake --build "build/release-$arch" --target a2emu-player a2emu-builder
-done
-python3 scripts/package-builder.py
+scripts/build-release.sh
 ```
 
 The resulting builder contains a universal player template and embedded corresponding source. Releases are ad hoc signed, not notarized. Firmware, game images, test assets and generated releases remain outside Git.
+
+Set `SDL3_PREFIX` for a different SDL3 installation. To package existing builds in another directory, run `scripts/package-builder.sh --output-dir /path/to/output`.

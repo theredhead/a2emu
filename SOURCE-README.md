@@ -11,7 +11,7 @@ The player seeds config.kegs on first launch and preserves later edits. The ROM 
 
 Sources adapted from GSplus revision 41e71031debbde98e66ea5c5c67498e9b4726a6d. Modifications by theredhead, 2026-10-14. GPL-3.0; see LICENSE and preserved notices. Generic fallback artwork comes from KEGS/GSplus.
 
-Build with CMake/Ninja, Xcode tools, Python 3 and SDL3 for upstream configuration. See BUILDING.txt and scripts/package-builder.py.
+Build with CMake/Ninja, Xcode tools, SDL3 for upstream configuration. Run scripts/build-release.sh; set SDL3_PREFIX for a different SDL3 installation. See BUILDING.txt for source archive details.
 
 The builder selects the initial CPU speed (1.0 MHz, 2.8 MHz, 8 MHz, or Unlimited). Players can change and save speed from Emulation > Speed.
 

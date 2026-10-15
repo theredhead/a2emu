@@ -573,4 +573,3 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 		debugwin_info.update()
 	}
 }
-

@@ -3,9 +3,14 @@ if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS version" FORCE)
 endif()
 project(A2EmuPlayer LANGUAGES C Swift)
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
+# Keep builder and player versions in sync with the player bundle metadata.
+execute_process(
+    COMMAND /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${CMAKE_SOURCE_DIR}/Sources/Player/Info.plist"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE A2EMU_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
 add_custom_target(player-source
-    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/bundle-source.py"
+    COMMAND /bin/bash "${CMAKE_SOURCE_DIR}/scripts/bundle-source.sh"
         "${CMAKE_CURRENT_BINARY_DIR}/Player-Source.zip"
     VERBATIM)
 if(NOT CMAKE_OSX_ARCHITECTURES)
@@ -44,7 +49,7 @@ add_custom_command(TARGET a2emu-player POST_BUILD
 add_executable(a2emu-builder MACOSX_BUNDLE Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift Sources/Builder/Builder.swift Sources/Builder/PlayerExporter.swift Sources/Shared/PlayerManifest.swift)
 target_compile_options(a2emu-builder PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:-target;${CMAKE_OSX_ARCHITECTURES}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET};-swift-version;4>")
 target_link_libraries(a2emu-builder PRIVATE "-framework Cocoa" "-framework WebKit")
-set_target_properties(a2emu-builder PROPERTIES OUTPUT_NAME "Apple II Wrapper Builder" MACOSX_BUNDLE_GUI_IDENTIFIER "nl.theredhead.a2emu-wrapper-builder" MACOSX_BUNDLE_BUNDLE_NAME "Apple II Wrapper Builder" MACOSX_BUNDLE_SHORT_VERSION_STRING "0.4.2" MACOSX_BUNDLE_BUNDLE_VERSION "3" MACOSX_BUNDLE_ICON_FILE "Builder.icns")
+set_target_properties(a2emu-builder PROPERTIES OUTPUT_NAME "Apple II Wrapper Builder" MACOSX_BUNDLE_GUI_IDENTIFIER "nl.theredhead.a2emu-wrapper-builder" MACOSX_BUNDLE_BUNDLE_NAME "Apple II Wrapper Builder" MACOSX_BUNDLE_SHORT_VERSION_STRING "${A2EMU_VERSION}" MACOSX_BUNDLE_BUNDLE_VERSION "3" MACOSX_BUNDLE_ICON_FILE "Builder.icns")
 
 target_sources(a2emu-builder PRIVATE Assets/Builder.icns)
 set_source_files_properties(Assets/Builder.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
