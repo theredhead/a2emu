@@ -16,3 +16,5 @@
 
 .gallery-viewport{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--accent) transparent}.screenshot-gallery{display:flex;width:max-content;gap:24px;padding-bottom:15px}.screenshot-gallery figure{flex:0 0 auto;width:clamp(280px,45vw,520px)}.gallery-viewport.is-animated{overflow:hidden}.is-animated .screenshot-gallery{animation:screenshot-marquee 65s linear infinite}.gallery-viewport:hover .screenshot-gallery,.gallery-viewport:focus-within .screenshot-gallery{animation-play-state:paused}@keyframes screenshot-marquee{to{transform:translateX(-50%)}}@media(prefers-reduced-motion:reduce){.is-animated .screenshot-gallery{animation:none}.gallery-viewport.is-animated{overflow-x:auto}}
 .screenshot-gallery{padding-right:24px}
+
+.install-command{margin:18px 0;padding:16px;border:1px solid #76748d;border-radius:8px;background:#202639;color:#fff0dd;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.6}.install-command code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}

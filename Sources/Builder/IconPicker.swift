@@ -101,6 +101,8 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
     private var browser: WKWebView!
     private var searchBrowser: WKWebView!
     private var searchQuery = ""
+    private var gridReady = false
+    private var pendingResults: [String] = []
     private let crop = SquareCropView(frame: NSRect(x: 682, y: 174, width: 300, height: 300))
     private let query = NSTextField(string: "")
     private let status = NSTextField(labelWithString: "Click an image result, or choose a local image.")
@@ -119,6 +121,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         let root = window.contentView!
         query.stringValue = "apple ][ " + diskName
         query.frame = NSRect(x: 20, y: 592, width: 520, height: 28)
+        query.cell?.sendsActionOnEndEditing = false
         query.target = self
         query.action = #selector(searchImages(_:))
         root.addSubview(query)
@@ -131,6 +134,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         configuration.userContentController.add(self, name: "iconImage")
         browser = WKWebView(
             frame: NSRect(x: 20, y: 20, width: 628, height: 554), configuration: configuration)
+        browser.navigationDelegate = self
         let searchConfiguration = WKWebViewConfiguration()
         searchConfiguration.websiteDataStore = .nonPersistent()
         searchConfiguration.userContentController.add(self, name: "iconResults")
@@ -197,17 +201,15 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         ]
         requestID += 1
         searchQuery = query.stringValue
-        showResults([])
+        gridReady = false
+        pendingResults = []
+        showResults()
         status.stringValue = "Searching DuckDuckGo images…"
         searchBrowser.load(URLRequest(url: url.url!))
     }
 
     /// Renders remote URLs as DOM properties, keeping result content out of executable markup.
-    private func showResults(_ urls: [String]) {
-        guard let data = try? JSONSerialization.data(withJSONObject: urls),
-            let json = String(data: data, encoding: .utf8)
-        else { return }
-        let safeJSON = json.replacingOccurrences(of: "<", with: "\\u003c")
+    private func showResults() {
         browser.loadHTMLString(
             """
             <!doctype html><meta name="color-scheme" content="light dark">
@@ -221,23 +223,39 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
             p { color: #888; line-height: 1.5; }
             </style><div id="grid"></div><p id="empty">Searching for images…</p>
             <script>
-            const urls = \(safeJSON);
-            document.getElementById('empty').hidden = urls.length > 0;
-            for (const [index, url] of urls.entries()) {
-                const button = document.createElement('button');
-                button.setAttribute('aria-label', 'Select image ' + (index + 1));
-                const image = document.createElement('img');
-                image.src = url;
-                image.loading = 'lazy';
-                button.appendChild(image);
-                button.onclick = () => window.webkit.messageHandlers.iconImage.postMessage(url);
-                document.getElementById('grid').appendChild(button);
-            }
+            const displayed = new Set();
+            window.addResults = function(urls) {
+                for (const url of urls) {
+                    if (displayed.has(url)) continue;
+                    displayed.add(url);
+                    const button = document.createElement('button');
+                    button.setAttribute('aria-label', 'Select image ' + displayed.size);
+                    const image = document.createElement('img');
+                    image.src = url;
+                    image.loading = 'lazy';
+                    button.appendChild(image);
+                    button.onclick = () => window.webkit.messageHandlers.iconImage.postMessage(url);
+                    document.getElementById('grid').appendChild(button);
+                }
+                document.getElementById('empty').hidden = displayed.size > 0;
+            };
             </script>
             """, baseURL: nil)
     }
 
+    private func updateResults() {
+        guard gridReady, let data = try? JSONSerialization.data(withJSONObject: pendingResults),
+            let json = String(data: data, encoding: .utf8)
+        else { return }
+        browser.evaluateJavaScript("window.addResults(\(json))", completionHandler: nil)
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === browser {
+            gridReady = true
+            updateResults()
+            return
+        }
         searchBrowser.evaluateJavaScript("collectImages()", completionHandler: nil)
         if status.stringValue == "Searching DuckDuckGo images…" {
             status.stringValue = "If no images appear, try another search or choose a local image."
@@ -260,8 +278,13 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
                 result["query"] as? String == searchQuery, let urls = result["urls"] as? [String],
                 !urls.isEmpty
             else { return }
-            showResults(urls)
-            status.stringValue = "Click an image result, or choose a local image."
+            pendingResults = urls
+            updateResults()
+            if status.stringValue == "Searching DuckDuckGo images…"
+                || status.stringValue == "If no images appear, try another search or choose a local image."
+            {
+                status.stringValue = "Click an image result, or choose a local image."
+            }
             return
         }
         guard let value = message.body as? String else {
@@ -329,6 +352,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         searchBrowser.stopLoading()
         searchBrowser.configuration.userContentController.removeScriptMessageHandler(forName: "iconResults")
         searchBrowser.navigationDelegate = nil
+        browser.navigationDelegate = nil
         completion = nil
     }
 }
