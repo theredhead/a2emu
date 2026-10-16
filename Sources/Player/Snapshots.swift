@@ -64,11 +64,27 @@ extension AppDelegate {
         try manager.moveItem(at: preview, to: staging.appendingPathComponent(PlayerSnapshot.previewName))
         let snapshot = try PlayerSnapshot.finish(
             at: staging, title: title, gameName: PlayerManifest.displayName,
-            disks: machine.diskFiles, mounts: mounts)
+            disks: machine.diskFiles, mounts: mounts, compress: true,
+            expansionMemoryKB: Int(g_mem_size_exp / 1024))
         let destination = snapshotsDirectory.appendingPathComponent(
-            snapshot.id.uuidString + "." + PlayerSnapshot.fileExtension)
+            snapshot.fileName)
         try manager.moveItem(at: staging, to: destination)
+        setSnapshotFinderIcon(at: destination)
         return destination
+    }
+
+    /// Gives the package a useful Finder thumbnail without changing its validated payloads.
+    func setSnapshotFinderIcon(at url: URL) {
+        if let image = NSImage(contentsOf: url.appendingPathComponent(PlayerSnapshot.previewName)) {
+            NSWorkspace.shared.setIcon(image, forFile: url.path, options: [])
+        }
+    }
+
+    /// Invalidates derived video caches on the next tick without changing the saved machine format.
+    func refreshSnapshotDisplayIfNeeded() {
+        guard snapshotNeedsVideoRefresh else { return }
+        snapshotNeedsVideoRefresh = false
+        video_force_reparse()
     }
 
     /// Restores into new writable disks. Failed disk-layout validation rolls back the previous machine.
@@ -77,8 +93,6 @@ extension AppDelegate {
         guard snapshot.diskFiles == machine.diskFiles else {
             throw PlayerManifest.failure("This snapshot belongs to a player with a different set of disks.")
         }
-        let state = url.appendingPathComponent(PlayerSnapshot.stateName)
-        try snapshotCore(a2_snapshot_validate, at: state)
         let manager = FileManager.default
         let working = supportDirectory.appendingPathComponent("Snapshot Disks", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -86,9 +100,11 @@ extension AppDelegate {
         var committed = false
         defer { if !committed { try? manager.removeItem(at: working) } }
         for name in snapshot.diskFiles {
-            try manager.copyItem(
-                at: PlayerSnapshot.payload(name, at: url), to: working.appendingPathComponent(name))
+            try snapshot.extract(name, from: url, to: working.appendingPathComponent(name))
         }
+        let state = working.appendingPathComponent("Restore.state")
+        try snapshot.extract(PlayerSnapshot.stateName, from: url, to: state)
+        try snapshotCore(a2_snapshot_validate, at: state)
         guard a2_snapshot_flush_disks() != 0 else {
             throw PlayerManifest.failure(String(cString: a2_snapshot_error()))
         }
@@ -127,7 +143,10 @@ extension AppDelegate {
             throw restoreError
         }
         try? manager.removeItem(at: rollback)
+        try? manager.removeItem(at: state)
         a2_snapshot_reset_audio()
+        snapshotNeedsVideoRefresh = true
+        mainwin_info.mac_view?.showSnapshotPreview(at: url.appendingPathComponent(PlayerSnapshot.previewName))
         snapshotDiskDirectory = working
         mountedImages = Dictionary(uniqueKeysWithValues: snapshot.mounts.map { ($0.address, $0.diskIndex) })
         updateDiskChecks()

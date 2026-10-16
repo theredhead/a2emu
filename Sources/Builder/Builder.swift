@@ -37,7 +37,7 @@ final class PlayerDropView: NSView {
     var iconData: Data?
     var iconPicker: IconPicker?
     let iconPreview = NSImageView(frame: NSRect(x: 28, y: 76, width: 64, height: 64))
-    let heading = NSTextField(labelWithString: "Create a standalone Apple II player")
+    let heading = NSTextField(labelWithString: "Create a standalone Apple IIGS player")
     let appName = NSTextField(string: "")
     let mountList = NSScrollView(frame: NSRect(x: 28, y: 198, width: 564, height: 180))
     var listedDrives: [DriveAddress] = []
@@ -55,6 +55,7 @@ final class PlayerDropView: NSView {
     let speed = NSPopUpButton(frame: .zero)
     private var hasChosenSpeed = false
     let slot = NSPopUpButton(frame: .zero)
+    let memory = NSPopUpButton(frame: .zero)
     var editingPlayer: URL?
     var pendingPlayer: URL?
     let exportButton = NSButton(title: "Create Player…", target: nil, action: nil)
@@ -148,11 +149,24 @@ final class PlayerDropView: NSView {
         let speedLabel = NSTextField(labelWithString: "Initial speed:")
         speedLabel.frame = NSRect(x: 28, y: 465, width: 110, height: 24)
         root.addSubview(speedLabel)
-        speed.frame = NSRect(x: 140, y: 462, width: 452, height: 28)
+        speed.frame = NSRect(x: 140, y: 462, width: 128, height: 28)
         speed.addItems(withTitles: EmulationSpeed.allCases.map { $0.label })
         speed.target = self
         speed.action = #selector(speedChanged(_:))
         root.addSubview(speed)
+        let memoryLabel = NSTextField(labelWithString: "Expansion RAM:")
+        memoryLabel.frame = NSRect(x: 284, y: 465, width: 112, height: 24)
+        root.addSubview(memoryLabel)
+        memory.frame = NSRect(x: 398, y: 462, width: 194, height: 28)
+        memory.addItems(
+            withTitles: PlayerManifest.expansionMemoryChoices.map {
+                $0 == 0 ? "None (built-in only)" : ($0 < 1024 ? "\($0) KB" : "\($0 / 1024) MB")
+            })
+        memory.selectItem(at: PlayerManifest.expansionMemoryChoices.firstIndex(of: 8192)!)
+        memory.toolTip =
+            "Additional RAM beyond the ROM model's built-in memory. ROM 01 starts with 256 KB; ROM 03 has about 1 MB."
+        root.addSubview(memory)
+        align(memoryLabel, with: memory)
         align(label, with: slot)
         align(speedLabel, with: speed)
         slot.target = self
@@ -186,7 +200,7 @@ final class PlayerDropView: NSView {
         root.addSubview(mountList)
         let help = NSTextField(
             wrappingLabelWithString:
-                "Leave extra images unmounted; swap them into a drive later through Emulation → Disks.")
+                "Leave extra images unmounted; swap them into a drive later through the Disks menu.")
         help.frame = NSRect(x: 28, y: 146, width: 450, height: 40)
         root.addSubview(help)
         iconPreview.image = NSImage(named: NSImage.Name("PlayerIcon"))
@@ -262,6 +276,11 @@ final class PlayerDropView: NSView {
                 throw PlayerManifest.failure(
                     "Choose this player's disk images first, in the same order as the snapshot.")
             }
+            let capturedMemory = try snapshot.capturedExpansionMemoryKB(at: url)
+            if let index = PlayerManifest.expansionMemoryChoices.firstIndex(of: capturedMemory) {
+                memory.selectItem(at: index)
+            }
+            memory.isEnabled = false
             startupSnapshot = url
             speed.isEnabled = false
             speed.toolTip = "The startup snapshot restores its captured speed."
@@ -273,6 +292,7 @@ final class PlayerDropView: NSView {
     @objc func clearSnapshot(_ sender: Any?) {
         startupSnapshot = nil
         speed.isEnabled = true
+        memory.isEnabled = true
         speed.toolTip = nil
         snapshotLabel.stringValue = "No snapshot — normal startup"
         snapshotLabel.toolTip = nil
@@ -441,7 +461,8 @@ final class PlayerDropView: NSView {
                     displayName: name, mounts: mounts, diskNames: diskNames,
                     availableDrives: configuredDrives,
                     initialSpeed: EmulationSpeed.allCases[speed.indexOfSelectedItem],
-                    startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot)
+                    startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot,
+                    expansionMemoryKB: PlayerManifest.expansionMemoryChoices[memory.indexOfSelectedItem])
                 loadPlayer(existing)
                 summary.stringValue = "Saved changes to \(existing.lastPathComponent)"
             } catch {
@@ -462,7 +483,8 @@ final class PlayerDropView: NSView {
                 destination: output, icon: iconData, displayName: name, mounts: mounts, diskNames: diskNames,
                 availableDrives: configuredDrives,
                 initialSpeed: EmulationSpeed.allCases[speed.indexOfSelectedItem],
-                startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot)
+                startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot,
+                expansionMemoryKB: PlayerManifest.expansionMemoryChoices[memory.indexOfSelectedItem])
             NSWorkspace.shared.activateFileViewerSelecting([output])
         } catch {
             showError(error.localizedDescription)
@@ -506,12 +528,13 @@ final class PlayerDropView: NSView {
         appName.stringValue = ""
         fullScreen.state = .off
         hasChosenSpeed = false
+        memory.selectItem(at: PlayerManifest.expansionMemoryChoices.firstIndex(of: 8192)!)
         speed.selectItem(at: 0)
         slot.selectItem(at: 0)
         for (i, count) in driveCounts.enumerated() {
             count.selectItem(at: i == 0 ? 1 : 0)
         }
-        heading.stringValue = "Create a standalone Apple II player"
+        heading.stringValue = "Create a standalone Apple IIGS player"
         exportButton.title = "Create Player…"
         window.title = "Apple IIGS Player Builder"
         summary.stringValue = "Choose disks, or drop an existing player here to edit it."
@@ -540,10 +563,14 @@ final class PlayerDropView: NSView {
             slot.selectItem(at: [6, 5, 7].firstIndex(of: manifest.bootSlot)!)
             speed.selectItem(at: EmulationSpeed.allCases.firstIndex(of: manifest.initialSpeed ?? .oneMHz)!)
             hasChosenSpeed = true
+            memory.selectItem(
+                at: PlayerManifest.expansionMemoryChoices.firstIndex(of: manifest.expansionMemoryKB ?? 8192)!)
             fullScreen.state = manifest.startInFullScreen == true ? .on : .off
             startupSnapshot =
                 manifest.startupSnapshot == true
                 ? resources.appendingPathComponent("Startup.a2snapshot") : nil
+            memory.isEnabled = startupSnapshot == nil
+            speed.isEnabled = startupSnapshot == nil
             snapshotLabel.stringValue =
                 startupSnapshot == nil ? "No snapshot — normal startup" : "Bundled startup snapshot"
             rebuildMounts()
@@ -556,7 +583,7 @@ final class PlayerDropView: NSView {
             iconData = try? Data(contentsOf: resources.appendingPathComponent("PlayerIcon.png"))
             iconPreview.image =
                 iconData.flatMap { NSImage(data: $0) } ?? NSWorkspace.shared.icon(forFile: url.path)
-            heading.stringValue = "Edit this Apple II player"
+            heading.stringValue = "Edit this Apple IIGS player"
             editingPlayer = url
             exportButton.title = "Save"
             window.title = "Edit \(url.lastPathComponent)"

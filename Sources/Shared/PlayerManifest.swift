@@ -39,6 +39,11 @@ struct DiskMount: Codable {
 struct PlayerManifest: Codable {
     var configurationRevision: String? = nil
     var startupSnapshot: Bool? = nil
+    var expansionMemoryKB: Int? = nil
+
+    static let expansionMemoryChoices = [
+        0, 256, 512, 1024, 2048, 3072, 4096, 6144, 8192, 10240, 12288, 14336,
+    ]
     let startInFullScreen: Bool?
     let initialSpeed: EmulationSpeed?
     let availableDrives: [DriveAddress]?
@@ -55,14 +60,15 @@ struct PlayerManifest: Codable {
     static func make(
         disks: [String], slot: Int, mounts: [DiskMount]? = nil, diskNames: [String]? = nil,
         availableDrives: [DriveAddress]? = nil, initialSpeed: EmulationSpeed = .oneMHz,
-        startInFullScreen: Bool = false
+        startInFullScreen: Bool = false, expansionMemoryKB: Int = 8192
     ) throws -> PlayerManifest {
         let slot = availableDrives?.count == 1 ? availableDrives![0].slot : slot
         guard [5, 6, 7].contains(slot), !disks.isEmpty else {
             throw failure("Choose slot 5, 6 or 7 and at least one disk.")
         }
         return PlayerManifest(
-            startInFullScreen: startInFullScreen, initialSpeed: initialSpeed,
+            expansionMemoryKB: expansionMemoryKB, startInFullScreen: startInFullScreen,
+            initialSpeed: initialSpeed,
             availableDrives: availableDrives, diskNames: diskNames,
             initialMounts: mounts
                 ?? Array(disks.indices.prefix(slot == 7 ? 16 : 2)).map {
@@ -123,6 +129,9 @@ struct PlayerManifest: Codable {
 
     /// Throws if the manifest has unsupported settings, unsafe disk names, or inconsistent mounts.
     func validate() throws {
+        if let memory = expansionMemoryKB, !Self.expansionMemoryChoices.contains(memory) {
+            throw Self.failure("Choose a supported expansion RAM size.")
+        }
         guard version == 1, [5, 6, 7].contains(bootSlot), !diskFiles.isEmpty, bram1.count == 256,
             bram3.count == 256,
             diskFiles.allSatisfy({

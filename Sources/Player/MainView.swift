@@ -346,6 +346,15 @@ class MainView: NSView {
         }
     }
 
+    /// Presents the captured frame immediately, including when restoring while paused.
+    func showSnapshotPreview(at url: URL) {
+        guard let context = bitmapContext, let data = try? Data(contentsOf: url),
+            let image = NSBitmapImageRep(data: data)?.cgImage
+        else { return }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: context.width, height: context.height))
+        needsDisplay = true
+    }
+
     /// Saves the current native-resolution game frame, without window chrome or overlays.
     /// Throws if no frame is available, PNG encoding fails, or the destination cannot be written.
     @discardableResult

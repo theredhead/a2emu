@@ -153,7 +153,19 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
                     bytes.count < 1_048_576,
                     let snapshot = try? JSONDecoder().decode(PlayerSnapshot.self, from: bytes)
                 else { return nil }
-                return (url, snapshot)
+                var displayURL = url
+                if url.deletingLastPathComponent() == player.snapshotsDirectory,
+                    UUID(uuidString: url.deletingPathExtension().lastPathComponent) != nil
+                {
+                    let named = player.snapshotsDirectory.appendingPathComponent(snapshot.fileName)
+                    if !manager.fileExists(atPath: named.path),
+                        (try? manager.moveItem(at: url, to: named)) != nil
+                    {
+                        displayURL = named
+                        player.setSnapshotFinderIcon(at: named)
+                    }
+                }
+                return (displayURL, snapshot)
             }.sorted { $0.1.createdAt > $1.1.createdAt }
             collection.selectionIndexPaths = []
             collection.reloadData()
@@ -249,8 +261,12 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
                 throw PlayerManifest.failure("This snapshot uses a different set of disks.")
             }
             let destination = player.snapshotsDirectory.appendingPathComponent(
-                UUID().uuidString + "." + PlayerSnapshot.fileExtension)
+                snapshot.fileName)
+            guard !FileManager.default.fileExists(atPath: destination.path) else {
+                throw PlayerManifest.failure("This snapshot is already in your library.")
+            }
             try FileManager.default.copyItem(at: url, to: destination)
+            player.setSnapshotFinderIcon(at: destination)
             reload()
         } catch { showError(error) }
     }

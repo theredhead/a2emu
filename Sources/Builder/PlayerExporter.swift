@@ -10,7 +10,7 @@ struct PlayerExporter {
         availableDrives: [DriveAddress]? = nil, initialSpeed: EmulationSpeed = .oneMHz,
         startInFullScreen: Bool = false, bundleIdentifier: String? = nil,
         configurationRevision: String? = nil,
-        startupSnapshot: URL? = nil
+        startupSnapshot: URL? = nil, expansionMemoryKB: Int = 8192
     ) throws {
         let manager = FileManager.default
         guard !manager.fileExists(atPath: destination.path) else {
@@ -26,7 +26,8 @@ struct PlayerExporter {
 
         var manifest = try PlayerManifest.make(
             disks: names, slot: slot, mounts: mounts, diskNames: diskNames, availableDrives: availableDrives,
-            initialSpeed: initialSpeed, startInFullScreen: startInFullScreen)
+            initialSpeed: initialSpeed, startInFullScreen: startInFullScreen,
+            expansionMemoryKB: expansionMemoryKB)
         // A fresh export may reuse this game's saved-data directory. Apply its new
         // startup defaults once, just as an update does, then preserve player edits.
         manifest.configurationRevision = configurationRevision ?? UUID().uuidString
@@ -40,6 +41,8 @@ struct PlayerExporter {
                 throw PlayerManifest.failure(
                     "The startup snapshot must use this player's disks and available drives.")
             }
+            manifest.expansionMemoryKB = try snapshot.capturedExpansionMemoryKB(at: snapshotURL)
+            try manifest.validate()
             try PlayerSnapshot.checkCore(at: snapshotURL, template: template)
         }
         let staging = destination.deletingLastPathComponent().appendingPathComponent(
@@ -55,7 +58,20 @@ struct PlayerExporter {
         }
         let bundledSnapshot = resources.appendingPathComponent("Startup.a2snapshot")
         if manager.fileExists(atPath: bundledSnapshot.path) { try manager.removeItem(at: bundledSnapshot) }
-        if let snapshot = startupSnapshot { try manager.copyItem(at: snapshot, to: bundledSnapshot) }
+        if let snapshot = startupSnapshot {
+            try manager.copyItem(at: snapshot, to: bundledSnapshot)
+            let finderIcon = bundledSnapshot.appendingPathComponent("Icon\r")
+            if manager.fileExists(atPath: finderIcon.path) { try manager.removeItem(at: finderIcon) }
+            // Finder thumbnails belong to standalone snapshots; resource forks cannot be code signed.
+            let clean = Process()
+            clean.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+            clean.arguments = ["-cr", bundledSnapshot.path]
+            try clean.run()
+            clean.waitUntilExit()
+            guard clean.terminationStatus == 0 else {
+                throw PlayerManifest.failure("Could not prepare the startup snapshot for signing.")
+            }
+        }
         for disk in disks {
             try manager.copyItem(at: disk, to: resources.appendingPathComponent(disk.lastPathComponent))
         }
@@ -122,7 +138,7 @@ struct PlayerExporter {
     static func update(
         app: URL, disks: [URL], slot: Int, icon: Data?, displayName: String, mounts: [DiskMount],
         diskNames: [String], availableDrives: [DriveAddress], initialSpeed: EmulationSpeed,
-        startInFullScreen: Bool, startupSnapshot: URL? = nil
+        startInFullScreen: Bool, startupSnapshot: URL? = nil, expansionMemoryKB: Int = 8192
     ) throws {
         _ = try read(app: app)
         let manager = FileManager.default
@@ -145,7 +161,8 @@ struct PlayerExporter {
             disks: disks, slot: slot, template: template, destination: temporary, icon: icon,
             displayName: displayName, mounts: mounts, diskNames: diskNames, availableDrives: availableDrives,
             initialSpeed: initialSpeed, startInFullScreen: startInFullScreen, bundleIdentifier: identifier,
-            configurationRevision: UUID().uuidString, startupSnapshot: startupSnapshot)
+            configurationRevision: UUID().uuidString, startupSnapshot: startupSnapshot,
+            expansionMemoryKB: expansionMemoryKB)
         try manager.moveItem(at: app, to: backup)
         do {
             try manager.moveItem(at: temporary, to: app)

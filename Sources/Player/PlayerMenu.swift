@@ -2,7 +2,7 @@ import Cocoa
 
 /// Stable identities for runtime updates; menu labels and positions may change freely.
 enum PlayerMenuID: Hashable {
-    case emulation, speed, controls, disks, pause, integerResize, controllerStatus
+    case emulation, configuration, speed, controls, disks, pause, integerResize, controllerStatus
     case diskChoice(Int)
 }
 

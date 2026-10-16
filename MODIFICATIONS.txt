@@ -12,3 +12,6 @@ regression test covers Death Sword's warm-reset music loss.
 2026-10-16: Declarative player-menu layout with stable item IDs, dynamic submenu
 slots, native action routing, and live visibility/enabled predicates. The Emulation
 menu groups playback, controls, saved state/media, and ROM configuration separately.
+2026-10-16: Rebuild derived video caches after snapshot restore; preserve immediate
+paused previews. Add descriptive snapshot filenames, Finder preview icons, bounded
+LZFSE payload compression, and configurable expansion RAM with snapshot-derived defaults.

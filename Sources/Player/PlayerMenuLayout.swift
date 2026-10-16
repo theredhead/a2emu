@@ -4,7 +4,7 @@ import Cocoa
 /// IDs bind live state to items independently of their displayed names or positions.
 enum PlayerMenuLayout {
     static func main(
-        appName: String, isRunning: @escaping () -> Bool, showDisks: @escaping () -> Bool
+        appName: String, isRunning: @escaping () -> Bool, showAdvanced: @escaping () -> Bool
     ) -> [PlayerMenuEntry] {
         [
             .menu(
@@ -26,11 +26,16 @@ enum PlayerMenuLayout {
                     .command("Paste", action: #selector(MainView.do_paste(_:)), target: .responderChain),
                 ]),
             .menu(
-                "Config",
+                "Configuration", id: .configuration, enabledWhen: isRunning,
                 [
+                    .menu("Speed", id: .speed, []),
+                    .menu("Controls", id: .controls, []),
+                    .separator,
+                    .command("Change ROM…", action: #selector(AppDelegate.changeROM(_:))),
+                    .separator,
                     .command(
                         "Configuration  F4", action: #selector(MainView.do_config(_:)),
-                        target: .responderChain)
+                        target: .responderChain, visibleWhen: showAdvanced),
                 ]),
             .menu(
                 "View",
@@ -56,16 +61,14 @@ enum PlayerMenuLayout {
                         "Reset", action: #selector(AppDelegate.resetGame(_:)),
                         toolTip: "Restart from disk with cleared RAM; keep disk data and the selected speed."),
                     .separator,
-                    .menu("Speed", id: .speed, []),
-                    .menu("Controls", id: .controls, []),
-                    .separator,
                     .command("Snapshots…", action: #selector(AppDelegate.showSnapshots(_:))),
-                    .menu("Disks", id: .disks, visibleWhen: showDisks, []),
-                    .command("Show Saved Disk", action: #selector(AppDelegate.showSavedDisk(_:))),
-                    .separator,
-                    .command("Change ROM…", action: #selector(AppDelegate.changeROM(_:))),
                 ]),
+            .menu("Disks", id: .disks, enabledWhen: isRunning, savedDisks),
         ]
+    }
+
+    static var savedDisks: [PlayerMenuEntry] {
+        [.command("Show Saved Disk", action: #selector(AppDelegate.showSavedDisk(_:)))]
     }
 
     static var speeds: [PlayerMenuEntry] {
@@ -111,6 +114,6 @@ enum PlayerMenuLayout {
             }
             entries.append(.menu(address.label, drive))
         }
-        return (entries, choices)
+        return (entries + [.separator] + savedDisks, choices)
     }
 }

@@ -63,6 +63,7 @@ rm -f "$player/Contents/Resources/Player-Source.zip"
 codesign --force --deep --sign - "$player"
 verify_app "$player" 'Apple II Player'
 cp "$repo_root/Assets/Builder.icns" "$resources/Builder.icns"
+cp "$repo_root/Assets/Snapshot.icns" "$resources/Snapshot.icns"
 cp "$repo_root/Assets/BuilderIcon.png" "$resources/BuilderIcon.png"
 cp "$repo_root/Assets/PlayerIcon.png" "$resources/PlayerIcon.png"
 rm -f "$resources/Player-Source.zip"
@@ -87,18 +88,18 @@ Emulation > Pause/Resume freezes or continues the emulator (also pauses on contr
 Emulation > Snapshots saves and restores a dated thumbnail grid of self-contained snapshots.
 Snapshots are kept in the player's Application Support/Snapshots directory.
 Snapshots require the matching emulator core, ROM, RAM size, and audio sample rate.
-Emulation > Speed changes and saves the CPU speed.
-Emulation > Disks swaps or ejects images in available drives; hidden for one disk/drive.
+Configuration > Speed changes and saves the CPU speed.
+Disks swaps or ejects images in available drives; hidden for one disk/drive.
 View > Save Screenshot uses F3 (or Fn-F3 if macOS reserves F3), without Command/Option.
 Screenshots go to Pictures/Apple II Player/<game name> and play the system shutter sound.
 View > Resize in Integer Multiples snaps the window size while resizing.
 ROM setup is offered if no compatible shared ROM is installed. No firmware ROM is bundled.
 ROMs are shared in Application Support/nl.theredhead.a2emu.player/ROMs.
-Each player can choose its own ROM through Emulation > Change ROM.
+Each player can choose its own ROM through Configuration > Change ROM.
 
 Choose Player Icon searches DuckDuckGo for apple ][ and the first disk name.
 Select a result or local image, drag and zoom the square crop, then Use This Crop.
-Emulation > Controls configures classic analog joystick or numeric-keypad/Apple-key mappings.
+Configuration > Controls configures classic analog joystick or numeric-keypad/Apple-key mappings.
 Licenses and credits are included in the player (About > More), with a link to
 https://github.com/theredhead/a2emu for the builder and player project.
 README

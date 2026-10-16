@@ -18,7 +18,7 @@ for name in .gitignore .swift-format .swiftlint.yml README.md CMakeLists.txt SOU
     --exclude='*.pyo' --exclude='.DS_Store' \
     "$repo_root/$name" "$source_root/$(dirname "$name")/"
 done
-for name in Player.icns PlayerIcon.png Builder.icns BuilderIcon.png Builder-Icon-Prompt.txt; do
+for name in Player.icns PlayerIcon.png Builder.icns BuilderIcon.png Snapshot.icns; do
   cp "$repo_root/Assets/$name" "$source_root/Assets/$name"
 done
 cat > "$source_root/BUILDING.txt" <<'BUILDING'

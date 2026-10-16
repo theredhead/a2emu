@@ -73,6 +73,7 @@ target_link_libraries(a2emu-player PRIVATE gsplus_core
 set_target_properties(a2emu-player PROPERTIES OUTPUT_NAME "Apple II Player"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Sources/Player/Info.plist")
 add_custom_command(TARGET a2emu-player POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/Snapshot-Core-ID.txt" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Snapshot-Core-ID.txt"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Player.icns" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Player.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Vendor/gsplus/LICENSE" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/GSplus-LICENSE.txt"
@@ -90,6 +91,7 @@ set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE
 target_sources(a2emu-builder PRIVATE Assets/Builder.icns)
 set_source_files_properties(Assets/Builder.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 add_custom_command(TARGET a2emu-builder POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/PlayerIcon.png"
     COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/Player-Source.zip"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/BuilderIcon.png" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/BuilderIcon.png"

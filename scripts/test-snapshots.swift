@@ -52,8 +52,14 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
             try delegate.snapshotCore(a2_snapshot_save, at: result)
             require(
                 try Data(contentsOf: result)
-                    == Data(contentsOf: url.appendingPathComponent(PlayerSnapshot.stateName)),
+                    == { () throws -> Data in
+                        let metadata = try PlayerSnapshot.read(at: url)
+                        let expanded = temporary.appendingPathComponent("Expected.state")
+                        try metadata.extract(PlayerSnapshot.stateName, from: url, to: expanded)
+                        return try Data(contentsOf: expanded)
+                    }(),
                 "A fresh process must reconstruct the same machine without saved pointers")
+            delegate.refreshSnapshotDisplayIfNeeded()
             for _ in 0..<30 { require(run_16ms() == 0) }
             a2_snapshot_eject_disks()
             print("PASS fresh-process restore and continued execution")
@@ -64,8 +70,14 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         let saved = try delegate.saveSnapshot(title: "GS/OS checkpoint")
         let metadata = try PlayerSnapshot.read(at: saved)
         require(metadata.diskFiles == [diskName] && metadata.mounts.count == 1)
-        let state = saved.appendingPathComponent(PlayerSnapshot.stateName)
+        require(metadata.version == 2 && metadata.compressedPayloads?[PlayerSnapshot.stateName] != nil)
+        let state = temporary.appendingPathComponent("Original.state")
+        try metadata.extract(PlayerSnapshot.stateName, from: saved, to: state)
         let original = try Data(contentsOf: state)
+        require(
+            try Data(contentsOf: saved.appendingPathComponent(PlayerSnapshot.stateName)).count
+                < original.count)
+        print("PASS compressed machine state and legacy-compatible extraction")
         let frameCount = g_vbl_count
         g_limit_speed = 3
         g_zip_speed_mhz = 16
@@ -105,12 +117,15 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         delegate.setEmulationPaused(false)
         let working = delegate.currentDiskDirectory.appendingPathComponent(diskName)
         require(working != disk)
-        let immutable = try PlayerSnapshot.digest(PlayerSnapshot.payload(diskName, at: saved))
+        let immutable =
+            try metadata.compressedPayloads?[diskName]?.hash
+            ?? PlayerSnapshot.digest(PlayerSnapshot.payload(diskName, at: saved))
+        let packedHash = try PlayerSnapshot.digest(PlayerSnapshot.payload(diskName, at: saved))
         let handle = try FileHandle(forWritingTo: working)
         try handle.seek(toOffset: 1024)
         try handle.write(contentsOf: Data([0xaa, 0xbb, 0xcc]))
         try handle.close()
-        require(try PlayerSnapshot.digest(PlayerSnapshot.payload(diskName, at: saved)) == immutable)
+        require(try PlayerSnapshot.digest(PlayerSnapshot.payload(diskName, at: saved)) == packedHash)
         require(try PlayerSnapshot.digest(disk) == immutable)
         try delegate.restoreSnapshot(at: saved)
         require(
@@ -140,7 +155,11 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         print("PASS incompatible core build rejected")
         if !floppy {
             let badDisks = temporary.appendingPathComponent("Bad Disks.a2snapshot")
-            try manager.copyItem(at: saved, to: badDisks)
+            try manager.createDirectory(
+                at: badDisks.appendingPathComponent("Disks"), withIntermediateDirectories: true)
+            for name in metadata.diskFiles + [PlayerSnapshot.stateName, PlayerSnapshot.previewName] {
+                try metadata.extract(name, from: saved, to: PlayerSnapshot.payload(name, at: badDisks))
+            }
             let truncated = try FileHandle(forWritingTo: PlayerSnapshot.payload(diskName, at: badDisks))
             try truncated.truncate(atOffset: 512)
             try truncated.close()

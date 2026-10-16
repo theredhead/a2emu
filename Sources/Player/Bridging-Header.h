@@ -15,3 +15,6 @@ void a2_snapshot_reset_audio(void);
 
 // Fresh boot for standalone games; retains mounted disks and configured speed.
 void a2_restart_emulation(void);
+
+extern unsigned int g_mem_size_exp;
+extern unsigned int g_mem_size_total;

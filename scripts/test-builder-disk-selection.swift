@@ -29,7 +29,22 @@ import Cocoa
         builder.speed.selectItem(at: 3)
         builder.speedChanged(nil)
         builder.selectDisks([URL(fileURLWithPath: "/nonexistent/game.2mg")])
-        precondition(builder.speed.indexOfSelectedItem == 3, "Explicit unlimited speed must survive detection")
+        precondition(
+            builder.speed.indexOfSelectedItem == 3, "Explicit unlimited speed must survive detection")
+        for memory in PlayerManifest.expansionMemoryChoices {
+            let manifest = try! PlayerManifest.make(disks: ["Game.2mg"], slot: 5, expansionMemoryKB: memory)
+            try! manifest.validate()
+            precondition(manifest.expansionMemoryKB == memory)
+        }
+        var oldJSON =
+            try! JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(
+                    PlayerManifest.make(disks: ["Game.2mg"], slot: 5))) as! [String: Any]
+        oldJSON.removeValue(forKey: "expansionMemoryKB")
+        let oldManifest = try! JSONDecoder().decode(
+            PlayerManifest.self, from: JSONSerialization.data(withJSONObject: oldJSON))
+        precondition(oldManifest.expansionMemoryKB == nil)
+        print("PASS RAM choices and backward-compatible player manifests")
         print("Builder boot selection, speed defaults, initial mount and manual override passed.")
     }
 }

@@ -23,10 +23,21 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 
+    <key>CFBundleDocumentTypes</key><array>
+    <dict>
+        <key>CFBundleTypeName</key><string>Apple II Player Snapshot</string>
+        <key>CFBundleTypeRole</key><string>None</string>
+        <key>CFBundleTypeIconFile</key><string>Snapshot.icns</string>
+        <key>LSTypeIsPackage</key><true/>
+        <key>LSItemContentTypes</key><array><string>nl.theredhead.a2emu.snapshot</string></array>
+    </dict>
+</array>
+
     <key>UTExportedTypeDeclarations</key>
     <array><dict>
         <key>UTTypeIdentifier</key><string>nl.theredhead.a2emu.snapshot</string>
         <key>UTTypeDescription</key><string>Apple II Player Snapshot</string>
+        <key>UTTypeIconFile</key><string>Snapshot.icns</string>
         <key>UTTypeConformsTo</key><array><string>com.apple.package</string></array>
         <key>UTTypeTagSpecification</key><dict>
             <key>public.filename-extension</key><array><string>a2snapshot</string></array>

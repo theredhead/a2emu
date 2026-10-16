@@ -29,9 +29,24 @@ import Cocoa
         layout.menuWillOpen(emulation)
         precondition(
             visibleTitles(emulation) == [
-                "Pause", "Reset", "---", "Speed", "Controls", "---", "Snapshots…", "Show Saved Disk", "---",
-                "Change ROM…",
+                "Pause", "Reset", "---", "Snapshots…",
             ])
+        let configuration = layout.submenu(.configuration)!
+        layout.menuWillOpen(configuration)
+        precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…"])
+        delegate.menuModifierFlags = { .option }
+        layout.menuWillOpen(configuration)
+        precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…", "---", "Configuration  F4"])
+        let advanced = configuration.items.last!
+        precondition(advanced.action == #selector(MainView.do_config(_:)) && advanced.target == nil)
+        delegate.menuModifierFlags = { [] }
+        layout.menuWillOpen(layout.submenu(.speed)!)
+        precondition(!advanced.isHidden, "Submenus must retain the mode selected when opening the menu")
+        layout.menuWillOpen(configuration)
+        precondition(advanced.isHidden)
+        precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…"])
+        precondition(configuration.items.contains { $0 === layout.item(.speed) })
+        precondition(configuration.items.contains { $0 === layout.item(.controls) })
         precondition(layout.item(.pause)!.target === delegate)
         precondition(layout.item(.pause)!.keyEquivalent == "p")
         precondition(layout.item(.pause)!.keyEquivalentModifierMask == .command)
@@ -57,13 +72,16 @@ import Cocoa
                 choice.0.tag == index && choice.0.target === delegate
             })
         delegate.addDiskMenus()
-        precondition(delegate.diskMenuItems.count == 6 && layout.submenu(.disks)!.numberOfItems == 2)
+        precondition(delegate.diskMenuItems.count == 6 && layout.submenu(.disks)!.numberOfItems == 4)
         delegate.machine = try PlayerManifest.make(disks: ["test.woz"], slot: 6)
         delegate.addDiskMenus()
         layout.item(.emulation)!.title = "Emulation"
         emulation.title = "Emulation"
         layout.menuWillOpen(emulation)
-        precondition(layout.item(.disks)!.isHidden)
+        precondition(!layout.item(.disks)!.isHidden)
+        precondition(layout.root.items.contains { $0 === layout.item(.disks) })
+        precondition(!emulation.items.contains { $0 === layout.item(.disks) })
+        precondition(visibleTitles(layout.submenu(.disks)!) == ["Show Saved Disk"])
         var available = false
         var visible = false
         let conditional = PlayerMenu(
@@ -105,8 +123,8 @@ import Cocoa
             precondition(
                 delegate.speedMenuItems.filter { $0.state == .on }.map { $0.tag } == [speed.rawValue])
         }
-        let menu = NSApp.mainMenu!.items.first { $0.title == "Emulation" }!.submenu!
-        let speedMenu = menu.items.first { $0.title == "Speed" }!.submenu!
+        let menu = layout.submenu(.emulation)!
+        let speedMenu = layout.submenu(.speed)!
         let presetCount = speedMenu.numberOfItems
         for (index, mhz) in [16, 32, 64].enumerated() {
             g_limit_speed = 3

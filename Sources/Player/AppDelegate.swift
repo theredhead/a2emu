@@ -363,15 +363,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     var playerMenu: PlayerMenu?
+    private(set) var advancedMenus = false
+    var menuModifierFlags: () -> NSEvent.ModifierFlags = { NSEvent.modifierFlags }
 
     func set_menu_for_kegs() {
         let entries = PlayerMenuLayout.main(
             appName: PlayerManifest.displayName,
             isRunning: { [weak self] in self?.emulatorStarted == true },
-            showDisks: { [weak self] in
-                guard let machine = self?.machine else { return false }
-                return machine.drives.count > 1 || machine.diskFiles.count > 1
-            })
+            showAdvanced: { [weak self] in self?.advancedMenus == true })
         let layout = PlayerMenu(entries: entries, target: self, menuDelegate: self)
         playerMenu = layout
         NSApp.mainMenu = layout.root
@@ -391,6 +390,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     var mainwin_view: MainView!
 
     var snapshotDiskDirectory: URL?
+    var snapshotNeedsVideoRefresh = false
     var snapshotBrowser: SnapshotBrowser?
     var supportDirectory: URL!
     var selectedROM: URL?
@@ -432,6 +432,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             \(machine.batteryConfiguration)
             g_cfg_rom_path = \(rom.path)
             g_limit_speed = \((machine.initialSpeed ?? .oneMHz).rawValue)
+            g_mem_size_exp = \((machine.expansionMemoryKB ?? 8192) * 1024)
             g_zip_speed_mhz = 8
             g_status_enable = 0
             g_config_kegs_auto_update = 0
@@ -451,6 +452,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 }
                 return !line.hasPrefix("bram1[") && !line.hasPrefix("bram3[")
                     && !line.hasPrefix("g_limit_speed =") && !line.hasPrefix("g_zip_speed_mhz =")
+                    && !line.hasPrefix("g_mem_size_exp =")
                     && line.range(of: "^s[567]d[0-9]+\\s*=", options: .regularExpression) == nil
             }
 
@@ -529,6 +531,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     func menuWillOpen(_ menu: NSMenu) {
+        // Latch the mode when opening a top-level menu; submenus inherit it after Option is released.
+        if menu.supermenu === playerMenu?.root {
+            advancedMenus = menuModifierFlags().contains(.option)
+        }
         updatePauseMenu()
         updateSpeedChecks()
         for item in controlMenuItems {
@@ -638,8 +644,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     func addDiskMenus() {
         guard let layout = playerMenu else { return }
         let visible = machine.drives.count > 1 || machine.diskFiles.count > 1
-        layout.item(.disks)?.isHidden = !visible
-        layout.replaceContents(of: .disks, with: [])
+        layout.replaceContents(of: .disks, with: PlayerMenuLayout.savedDisks)
         diskMenuItems = []
         guard visible else { return }
         mountedImages = [:]
@@ -796,6 +801,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         }
 
         guard !emulationPaused else { return }
+        refreshSnapshotDisplayIfNeeded()
         let ret = run_16ms()
         if ret != 0 {
             exit(ret)
