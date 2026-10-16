@@ -1,4 +1,5 @@
 import Cocoa
+import UniformTypeIdentifiers
 
 final class PlayerDropView: NSView {
     var openPlayer: ((URL) -> Void)?
@@ -28,9 +29,14 @@ final class PlayerDropView: NSView {
 
     var window: NSWindow!
     var disks: [URL] = []
+    var startupSnapshot: URL? {
+        didSet { snapshotClearButton.isHidden = startupSnapshot == nil }
+    }
+    let snapshotClearButton = NSButton(title: "", target: nil, action: nil)
+    let snapshotLabel = NSTextField(labelWithString: "No snapshot — normal startup")
     var iconData: Data?
     var iconPicker: IconPicker?
-    let iconPreview = NSImageView(frame: NSRect(x: 506, y: 86, width: 84, height: 84))
+    let iconPreview = NSImageView(frame: NSRect(x: 28, y: 76, width: 64, height: 64))
     let heading = NSTextField(labelWithString: "Create a standalone Apple II player")
     let appName = NSTextField(string: "")
     let mountList = NSScrollView(frame: NSRect(x: 28, y: 198, width: 564, height: 180))
@@ -47,6 +53,7 @@ final class PlayerDropView: NSView {
     let summary = NSTextField(labelWithString: "Choose disk images to package.")
     let fullScreen = NSButton(checkboxWithTitle: "Start in full screen", target: nil, action: nil)
     let speed = NSPopUpButton(frame: .zero)
+    private var hasChosenSpeed = false
     let slot = NSPopUpButton(frame: .zero)
     var editingPlayer: URL?
     var pendingPlayer: URL?
@@ -61,11 +68,17 @@ final class PlayerDropView: NSView {
                 func value(_ flag: String) -> String {
                     args[args.firstIndex(of: flag)! + 1]
                 }
+                let disk = URL(fileURLWithPath: value("--export"))
+                let bootSlot =
+                    args.contains("--boot-slot")
+                    ? Int(value("--boot-slot"))! : DiskImageDevice.detect(disk).slot
                 try PlayerExporter.export(
-                    disks: [URL(fileURLWithPath: value("--export"))], slot: Int(value("--boot-slot"))!,
+                    disks: [disk], slot: bootSlot,
                     template: URL(fileURLWithPath: value("--template")),
                     destination: URL(fileURLWithPath: value("--output")),
-                    displayName: args.contains("--name") ? value("--name") : nil)
+                    displayName: args.contains("--name") ? value("--name") : nil,
+                    startupSnapshot: args.contains("--snapshot")
+                        ? URL(fileURLWithPath: value("--snapshot")) : nil)
                 print("Player exported.")
                 return
             } catch {
@@ -84,9 +97,9 @@ final class PlayerDropView: NSView {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let menu = NSMenu()
         let appItem = NSMenuItem()
-        let app = NSMenu(title: "Apple II Wrapper Builder")
+        let app = NSMenu(title: "Apple IIGS Player Builder")
         let about = app.addItem(
-            withTitle: "About Apple II Wrapper Builder", action: #selector(showAbout(_:)), keyEquivalent: "")
+            withTitle: "About Apple IIGS Player Builder", action: #selector(showAbout(_:)), keyEquivalent: "")
         about.target = self
         app.addItem(NSMenuItem.separator())
         app.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -105,24 +118,25 @@ final class PlayerDropView: NSView {
         fileItem.submenu = fileMenu
         menu.addItem(fileItem)
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 710),
+            contentRect: NSRect(x: 0, y: 0, width: 620, height: 760),
             styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        window.title = "Apple II Wrapper Builder"
+        window.title = "Apple IIGS Player Builder"
         let root = PlayerDropView(frame: window.contentView!.bounds)
         root.registerForDraggedTypes([.fileURL])
         root.openPlayer = { [weak self] in self?.loadPlayer($0) }
         window.contentView = root
         let title = heading
         title.font = .boldSystemFont(ofSize: 20)
-        title.frame = NSRect(x: 28, y: 650, width: 560, height: 32)
+        title.frame = NSRect(x: 28, y: 700, width: 560, height: 32)
         root.addSubview(title)
-        summary.frame = NSRect(x: 212, y: 608, width: 380, height: 32)
+        summary.frame = NSRect(x: 212, y: 658, width: 380, height: 32)
         summary.lineBreakMode = .byWordWrapping
         root.addSubview(summary)
         let choose = NSButton(title: "Choose Disks…", target: self, action: #selector(chooseDisks(_:)))
-        choose.frame = NSRect(x: 28, y: 608, width: 160, height: 32)
+        choose.frame = NSRect(x: 28, y: 658, width: 160, height: 32)
         choose.bezelStyle = .rounded
         root.addSubview(choose)
+        align(summary, with: choose)
         let label = NSTextField(labelWithString: "Start up from:")
         label.frame = NSRect(x: 28, y: 511, width: 110, height: 24)
         root.addSubview(label)
@@ -136,6 +150,8 @@ final class PlayerDropView: NSView {
         root.addSubview(speedLabel)
         speed.frame = NSRect(x: 140, y: 462, width: 452, height: 28)
         speed.addItems(withTitles: EmulationSpeed.allCases.map { $0.label })
+        speed.target = self
+        speed.action = #selector(speedChanged(_:))
         root.addSubview(speed)
         align(label, with: slot)
         align(speedLabel, with: speed)
@@ -173,12 +189,13 @@ final class PlayerDropView: NSView {
                 "Leave extra images unmounted; swap them into a drive later through Emulation → Disks.")
         help.frame = NSRect(x: 28, y: 146, width: 450, height: 40)
         root.addSubview(help)
+        iconPreview.image = NSImage(named: NSImage.Name("PlayerIcon"))
         root.addSubview(iconPreview)
         let icon = NSButton(title: "Choose Player Icon…", target: self, action: #selector(chooseIcon(_:)))
-        icon.frame = NSRect(x: 28, y: 102, width: 210, height: 32)
+        icon.frame = NSRect(x: 108, y: 92, width: 210, height: 32)
         icon.bezelStyle = .rounded
         root.addSubview(icon)
-        fullScreen.frame = NSRect(x: 28, y: 63, width: 280, height: 24)
+        fullScreen.frame = NSRect(x: 28, y: 30, width: 280, height: 24)
         root.addSubview(fullScreen)
         let export = exportButton
         export.target = self
@@ -186,6 +203,32 @@ final class PlayerDropView: NSView {
         export.frame = NSRect(x: 402, y: 25, width: 190, height: 34)
         export.bezelStyle = .rounded
         root.addSubview(export)
+        let snapshotButton = NSButton(
+            title: "Startup Snapshot…", target: self, action: #selector(chooseSnapshot(_:)))
+        snapshotButton.bezelStyle = .rounded
+        snapshotButton.frame = NSRect(x: 28, y: 610, width: 160, height: 32)
+        root.addSubview(snapshotButton)
+        snapshotLabel.frame = NSRect(x: 212, y: 614, width: 334, height: 24)
+        snapshotLabel.lineBreakMode = .byTruncatingMiddle
+        root.addSubview(snapshotLabel)
+        let clearSnapshot = snapshotClearButton
+        clearSnapshot.target = self
+        clearSnapshot.action = #selector(clearSnapshot(_:))
+        clearSnapshot.image = NSImage(
+            systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Remove startup snapshot")
+        clearSnapshot.imagePosition = .imageOnly
+        clearSnapshot.isBordered = false
+        clearSnapshot.isHidden = startupSnapshot == nil
+        clearSnapshot.toolTip = "Remove startup snapshot and use normal startup"
+        clearSnapshot.bezelStyle = .rounded
+        clearSnapshot.frame = NSRect(x: 558, y: 614, width: 28, height: 24)
+        root.addSubview(clearSnapshot)
+        snapshotButton.toolTip = "Optional: restore the captured speed and disk state on every launch."
+        for y: CGFloat in [598, 66] {
+            let separator = NSBox(frame: NSRect(x: 28, y: y, width: 564, height: 1))
+            separator.boxType = .separator
+            root.addSubview(separator)
+        }
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -207,24 +250,63 @@ final class PlayerDropView: NSView {
         true
     }
 
+    @objc func chooseSnapshot(_ sender: Any?) {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.treatsFilePackagesAsDirectories = false
+        panel.allowedContentTypes = [UTType(exportedAs: "nl.theredhead.a2emu.snapshot")]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let snapshot = try PlayerSnapshot.read(at: url)
+            guard snapshot.diskFiles == disks.map({ $0.lastPathComponent }) else {
+                throw PlayerManifest.failure(
+                    "Choose this player's disk images first, in the same order as the snapshot.")
+            }
+            startupSnapshot = url
+            speed.isEnabled = false
+            speed.toolTip = "The startup snapshot restores its captured speed."
+            snapshotLabel.stringValue = snapshot.title
+            snapshotLabel.toolTip = url.path
+        } catch { showError(error.localizedDescription) }
+    }
+
+    @objc func clearSnapshot(_ sender: Any?) {
+        startupSnapshot = nil
+        speed.isEnabled = true
+        speed.toolTip = nil
+        snapshotLabel.stringValue = "No snapshot — normal startup"
+        snapshotLabel.toolTip = nil
+    }
+
     @objc func chooseDisks(_ sender: Any?) {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true
-        panel.allowedFileTypes = ["woz", "dsk", "do", "po", "2mg", "hdv", "nib"]
+        panel.allowedContentTypes = ["woz", "dsk", "do", "po", "2mg", "2img", "hdv", "nib"].compactMap {
+            UTType(filenameExtension: $0)
+        }
         guard panel.runModal() == .OK else {
             return
         }
 
+        selectDisks(panel.urls)
+    }
+
+    /// Selects the initial boot drive from the first image; drive controls remain editable.
+    func selectDisks(_ urls: [URL]) {
+        guard let bootImage = urls.first else { return }
         let previousDefault = disks.first?.deletingPathExtension().lastPathComponent
         diskNameFields = []
         mountChoices = []
-        disks = panel.urls
+        disks = urls
         summary.stringValue = "\(disks.count) disk image\(disks.count == 1 ? "" : "s") selected"
         if appName.stringValue.isEmpty || appName.stringValue == previousDefault {
             appName.stringValue = disks[0].deletingPathExtension().lastPathComponent
         }
-        rebuildMounts()
+        if let index = [6, 5, 7].firstIndex(of: DiskImageDevice.detect(bootImage).slot) {
+            slot.selectItem(at: index)
+        }
+        startupChanged(nil)
     }
 
     @objc func startupChanged(_ sender: Any?) {
@@ -233,6 +315,20 @@ final class PlayerDropView: NSView {
             count.selectItem(at: index == slot.indexOfSelectedItem ? 1 : 0)
         }
         rebuildMounts()
+    }
+
+    @objc func speedChanged(_ sender: Any?) {
+        hasChosenSpeed = true
+    }
+
+    /// Only untouched defaults follow the boot device; explicit and saved speeds take precedence.
+    private func updateAutomaticSpeed() {
+        guard !hasChosenSpeed, startupSnapshot == nil, slot.indexOfSelectedItem >= 0 else { return }
+        let bootSlot = [6, 5, 7][slot.indexOfSelectedItem]
+        let defaultSpeed: EmulationSpeed = bootSlot == 6 ? .oneMHz : .twoPointEightMHz
+        if let index = EmulationSpeed.allCases.firstIndex(of: defaultSpeed) {
+            speed.selectItem(at: index)
+        }
     }
 
     @objc func drivesChanged(_ sender: Any?) {
@@ -246,6 +342,7 @@ final class PlayerDropView: NSView {
             slot.selectItem(at: index)
         }
 
+        updateAutomaticSpeed()
         let content = NSView(frame: NSRect(x: 0, y: 0, width: 540, height: max(180, disks.count * 42)))
         let previousMounts = mountChoices.map { choice -> DriveAddress? in
             choice.indexOfSelectedItem > 0 ? listedDrives[choice.indexOfSelectedItem - 1] : nil
@@ -344,7 +441,7 @@ final class PlayerDropView: NSView {
                     displayName: name, mounts: mounts, diskNames: diskNames,
                     availableDrives: configuredDrives,
                     initialSpeed: EmulationSpeed.allCases[speed.indexOfSelectedItem],
-                    startInFullScreen: fullScreen.state == .on)
+                    startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot)
                 loadPlayer(existing)
                 summary.stringValue = "Saved changes to \(existing.lastPathComponent)"
             } catch {
@@ -365,7 +462,7 @@ final class PlayerDropView: NSView {
                 destination: output, icon: iconData, displayName: name, mounts: mounts, diskNames: diskNames,
                 availableDrives: configuredDrives,
                 initialSpeed: EmulationSpeed.allCases[speed.indexOfSelectedItem],
-                startInFullScreen: fullScreen.state == .on)
+                startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot)
             NSWorkspace.shared.activateFileViewerSelecting([output])
         } catch {
             showError(error.localizedDescription)
@@ -389,7 +486,7 @@ final class PlayerDropView: NSView {
 
     @objc func openPlayerPanel(_ sender: Any?) {
         let panel = NSOpenPanel()
-        panel.allowedFileTypes = ["app"]
+        panel.allowedContentTypes = [.applicationBundle]
         panel.canChooseDirectories = false
         panel.treatsFilePackagesAsDirectories = false
         guard panel.runModal() == .OK, let url = panel.url else {
@@ -400,13 +497,15 @@ final class PlayerDropView: NSView {
 
     @objc func newPlayer(_ sender: Any?) {
         editingPlayer = nil
+        clearSnapshot(nil)
         disks = []
         diskNameFields = []
         mountChoices = []
         iconData = nil
-        iconPreview.image = nil
+        iconPreview.image = NSImage(named: NSImage.Name("PlayerIcon"))
         appName.stringValue = ""
         fullScreen.state = .off
+        hasChosenSpeed = false
         speed.selectItem(at: 0)
         slot.selectItem(at: 0)
         for (i, count) in driveCounts.enumerated() {
@@ -414,7 +513,7 @@ final class PlayerDropView: NSView {
         }
         heading.stringValue = "Create a standalone Apple II player"
         exportButton.title = "Create Player…"
-        window.title = "Apple II Wrapper Builder"
+        window.title = "Apple IIGS Player Builder"
         summary.stringValue = "Choose disks, or drop an existing player here to edit it."
         rebuildMounts()
     }
@@ -440,7 +539,13 @@ final class PlayerDropView: NSView {
             }
             slot.selectItem(at: [6, 5, 7].firstIndex(of: manifest.bootSlot)!)
             speed.selectItem(at: EmulationSpeed.allCases.firstIndex(of: manifest.initialSpeed ?? .oneMHz)!)
+            hasChosenSpeed = true
             fullScreen.state = manifest.startInFullScreen == true ? .on : .off
+            startupSnapshot =
+                manifest.startupSnapshot == true
+                ? resources.appendingPathComponent("Startup.a2snapshot") : nil
+            snapshotLabel.stringValue =
+                startupSnapshot == nil ? "No snapshot — normal startup" : "Bundled startup snapshot"
             rebuildMounts()
             for index in disks.indices {
                 diskNameFields[index].stringValue = manifest.diskName(at: index)

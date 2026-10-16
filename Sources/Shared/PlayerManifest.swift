@@ -38,6 +38,7 @@ struct DiskMount: Codable {
 /// Bundled startup defaults; optional fields support players exported by earlier versions.
 struct PlayerManifest: Codable {
     var configurationRevision: String? = nil
+    var startupSnapshot: Bool? = nil
     let startInFullScreen: Bool?
     let initialSpeed: EmulationSpeed?
     let availableDrives: [DriveAddress]?

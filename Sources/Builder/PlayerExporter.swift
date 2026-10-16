@@ -8,7 +8,9 @@ struct PlayerExporter {
         disks: [URL], slot: Int, template: URL, destination: URL, icon: Data? = nil,
         displayName: String? = nil, mounts: [DiskMount]? = nil, diskNames: [String]? = nil,
         availableDrives: [DriveAddress]? = nil, initialSpeed: EmulationSpeed = .oneMHz,
-        startInFullScreen: Bool = false, bundleIdentifier: String? = nil, configurationRevision: String? = nil
+        startInFullScreen: Bool = false, bundleIdentifier: String? = nil,
+        configurationRevision: String? = nil,
+        startupSnapshot: URL? = nil
     ) throws {
         let manager = FileManager.default
         guard !manager.fileExists(atPath: destination.path) else {
@@ -25,8 +27,21 @@ struct PlayerExporter {
         var manifest = try PlayerManifest.make(
             disks: names, slot: slot, mounts: mounts, diskNames: diskNames, availableDrives: availableDrives,
             initialSpeed: initialSpeed, startInFullScreen: startInFullScreen)
-        manifest.configurationRevision = configurationRevision
+        // A fresh export may reuse this game's saved-data directory. Apply its new
+        // startup defaults once, just as an update does, then preserve player edits.
+        manifest.configurationRevision = configurationRevision ?? UUID().uuidString
+        manifest.startupSnapshot = startupSnapshot != nil
         try manifest.validate()
+        if let snapshotURL = startupSnapshot {
+            let snapshot = try PlayerSnapshot.read(at: snapshotURL)
+            guard snapshot.diskFiles == names,
+                snapshot.mounts.allSatisfy({ manifest.drives.contains($0.address) })
+            else {
+                throw PlayerManifest.failure(
+                    "The startup snapshot must use this player's disks and available drives.")
+            }
+            try PlayerSnapshot.checkCore(at: snapshotURL, template: template)
+        }
         let staging = destination.deletingLastPathComponent().appendingPathComponent(
             ".a2-export-\(UUID().uuidString).app")
         defer { try? manager.removeItem(at: staging) }
@@ -38,6 +53,9 @@ struct PlayerExporter {
                 try? manager.removeItem(at: resources.appendingPathComponent(name))
             }
         }
+        let bundledSnapshot = resources.appendingPathComponent("Startup.a2snapshot")
+        if manager.fileExists(atPath: bundledSnapshot.path) { try manager.removeItem(at: bundledSnapshot) }
+        if let snapshot = startupSnapshot { try manager.copyItem(at: snapshot, to: bundledSnapshot) }
         for disk in disks {
             try manager.copyItem(at: disk, to: resources.appendingPathComponent(disk.lastPathComponent))
         }
@@ -88,6 +106,14 @@ struct PlayerExporter {
                 throw PlayerManifest.failure("This player is missing a bundled disk image.")
             }
         }
+        if manifest.startupSnapshot == true {
+            let snapshotURL = app.appendingPathComponent("Contents/Resources/Startup.a2snapshot")
+            let snapshot = try PlayerSnapshot.read(at: snapshotURL)
+            guard snapshot.diskFiles == manifest.diskFiles else {
+                throw PlayerManifest.failure("The bundled startup snapshot uses different disks.")
+            }
+            try PlayerSnapshot.checkCore(at: snapshotURL, template: app)
+        }
         return manifest
     }
 
@@ -96,7 +122,7 @@ struct PlayerExporter {
     static func update(
         app: URL, disks: [URL], slot: Int, icon: Data?, displayName: String, mounts: [DiskMount],
         diskNames: [String], availableDrives: [DriveAddress], initialSpeed: EmulationSpeed,
-        startInFullScreen: Bool
+        startInFullScreen: Bool, startupSnapshot: URL? = nil
     ) throws {
         _ = try read(app: app)
         let manager = FileManager.default
@@ -119,7 +145,7 @@ struct PlayerExporter {
             disks: disks, slot: slot, template: template, destination: temporary, icon: icon,
             displayName: displayName, mounts: mounts, diskNames: diskNames, availableDrives: availableDrives,
             initialSpeed: initialSpeed, startInFullScreen: startInFullScreen, bundleIdentifier: identifier,
-            configurationRevision: UUID().uuidString)
+            configurationRevision: UUID().uuidString, startupSnapshot: startupSnapshot)
         try manager.moveItem(at: app, to: backup)
         do {
             try manager.moveItem(at: temporary, to: app)

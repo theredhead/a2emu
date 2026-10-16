@@ -3,7 +3,14 @@ import GameController
 
 /// Bridges GameController or HID input to the emulator; create and poll on the main thread.
 final class GamepadInput {
-    private var controller: GCController?
+    private var nativeControllers: [GCController] = []
+    private var nativeIDs: [ObjectIdentifier: String] = [:]
+    private var automaticControllerID: String?
+    private var lastInputID: String?
+
+    /// Runtime connection choice; nil follows the automatic selection. Names are never used as IDs.
+    var selectedControllerID: String?
+    var controllerDisconnected: (() -> Void)?
     private var connected = false
     private let hidSnapshot = GCController.withExtendedGamepad()
     private var pressedKeys = Set<Int32>()
@@ -15,30 +22,67 @@ final class GamepadInput {
     }
 
     var controllerName: String {
-        controller?.vendorName
-            ?? (a2_hid_gamepad_connected() != 0 ? String(cString: a2_hid_gamepad_name()) : nil)
-            ?? (connected ? "Game controller connected" : "No game controller connected")
+        let choices = availableControllers()
+        return selectedChoice(in: choices, requestedID: selectedControllerID)?.name
+            ?? (selectedControllerID == nil
+                ? "No game controller connected" : "Selected controller disconnected")
+    }
+
+    /// Lists every supported native and direct-input connection with stable session IDs.
+    func availableControllers() -> [ControllerChoice] {
+        let available = GCController.controllers().filter { $0.extendedGamepad != nil }
+        let ordered =
+            nativeControllers.filter { old in available.contains { $0 === old } }
+            + available.filter { new in !nativeControllers.contains { $0 === new } }
+        nativeIDs = nativeIDs.filter { id, _ in ordered.contains { ObjectIdentifier($0) == id } }
+        nativeControllers = ordered
+        var choices: [ControllerChoice] = []
+        for controller in ordered {
+            let identifier = ObjectIdentifier(controller)
+            if nativeIDs[identifier] == nil { nativeIDs[identifier] = "gc:" + UUID().uuidString }
+            choices.append(
+                ControllerChoice(id: nativeIDs[identifier]!, name: controller.vendorName ?? "Game controller")
+            )
+        }
+        let nativeNames = Set(choices.map { $0.name })
+        for index in 0..<a2_hid_gamepad_count() {
+            let name = String(cString: a2_hid_gamepad_name_at(index))
+            // Some devices expose both connections. Keep direct input available as a fallback.
+            let label = nativeNames.contains(name) ? "\(name) (direct input)" : name
+            choices.append(ControllerChoice(id: "hid:\(a2_hid_gamepad_id(index))", name: label))
+        }
+        let counts = Dictionary(grouping: choices, by: { $0.name }).mapValues { $0.count }
+        var occurrences: [String: Int] = [:]
+        return choices.map { choice in
+            occurrences[choice.name, default: 0] += 1
+            let name =
+                counts[choice.name, default: 0] > 1
+                ? "\(choice.name) (\(occurrences[choice.name]!))" : choice.name
+            return ControllerChoice(id: choice.id, name: name)
+        }
+    }
+
+    private func selectedChoice(in choices: [ControllerChoice], requestedID: String?) -> ControllerChoice? {
+        if let requestedID = requestedID { return choices.first { $0.id == requestedID } }
+        if let existing = choices.first(where: { $0.id == automaticControllerID }) { return existing }
+        automaticControllerID = choices.first?.id
+        return choices.first
     }
 
     /// Polls input and releases held controls when inactive or disconnected.
     /// The key callback receives true for key-up and false for key-down.
     func update(active: Bool, keyEvent: ((Int32, Bool) -> Void)? = nil) {
-        let available = GCController.controllers().filter { $0.extendedGamepad != nil }
-        if controller == nil || !available.contains(where: { $0 === controller }) {
-            controller = available.first
-        }
-
-        var profile = controller?.extendedGamepad
-        if profile == nil, a2_hid_gamepad_connected() != 0, let snapshot = hidSnapshot.extendedGamepad {
-            snapshot.leftThumbstick.setValueForXAxis(a2_hid_gamepad_value(0), yAxis: a2_hid_gamepad_value(1))
-            snapshot.rightThumbstick.setValueForXAxis(a2_hid_gamepad_value(2), yAxis: a2_hid_gamepad_value(3))
-            snapshot.dpad.setValueForXAxis(a2_hid_gamepad_value(4), yAxis: a2_hid_gamepad_value(5))
-            for index in 0..<8 {
-                mapping.button(index, on: snapshot).setValue(a2_hid_gamepad_value(Int32(index + 6)))
+        let input = currentProfile(controllerID: selectedControllerID)
+        var interrupted = false
+        if input?.id != lastInputID {
+            if let previous = lastInputID, !availableControllers().contains(where: { $0.id == previous }) {
+                interrupted = true
+                controllerDisconnected?()
             }
-            profile = snapshot
+            sendKeys([], event: keyEvent)
+            lastInputID = input?.id
         }
-        guard let pad = profile else {
+        guard let pad = input?.pad else {
             sendKeys([], event: keyEvent)
             if connected {
                 joystick_callback_update(0, 0, 0)
@@ -50,7 +94,7 @@ final class GamepadInput {
         }
         joystick_callback_init(1)
         connected = true
-        guard active else {
+        guard active && !interrupted else {
             sendKeys([], event: keyEvent)
             joystick_callback_update(0, 0, 0)
             joystick_update_buttons()
@@ -59,32 +103,58 @@ final class GamepadInput {
 
         let state = Self.state(for: pad, mapping: mapping)
         if mapping.keyboardMode == true {
-            var keys = Set<Int32>()
-            let codes = mapping.keyCodes ?? ControllerMapping.defaultKeyCodes
-            if state.x < -16000 {
-                keys.insert(Int32(codes[0]))
-            }
-            if state.x > 16000 {
-                keys.insert(Int32(codes[1]))
-            }
-            if state.y < -16000 {
-                keys.insert(Int32(codes[2]))
-            }
-            if state.y > 16000 {
-                keys.insert(Int32(codes[3]))
-            }
-            if state.buttons & 1 != 0 {
-                keys.insert(Int32(codes[4]))
-            }
-            if state.buttons & 2 != 0 {
-                keys.insert(Int32(codes[5]))
-            }
+            let keys = keyboardKeys(for: pad, mapping: mapping, state: state)
             sendKeys(keys, event: keyEvent)
             joystick_callback_update(0, 0, 0)
         } else {
             sendKeys([], event: keyEvent)
             joystick_callback_update(state.buttons, state.x, state.y)
         }
+    }
+
+    /// Reads the same controller sources as emulation without sending events to the C core.
+    func previewState(mapping: ControllerMapping, controllerID: String?) -> (
+        buttons: UInt32, x: Int32, y: Int32, keys: Set<Int32>
+    )? {
+        guard let pad = currentProfile(controllerID: controllerID)?.pad else { return nil }
+        let state = Self.state(for: pad, mapping: mapping)
+        return (state.buttons, state.x, state.y, keyboardKeys(for: pad, mapping: mapping, state: state))
+    }
+
+    private func currentProfile(controllerID: String?) -> (id: String, pad: GCExtendedGamepad)? {
+        let choices = availableControllers()
+        guard let choice = selectedChoice(in: choices, requestedID: controllerID) else { return nil }
+        if choice.id.hasPrefix("gc:") {
+            guard
+                let controller = nativeControllers.first(where: {
+                    nativeIDs[ObjectIdentifier($0)] == choice.id
+                }),
+                let pad = controller.extendedGamepad
+            else { return nil }
+            return (choice.id, pad)
+        }
+        guard let identifier = UInt64(choice.id.dropFirst(4)), a2_hid_gamepad_select(identifier) != 0,
+            let snapshot = hidSnapshot.extendedGamepad
+        else { return nil }
+        snapshot.leftThumbstick.setValueForXAxis(a2_hid_gamepad_value(0), yAxis: a2_hid_gamepad_value(1))
+        snapshot.rightThumbstick.setValueForXAxis(a2_hid_gamepad_value(2), yAxis: a2_hid_gamepad_value(3))
+        snapshot.dpad.setValueForXAxis(a2_hid_gamepad_value(4), yAxis: a2_hid_gamepad_value(5))
+        for index in 0..<8 {
+            mapping.button(index, on: snapshot).setValue(a2_hid_gamepad_value(Int32(index + 6)))
+        }
+        return (choice.id, snapshot)
+    }
+
+    private func keyboardKeys(
+        for pad: GCExtendedGamepad, mapping: ControllerMapping,
+        state: (buttons: UInt32, x: Int32, y: Int32)
+    ) -> Set<Int32> {
+        var physicalButtons: UInt32 = 0
+        for index in 0..<8 where mapping.button(index, on: pad).isPressed {
+            physicalButtons |= 1 << index
+        }
+        return mapping.keyboardKeys(
+            x: state.x, y: state.y, buttons: state.buttons, physicalButtons: physicalButtons)
     }
 
     private func sendKeys(_ keys: Set<Int32>, event: ((Int32, Bool) -> Void)?) {

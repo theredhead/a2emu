@@ -2,3 +2,13 @@ Apple II Player integration by theredhead, 2026-10-14.
 AppDelegate.swift and MainView.swift are modified GSplus frontend files.
 Player additions, build scripts and source packaging are distributed under GPL-3.0.
 Original copyright notices are retained. Firmware and wrapped software are separate.
+2026-10-16: Self-contained machine snapshots and an AppKit snapshot browser.
+Project-local adapters include unmodified GSplus translation units, enumerate
+emulated state, serialize event links without pointers, and reset host audio.
+The builder can bundle an optional startup snapshot with its own disk copies.
+2026-10-16: The player Reset menu now clears volatile machine and sound state
+for a fresh boot, preserving disks, BRAM and speed; a device-free render-callback
+regression test covers Death Sword's warm-reset music loss.
+2026-10-16: Declarative player-menu layout with stable item IDs, dynamic submenu
+slots, native action routing, and live visibility/enabled predicates. The Emulation
+menu groups playback, controls, saved state/media, and ROM configuration separately.

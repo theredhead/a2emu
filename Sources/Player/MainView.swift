@@ -24,6 +24,11 @@ class MainView: NSView {
     var closed: Bool = false
     var pixels_per_line = 640
     var max_height = 600
+    // Retain the sound until playback finishes; system resources can be absent on future macOS versions.
+    private let screenshotSound = NSSound(
+        contentsOfFile:
+            "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Screen Capture.aif",
+        byReference: true)
 
     let is_cmd = UInt(NSEvent.ModifierFlags.command.rawValue)
     let is_control = UInt(NSEvent.ModifierFlags.control.rawValue)
@@ -44,6 +49,8 @@ class MainView: NSView {
     }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.keyCode == 99 { return false }  // Leave F3 to the screenshot menu command or keyDown.
+        guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return false }
         let keycode = event.keyCode
         let is_repeat = event.isARepeat
         let unicode_key = get_unicode_key_from_event(event)
@@ -77,6 +84,11 @@ class MainView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
+        if event.keyCode == 99 {
+            if !event.isARepeat { do_screenshot(nil) }
+            return
+        }
+        guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return }
         let keycode = event.keyCode
         let is_repeat = event.isARepeat
         let unicode_key = get_unicode_key_from_event(event)
@@ -90,6 +102,7 @@ class MainView: NSView {
     }
 
     override func keyUp(with event: NSEvent) {
+        if event.keyCode == 99 { return }  // F3 belongs to the host, never the emulated keyboard.
         let keycode = event.keyCode
         let unicode_key = get_unicode_key_from_event(event)
         adb_physical_key_update(
@@ -330,6 +343,46 @@ class MainView: NSView {
                 video_out_done(kimage_ptr)
                 print("Did out_data_scaled, rect:\(rect)")
             }
+        }
+    }
+
+    /// Saves the current native-resolution game frame, without window chrome or overlays.
+    /// Throws if no frame is available, PNG encoding fails, or the destination cannot be written.
+    @discardableResult
+    func saveScreenshot(in directory: URL) throws -> URL {
+        guard let image = bitmapContext?.makeImage(),
+            let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+        else {
+            throw PlayerManifest.failure("No game frame is available to capture yet.")
+        }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH.mm.ss.SSS"
+        let name =
+            PlayerManifest.normalizedName(PlayerManifest.displayName)
+            + " " + formatter.string(from: Date()) + " " + UUID().uuidString.prefix(6) + ".png"
+        let destination = directory.appendingPathComponent(name)
+        try png.write(to: destination, options: .atomic)
+        return destination
+    }
+
+    @objc func do_screenshot(_ sender: Any?) {
+        if let event = NSApp.currentEvent, event.type == .keyDown, event.isARepeat { return }
+        do {
+            let pictures = try FileManager.default.url(
+                for: .picturesDirectory, in: .userDomainMask,
+                appropriateFor: nil, create: true)
+            let directory = pictures.appendingPathComponent("Apple II Player", isDirectory: true)
+                .appendingPathComponent(
+                    PlayerManifest.normalizedName(PlayerManifest.displayName), isDirectory: true)
+            _ = try saveScreenshot(in: directory)
+            screenshotSound?.play()
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Could not save screenshot"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
         }
     }
 

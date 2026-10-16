@@ -204,7 +204,6 @@ struct ROMSetup {
         let session = URLSession(configuration: .ephemeral)
         var outcome: Result<Data, Error>?
         var cancelled = false
-        var task: URLSessionDataTask?
         var collected = Data()
 
         func next(_ index: Int) {
@@ -219,7 +218,7 @@ struct ROMSetup {
                 url: URL(
                     string: mirror + part.0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)!)
             request.timeoutInterval = 30
-            task = session.dataTask(with: request) { data, response, failure in
+            let task = session.dataTask(with: request) { data, response, failure in
                 DispatchQueue.main.async {
                     guard !cancelled else {
                         return
@@ -241,12 +240,12 @@ struct ROMSetup {
                     NSApp.abortModal()
                 }
             }
-            task?.resume()
+            task.resume()
         }
         DispatchQueue.main.async { next(0) }
         _ = progress.runModal()
         cancelled = true
-        task?.cancel()
+        // Invalidate the dedicated session to cancel any in-flight request.
         session.invalidateAndCancel()
         return try outcome?.get()
     }

@@ -1,4 +1,4 @@
-# Apple II Player and Wrapper Builder
+# Apple IIGS Player Builder and Apple II Player
 
 Swift/AppKit macOS builder and generic standalone player, using the GSplus/KEGS engine.
 

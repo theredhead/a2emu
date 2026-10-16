@@ -174,6 +174,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("start!")
+        gamepadInput.controllerDisconnected = { [weak self] in
+            guard let self = self, self.emulatorStarted, g_joystick_type == 4 || g_joystick_type == 2 else {
+                return
+            }
+            self.setEmulationPaused(true, reason: "Controller disconnected")
+        }
         set_menu_for_kegs()
         NSApp.activate(ignoringOtherApps: true)  // Bring window to front
         do {
@@ -188,6 +194,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             addControlsMenu()
             main_init()
             emulatorStarted = true
+            findSnapshotWorkingDisks()
+            if machine.startupSnapshot == true {
+                let startup = Bundle.main.resourceURL!.appendingPathComponent("Startup.a2snapshot")
+                do {
+                    try restoreSnapshot(at: startup)
+                } catch {
+                    setEmulationPaused(true, reason: "Startup snapshot could not be restored")
+                    let alert = NSAlert()
+                    alert.messageText = "Could not restore startup snapshot"
+                    alert.informativeText = error.localizedDescription + " You can resume to boot normally."
+                    alert.runModal()
+                }
+            }
+            updatePauseMenu()
+            updateSpeedChecks()
             if machine.startInFullScreen == true {
                 DispatchQueue.main.async { self.mainwin_info.x_win?.toggleFullScreen(nil) }
             }
@@ -341,115 +362,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         }
     }
 
+    var playerMenu: PlayerMenu?
+
     func set_menu_for_kegs() {
-        let appname = PlayerManifest.displayName
-        let menu = NSMenu(title: "MainMenu")
-        NSApp.mainMenu = menu
-
-        print("Installing my menu now")
-
-        //   Add "Kegs" menu
-        let kegs = NSMenu(title: appname)
-        kegs.addItem(
-            withTitle: "About \(appname)",
-            action: #selector(AppDelegate.do_about(_:)),
-            keyEquivalent: "")
-        kegs.addItem(NSMenuItem.separator())
-        let quit_item = NSMenuItem(
-            title: "Quit \(appname)",
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q")
-        quit_item.keyEquivalentModifierMask = [
-            .option,
-            .command,
-        ]
-        kegs.addItem(quit_item)
-        let kegs_item = NSMenuItem()
-        kegs_item.title = appname
-        kegs_item.submenu = kegs
-        menu.addItem(kegs_item)
-
-        //   Add "Edit" menu
-        let edit = NSMenu(title: "Edit")
-        edit.addItem(
-            withTitle: "Copy Text Screen",
-            action: #selector(MainView.do_copy_text(_:)),
-            keyEquivalent: "")
-        edit.addItem(NSMenuItem.separator())
-        edit.addItem(
-            withTitle: "Paste",
-            action: #selector(MainView.do_paste(_:)),
-            keyEquivalent: "")
-        let edit_item = NSMenuItem()
-        edit_item.title = "Edit"
-        edit_item.submenu = edit
-        menu.addItem(edit_item)
-
-        //   Add "Config" menu
-        let config = NSMenu(title: "Config")
-        config.addItem(
-            withTitle: "Configuration  F4",
-            action: #selector(MainView.do_config(_:)),
-            keyEquivalent: "")
-        let config_item = NSMenuItem()
-        config_item.title = "Config"
-        config_item.submenu = config
-        menu.addItem(config_item)
-
-        let viewMenu = NSMenu(title: "View")
-        let fullscreen = viewMenu.addItem(
-            withTitle: "Toggle Full Screen", action: #selector(toggleFullscreen(_:)), keyEquivalent: "f")
-        fullscreen.keyEquivalentModifierMask = [.control, .command]
-        fullscreen.target = self
-        let integerItem = viewMenu.addItem(
-            withTitle: "Resize in Integer Multiples", action: #selector(toggleIntegerResize(_:)),
-            keyEquivalent: "")
-        integerItem.target = self
-        integerResizeItem = integerItem
-        let viewItem = NSMenuItem(title: "View", action: nil, keyEquivalent: "")
-        viewItem.submenu = viewMenu
-        menu.addItem(viewItem)
-        let gameMenu = NSMenu(title: "Emulation")
-        let reset = gameMenu.addItem(withTitle: "Reset", action: #selector(resetGame(_:)), keyEquivalent: "")
-        reset.target = self
-        let changeROM = gameMenu.addItem(
-            withTitle: "Change ROM…", action: #selector(changeROM(_:)), keyEquivalent: "")
-        changeROM.target = self
-        let files = gameMenu.addItem(
-            withTitle: "Show Saved Disk", action: #selector(showSavedDisk(_:)), keyEquivalent: "")
-        files.target = self
-        let gameItem = NSMenuItem(title: "Emulation", action: nil, keyEquivalent: "")
-        gameItem.submenu = gameMenu
-        menu.addItem(gameItem)
-        show_menu(menu, depth: 0)
-    }
-
-    func show_menu(_ menu: NSMenu, depth: Int) {
-        if depth >= -10 {
-            return  // Menu diagnostics are disabled for normal nonnegative depths.
-        }
-        print("menu at depth \(depth): \(menu.title)")
-        if depth > 5 {  // Prevent infinite recursion
-            return
-        }
-        for menuit in menu.items {
-            print("menuit: depth:\(depth) \(menuit.title)")
-            print("  keyeq:\(menuit.keyEquivalent)")
-            print("  modifiers:\(menuit.keyEquivalentModifierMask)")
-            print("  isSeparator:\(menuit.isSeparatorItem)")
-            if let sub = menuit.submenu {
-                show_menu(sub, depth: depth + 1)
-            }
-        }
+        let entries = PlayerMenuLayout.main(
+            appName: PlayerManifest.displayName,
+            isRunning: { [weak self] in self?.emulatorStarted == true },
+            showDisks: { [weak self] in
+                guard let machine = self?.machine else { return false }
+                return machine.drives.count > 1 || machine.diskFiles.count > 1
+            })
+        let layout = PlayerMenu(entries: entries, target: self, menuDelegate: self)
+        playerMenu = layout
+        NSApp.mainMenu = layout.root
+        pauseMenuItem = layout.item(.pause)
+        integerResizeItem = layout.item(.integerResize)
+        speedMenuItems = []
+        controlMenuItems = []
+        diskMenuItems = []
+        customSpeedItems = [:]
+        unknownSpeedItem = nil
+        controllerStatusItem = nil
+        updatePauseMenu()
+        integerResizeItem?.state = integerResize ? .on : .off
     }
 
     var mainWindow: NSWindow!
     var mainwin_view: MainView!
 
+    var snapshotDiskDirectory: URL?
+    var snapshotBrowser: SnapshotBrowser?
     var supportDirectory: URL!
     var selectedROM: URL?
     var emulatorStarted = false
     var settingUpROM = false
+    private(set) var emulationPaused = false
+    private var pauseMenuItem: NSMenuItem?
     var machine: PlayerManifest!
 
     /// Seeds missing saved disks and applies revised export defaults while preserving other settings.
@@ -522,73 +470,54 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     var mountedImages: [DriveAddress: Int] = [:]
     var speedMenuItems: [NSMenuItem] = []
+    private var customSpeedItems: [Int32: NSMenuItem] = [:]
+    private var unknownSpeedItem: NSMenuItem?
 
     func addSpeedMenu() {
-        guard let emulation = NSApp.mainMenu?.items.first(where: { $0.title == "Emulation" })?.submenu else {
-            return
-        }
-
-        let menu = NSMenu(title: "Speed")
-        menu.delegate = self
+        guard let layout = playerMenu, let menu = layout.submenu(.speed) else { return }
+        layout.replaceContents(of: .speed, with: PlayerMenuLayout.speeds)
         menu.showsStateColumn = true
-        let parent = NSMenuItem(title: "Speed", action: nil, keyEquivalent: "")
-        parent.submenu = menu
-        emulation.addItem(parent)
-        for speed in EmulationSpeed.allCases {
-            let item = NSMenuItem(title: speed.label, action: #selector(changeSpeed(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = speed.rawValue
-            menu.addItem(item)
-            speedMenuItems.append(item)
-        }
+        speedMenuItems = menu.items
+        customSpeedItems = [:]
+        unknownSpeedItem = nil
     }
 
     let controllerMappingPanel = ControllerMappingPanel()
 
     @objc func configureControls(_ sender: Any?) {
         controllerMappingPanel.show(
-            mapping: gamepadInput.mapping, controllerName: gamepadInput.controllerName
-        ) { [weak self] mapping in
-            self?.gamepadInput.mapping = mapping
-            g_joystick_type = 4
-            _ = config_write_config_kegs_file(0)
-            self?.mainwin_info.x_win?.makeKeyAndOrderFront(nil)
-            if let view = self?.mainwin_info.mac_view {
-                self?.mainwin_info.x_win?.makeFirstResponder(view)
-            }
-        }
+            mapping: gamepadInput.mapping,
+            controllers: { [weak self] in self?.gamepadInput.availableControllers() ?? [] },
+            selectedControllerID: gamepadInput.selectedControllerID,
+            preview: { [weak self] mapping, controllerID in
+                self?.gamepadInput.previewState(mapping: mapping, controllerID: controllerID)
+            },
+            completion: { [weak self] mapping, controllerID in
+                self?.gamepadInput.selectedControllerID = controllerID
+                self?.gamepadInput.mapping = mapping
+                g_joystick_type = 4
+                _ = config_write_config_kegs_file(0)
+                self?.mainwin_info.x_win?.makeKeyAndOrderFront(nil)
+                if let view = self?.mainwin_info.mac_view {
+                    self?.mainwin_info.x_win?.makeFirstResponder(view)
+                }
+            })
     }
 
     var controlMenuItems: [NSMenuItem] = []
     var controllerStatusItem: NSMenuItem?
 
     func addControlsMenu() {
-        guard let emulation = NSApp.mainMenu?.items.first(where: { $0.title == "Emulation" })?.submenu else {
-            return
-        }
-
-        let menu = NSMenu(title: "Controls")
-        menu.delegate = self
-        let parent = NSMenuItem(title: "Controls", action: nil, keyEquivalent: "")
-        parent.submenu = menu
-        emulation.addItem(parent)
-        for (title, type) in [
-            ("Automatic (Controller or Keyboard)", 4), ("Keyboard Joystick (Numeric Keypad)", 0),
-            ("Mouse Joystick", 1), ("Game Controller", 2),
-        ] {
-            let item = NSMenuItem(title: title, action: #selector(changeControls(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = type
-            menu.addItem(item)
-            controlMenuItems.append(item)
-        }
-        menu.addItem(NSMenuItem.separator())
-        let status = NSMenuItem(title: gamepadInput.controllerName, action: nil, keyEquivalent: "")
-        menu.addItem(status)
-        controllerStatusItem = status
-        let configure = menu.addItem(
-            withTitle: "Configure Controls…", action: #selector(configureControls(_:)), keyEquivalent: "")
-        configure.target = self
+        guard let layout = playerMenu else { return }
+        layout.replaceContents(
+            of: .controls,
+            with:
+                PlayerMenuLayout.controls(controllerName: gamepadInput.controllerName))
+        controlMenuItems =
+            layout.submenu(.controls)?.items.filter {
+                $0.action == #selector(changeControls(_:))
+            } ?? []
+        controllerStatusItem = layout.item(.controllerStatus)
     }
 
     @objc func changeControls(_ sender: NSMenuItem) {
@@ -600,6 +529,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     func menuWillOpen(_ menu: NSMenu) {
+        updatePauseMenu()
         updateSpeedChecks()
         for item in controlMenuItems {
             item.state = item.tag == Int(g_joystick_type) ? .on : .off
@@ -607,10 +537,57 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         controllerStatusItem?.title = gamepadInput.controllerName
     }
 
+    /// Reflects the core's configured limit and retains discovered Zip speeds for this session.
     func updateSpeedChecks() {
-        for item in speedMenuItems {
-            item.state = item.tag == Int(g_limit_speed) ? .on : .off
+        let knownLimit = EmulationSpeed(rawValue: Int(g_limit_speed))
+        let customZip = knownLimit == .eightMHz && g_zip_speed_mhz != 8
+        guard let menu = speedMenuItems.first?.menu else { return }
+        if customZip, g_zip_speed_mhz > 0, customSpeedItems[g_zip_speed_mhz] == nil {
+            let item = NSMenuItem(
+                title: "\(g_zip_speed_mhz) MHz", action: #selector(changeCustomSpeed(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = [Int(EmulationSpeed.eightMHz.rawValue), Int(g_zip_speed_mhz)]
+            // Keep discovered speeds ordered, immediately before Unlimited.
+            let higher = customSpeedItems.keys.filter { $0 > g_zip_speed_mhz }.min()
+            let next =
+                higher.flatMap { customSpeedItems[$0] }
+                ?? speedMenuItems.first { $0.tag == EmulationSpeed.unlimited.rawValue }
+            menu.insertItem(item, at: next.map { menu.index(of: $0) } ?? menu.numberOfItems)
+            customSpeedItems[g_zip_speed_mhz] = item
         }
+        let unknown = knownLimit == nil || (customZip && g_zip_speed_mhz <= 0)
+        if unknown {
+            if unknownSpeedItem == nil {
+                let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+                item.isEnabled = false
+                menu.insertItem(item, at: 0)
+                unknownSpeedItem = item
+            }
+            unknownSpeedItem?.title =
+                knownLimit == nil
+                ? "Custom speed (mode \(g_limit_speed))" : "\(g_zip_speed_mhz) MHz (invalid setting)"
+            unknownSpeedItem?.state = .on
+        } else if let item = unknownSpeedItem {
+            menu.removeItem(item)
+            unknownSpeedItem = nil
+        }
+        for (mhz, item) in customSpeedItems {
+            item.state = customZip && g_zip_speed_mhz == mhz ? .on : .off
+        }
+        for item in speedMenuItems {
+            item.state = item.tag == Int(g_limit_speed) && !customZip ? .on : .off
+        }
+    }
+
+    @objc func changeCustomSpeed(_ sender: NSMenuItem) {
+        guard emulatorStarted, let values = sender.representedObject as? [Int], values.count == 2,
+            values[0] == EmulationSpeed.eightMHz.rawValue, values[1] > 0
+        else { return }
+        g_limit_speed = Int32(values[0])
+        g_zip_speed_mhz = Int32(values[1])
+        setup_zip_speeds()
+        updateSpeedChecks()
+        _ = config_write_config_kegs_file(0)
     }
 
     @objc func changeSpeed(_ sender: NSMenuItem) {
@@ -626,21 +603,46 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         _ = config_write_config_kegs_file(0)
     }
 
+    @objc func togglePause(_ sender: Any?) {
+        setEmulationPaused(!emulationPaused)
+    }
+
+    /// Freezes CPU execution while leaving menus, device discovery, and controller preview responsive.
+    func setEmulationPaused(_ paused: Bool, reason: String? = nil) {
+        guard emulatorStarted, paused != emulationPaused else { return }
+        emulationPaused = paused
+        if paused {
+            adb_kbd_repeat_off()
+            adb_mainwin_focus(0)
+        } else {
+            // Exclude paused wall-clock time from the core's frame pacing estimates.
+            let now = get_dtime()
+            g_dtime_last_vbl = now
+            g_dtime_expected = now
+            g_dtime_end_16ms = now
+            adb_mainwin_focus(mainwin_info.x_win?.isKeyWindow == true ? 1 : 0)
+        }
+        let suffix = paused ? " — Paused" + (reason.map { " (\($0))" } ?? "") : ""
+        mainwin_info.x_win?.title = PlayerManifest.displayName + suffix
+        updatePauseMenu()
+    }
+
+    private func updatePauseMenu() {
+        pauseMenuItem?.title = emulationPaused ? "Resume" : "Pause"
+        pauseMenuItem?.isEnabled = emulatorStarted
+        if let layout = playerMenu { layout.refresh(layout.root) }
+    }
+
     var diskMenuItems: [(NSMenuItem, DriveAddress, Int?)] = []
 
     func addDiskMenus() {
-        guard machine.drives.count > 1 || machine.diskFiles.count > 1 else {
-            return
-        }
-        guard let emulation = NSApp.mainMenu?.items.first(where: { $0.title == "Emulation" })?.submenu else {
-            return
-        }
-
-        let disks = NSMenu(title: "Disks")
-        let parent = NSMenuItem(title: "Disks", action: nil, keyEquivalent: "")
-        parent.submenu = disks
-        emulation.addItem(NSMenuItem.separator())
-        emulation.addItem(parent)
+        guard let layout = playerMenu else { return }
+        let visible = machine.drives.count > 1 || machine.diskFiles.count > 1
+        layout.item(.disks)?.isHidden = !visible
+        layout.replaceContents(of: .disks, with: [])
+        diskMenuItems = []
+        guard visible else { return }
+        mountedImages = [:]
         if let settings = try? String(
             contentsOf: supportDirectory.appendingPathComponent("config.kegs"), encoding: .utf8)
         {
@@ -670,24 +672,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 }
             }
         }
-        for address in machine.drives {
-            let drive = NSMenu(title: address.label)
-            let item = NSMenuItem(title: address.label, action: nil, keyEquivalent: "")
-            item.submenu = drive
-            disks.addItem(item)
-            let eject = NSMenuItem(title: "Eject", action: #selector(swapDisk(_:)), keyEquivalent: "")
-            eject.target = self
-            eject.tag = diskMenuItems.count
-            diskMenuItems.append((eject, address, nil))
-            drive.addItem(eject)
-            drive.addItem(NSMenuItem.separator())
-            for index in machine.diskFiles.indices {
-                let image = NSMenuItem(
-                    title: machine.diskName(at: index), action: #selector(swapDisk(_:)), keyEquivalent: "")
-                image.target = self
-                image.tag = diskMenuItems.count
-                diskMenuItems.append((image, address, index))
-                drive.addItem(image)
+        let contents = PlayerMenuLayout.disks(for: machine)
+        layout.replaceContents(of: .disks, with: contents.entries)
+        for (index, choice) in contents.choices.enumerated() {
+            if let item = layout.item(.diskChoice(index)) {
+                diskMenuItems.append((item, choice.0, choice.1))
             }
         }
         updateDiskChecks()
@@ -712,7 +701,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 iwm_eject_disk_by_num(Int32(old.slot), Int32(old.drive))
                 mountedImages.removeValue(forKey: old)
             }
-            supportDirectory.appendingPathComponent(machine.diskFiles[index]).path.withCString {
+            currentDiskDirectory.appendingPathComponent(machine.diskFiles[index]).path.withCString {
                 insert_disk(Int32(address.slot), Int32(address.drive), $0, 0, nil, -1, 0)
             }
             mountedImages[address] = index
@@ -733,12 +722,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         }
     }
 
+    @objc func takeScreenshot(_ sender: Any?) {
+        mainwin_info.mac_view?.do_screenshot(sender)
+    }
+
     @objc func toggleFullscreen(_ sender: Any?) {
         mainwin_info.x_win?.toggleFullScreen(sender)
     }
 
     @objc func resetGame(_ sender: Any?) {
-        do_reset()
+        guard emulatorStarted else { return }
+        a2_restart_emulation()
+        updateSpeedChecks()
     }
 
     @objc func showSavedDisk(_ sender: Any?) {
@@ -787,19 +782,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     /// Schedules the next main-thread tick and pauses core execution during ROM setup.
     func main_run_loop() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(emulationPaused ? 33 : 1)) {
             self.main_run_loop()
         }
         guard !settingUpROM else {
             return
         }
         gamepadInput.update(
-            active: NSApp.isActive && mainwin_info.x_win?.isKeyWindow == true
+            active: !emulationPaused && NSApp.isActive && mainwin_info.x_win?.isKeyWindow == true
                 && (g_joystick_type == 4 || g_joystick_type == 2)
         ) { key, isUp in
             adb_physical_key_update(self.mainwin_info.kimage_ptr, key, 0, isUp ? 1 : 0)
         }
 
+        guard !emulationPaused else { return }
         let ret = run_16ms()
         if ret != 0 {
             exit(ret)
