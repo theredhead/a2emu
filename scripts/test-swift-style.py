@@ -57,4 +57,12 @@ with tempfile.TemporaryDirectory(prefix="a2-swift-style-") as directory:
     )
     assert fixture.read_text() == formatted, "Formatting must be idempotent"
 
-print("Style fixtures passed (detached docs, attributes, duplicate imports, and semicolons).")
+    for source in ["func snake_case_name() {}\n", "let snake_case_value = 1\n"]:
+        fixture.write_text(source)
+        result = subprocess.run(command, capture_output=True, text=True)
+        assert result.returncode != 0 and "AlwaysUseLowerCamelCase" in result.stderr, result.stderr
+
+    fixture.write_text("func useCore() {\n    _ = video_get_kimage(0)\n    _ = g_limit_speed\n}\n")
+    subprocess.run(command, check=True)
+
+print("Style fixtures passed (documentation, imports, semicolons, Swift naming, and imported C names).")

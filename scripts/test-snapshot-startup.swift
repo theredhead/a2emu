@@ -42,11 +42,11 @@ import Cocoa
         NSApp.delegate = delegate
         delegate.supportDirectory = temporary
         delegate.machine = machine
-        delegate.set_menu_for_kegs()
+        delegate.setUpMenus()
         delegate.addDiskMenus()
         delegate.addSpeedMenu()
         g_audio_enable = 0
-        delegate.main_init()
+        delegate.initializeEmulator()
         delegate.emulatorStarted = true
         if let memoryKB = memoryKB {
             let base = romName == "Apple-IIGS-ROM01.bin" ? 128 * 1024 : 1024 * 1024
@@ -56,19 +56,33 @@ import Cocoa
             a2_snapshot_eject_disks()
             return
         }
+        delegate.setEmulationPaused(true)
+        let frames = g_vbl_count
+        delegate.showDebugger(nil)
+        let debugger = delegate.debugWindowInfo.window!
+        precondition(debugger.isVisible && !delegate.debugWindowInfo.view!.closed)
+        precondition(delegate.emulationPaused && g_vbl_count == frames)
+        debugger.performClose(nil)
+        precondition(!debugger.isVisible && delegate.debugWindowInfo.view!.closed)
+        delegate.showDebugger(nil)
+        precondition(delegate.debugWindowInfo.window === debugger && debugger.isVisible)
+        debugger.performClose(nil)
+        delegate.setEmulationPaused(false)
+        delegate.mainWindowInfo.window?.makeKeyAndOrderFront(nil)
+        print("PASS advanced debugger opens while paused, closes, and reuses its window without advancing frames")
         try delegate.restoreSnapshot(at: snapshot)
         precondition(delegate.snapshotNeedsVideoRefresh)
         precondition(String(cString: a2_snapshot_disk_path(5, 0)).hasSuffix("RastanB.2mg"))
         delegate.refreshSnapshotDisplayIfNeeded()
         for _ in 0..<30 { precondition(run_16ms() == 0) }
-        delegate.mainwin_info.update()
-        let image = delegate.mainwin_info.kimage_ptr.pointee
+        delegate.mainWindowInfo.update()
+        let image = delegate.mainWindowInfo.imagePointer.pointee
         let pixelCount = Int(image.a2_width_full * image.a2_height)
         let coreSamples = stride(from: 0, to: pixelCount, by: 16).filter {
             image.wptr[$0] & 0x00ff_ffff != 0
         }.count
         precondition(coreSamples > 500, "The core framebuffer must be rebuilt, not just the saved preview")
-        let before = try delegate.mainwin_info.mac_view!.saveScreenshot(in: temporary)
+        let before = try delegate.mainWindowInfo.view!.saveScreenshot(in: temporary)
         func litSamples(_ url: URL) throws -> Int {
             let image = NSBitmapImageRep(data: try Data(contentsOf: url))!
             var count = 0
@@ -84,12 +98,12 @@ import Cocoa
         precondition(beforeSamples > 1500, "A fresh restore must repaint the complete Rastan screen")
         print("PASS fresh-process full screen redraw and second-disk mount", before.path)
         adb_mainwin_focus(1)
-        adb_physical_key_update(delegate.mainwin_info.kimage_ptr, 40, 107, 0)
+        adb_physical_key_update(delegate.mainWindowInfo.imagePointer, 40, 107, 0)
         for _ in 0..<3 { precondition(run_16ms() == 0) }
-        adb_physical_key_update(delegate.mainwin_info.kimage_ptr, 40, 107, 1)
+        adb_physical_key_update(delegate.mainWindowInfo.imagePointer, 40, 107, 1)
         for _ in 0..<30 { precondition(run_16ms() == 0) }
-        delegate.mainwin_info.update()
-        let after = try delegate.mainwin_info.mac_view!.saveScreenshot(in: temporary)
+        delegate.mainWindowInfo.update()
+        let after = try delegate.mainWindowInfo.view!.saveScreenshot(in: temporary)
         let changed = try Data(contentsOf: before) != Data(contentsOf: after)
         precondition(changed, "Keyboard input must change the restored game")
         let afterSamples = try litSamples(after)
@@ -102,8 +116,8 @@ import Cocoa
         try delegate.restoreSnapshot(at: saved)
         delegate.refreshSnapshotDisplayIfNeeded()
         for _ in 0..<30 { precondition(run_16ms() == 0) }
-        delegate.mainwin_info.update()
-        let compressedFrame = try delegate.mainwin_info.mac_view!.saveScreenshot(in: temporary)
+        delegate.mainWindowInfo.update()
+        let compressedFrame = try delegate.mainWindowInfo.view!.saveScreenshot(in: temporary)
         let compressedSamples = try litSamples(compressedFrame)
         precondition(compressedSamples > 1500)
         let legacy = delegate.snapshotsDirectory.appendingPathComponent(

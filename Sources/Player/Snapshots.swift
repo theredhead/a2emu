@@ -9,10 +9,13 @@ extension AppDelegate {
         let workingRoot = supportDirectory.appendingPathComponent("Snapshot Disks", isDirectory: true)
         let directories = Set(
             DriveAddress.all.compactMap { address -> URL? in
-                guard let path = a2_snapshot_disk_path(Int32(address.slot), Int32(address.drive)) else {
+                guard
+                    let path = EmulatorCore.mountedDiskPath(
+                        slot: Int32(address.slot), drive: Int32(address.drive))
+                else {
                     return nil
                 }
-                return URL(fileURLWithPath: String(cString: path)).deletingLastPathComponent()
+                return URL(fileURLWithPath: path).deletingLastPathComponent()
             })
         if directories.count == 1, let directory = directories.first,
             directory.deletingLastPathComponent() == workingRoot,
@@ -22,15 +25,9 @@ extension AppDelegate {
         }
     }
 
-    func snapshotCore(_ operation: (UnsafePointer<CChar>?) -> Int32, at url: URL) throws {
-        guard url.path.withCString({ operation($0) }) != 0 else {
-            throw PlayerManifest.failure(String(cString: a2_snapshot_error()))
-        }
-    }
-
     /// Captures between emulation ticks. A package is visible only once every file has been written.
     func saveSnapshot(title: String) throws -> URL {
-        guard emulatorStarted, let view = mainwin_info.mac_view else {
+        guard emulatorStarted, let view = mainWindowInfo.view else {
             throw PlayerManifest.failure("Start the emulator before saving a snapshot.")
         }
         let manager = FileManager.default
@@ -39,14 +36,13 @@ extension AppDelegate {
         defer { try? manager.removeItem(at: staging) }
         try manager.createDirectory(
             at: staging.appendingPathComponent("Disks"), withIntermediateDirectories: true)
-        guard a2_snapshot_flush_disks() != 0 else {
-            throw PlayerManifest.failure(String(cString: a2_snapshot_error()))
-        }
+        try EmulatorCore.flushDisks()
         var mounts: [DiskMount] = []
         var sources = machine.diskFiles.map { currentDiskDirectory.appendingPathComponent($0) }
         for address in DriveAddress.all {
-            if let path = a2_snapshot_disk_path(Int32(address.slot), Int32(address.drive)) {
-                let source = URL(fileURLWithPath: String(cString: path))
+            if let path = EmulatorCore.mountedDiskPath(slot: Int32(address.slot), drive: Int32(address.drive))
+            {
+                let source = URL(fileURLWithPath: path)
                 guard let index = machine.diskFiles.firstIndex(of: source.lastPathComponent) else {
                     throw PlayerManifest.failure(
                         "This snapshot has a mounted disk that is not part of this player.")
@@ -59,13 +55,13 @@ extension AppDelegate {
             try manager.copyItem(
                 at: source, to: PlayerSnapshot.payload(machine.diskFiles[index], at: staging))
         }
-        try snapshotCore(a2_snapshot_save, at: staging.appendingPathComponent(PlayerSnapshot.stateName))
+        try EmulatorCore.saveSnapshot(at: staging.appendingPathComponent(PlayerSnapshot.stateName))
         let preview = try view.saveScreenshot(in: staging)
         try manager.moveItem(at: preview, to: staging.appendingPathComponent(PlayerSnapshot.previewName))
         let snapshot = try PlayerSnapshot.finish(
             at: staging, title: title, gameName: PlayerManifest.displayName,
             disks: machine.diskFiles, mounts: mounts, compress: true,
-            expansionMemoryKB: Int(g_mem_size_exp / 1024))
+            expansionMemoryKB: Int(EmulatorCore.expansionMemoryBytes / 1024))
         let destination = snapshotsDirectory.appendingPathComponent(
             snapshot.fileName)
         try manager.moveItem(at: staging, to: destination)
@@ -84,7 +80,7 @@ extension AppDelegate {
     func refreshSnapshotDisplayIfNeeded() {
         guard snapshotNeedsVideoRefresh else { return }
         snapshotNeedsVideoRefresh = false
-        video_force_reparse()
+        EmulatorCore.invalidateVideo()
     }
 
     /// Restores into new writable disks. Failed disk-layout validation rolls back the previous machine.
@@ -104,34 +100,32 @@ extension AppDelegate {
         }
         let state = working.appendingPathComponent("Restore.state")
         try snapshot.extract(PlayerSnapshot.stateName, from: url, to: state)
-        try snapshotCore(a2_snapshot_validate, at: state)
-        guard a2_snapshot_flush_disks() != 0 else {
-            throw PlayerManifest.failure(String(cString: a2_snapshot_error()))
-        }
+        try EmulatorCore.validateSnapshot(at: state)
+        try EmulatorCore.flushDisks()
         let rollback = working.appendingPathComponent("Rollback.state")
-        try snapshotCore(a2_snapshot_save, at: rollback)
+        try EmulatorCore.saveSnapshot(at: rollback)
         var oldMounts: [(DriveAddress, String)] = []
         for address in DriveAddress.all {
-            if let path = a2_snapshot_disk_path(Int32(address.slot), Int32(address.drive)) {
-                oldMounts.append((address, String(cString: path)))
+            if let path = EmulatorCore.mountedDiskPath(slot: Int32(address.slot), drive: Int32(address.drive))
+            {
+                oldMounts.append((address, path))
             }
         }
-        a2_snapshot_eject_disks()
+        EmulatorCore.ejectAllDisks()
         for mount in snapshot.mounts {
-            working.appendingPathComponent(snapshot.diskFiles[mount.diskIndex]).path.withCString {
-                insert_disk(Int32(mount.address.slot), Int32(mount.address.drive), $0, 0, nil, -1, 0)
-            }
+            EmulatorCore.mountDisk(
+                at: working.appendingPathComponent(snapshot.diskFiles[mount.diskIndex]), in: mount.address)
         }
         do {
-            try snapshotCore(a2_snapshot_restore, at: state)
+            try EmulatorCore.restoreSnapshot(at: state)
         } catch {
             let restoreError = error
-            a2_snapshot_eject_disks()
+            EmulatorCore.ejectAllDisks()
             for (address, path) in oldMounts {
-                path.withCString { insert_disk(Int32(address.slot), Int32(address.drive), $0, 0, nil, -1, 0) }
+                EmulatorCore.mountDisk(at: URL(fileURLWithPath: path), in: address)
             }
             do {
-                try snapshotCore(a2_snapshot_restore, at: rollback)
+                try EmulatorCore.restoreSnapshot(at: rollback)
             } catch {
                 // Retain the rollback and disks for recovery if the core cannot resume safely.
                 committed = true
@@ -144,14 +138,14 @@ extension AppDelegate {
         }
         try? manager.removeItem(at: rollback)
         try? manager.removeItem(at: state)
-        a2_snapshot_reset_audio()
+        EmulatorCore.resetAudio()
         snapshotNeedsVideoRefresh = true
-        mainwin_info.mac_view?.showSnapshotPreview(at: url.appendingPathComponent(PlayerSnapshot.previewName))
+        mainWindowInfo.view?.showSnapshotPreview(at: url.appendingPathComponent(PlayerSnapshot.previewName))
         snapshotDiskDirectory = working
         mountedImages = Dictionary(uniqueKeysWithValues: snapshot.mounts.map { ($0.address, $0.diskIndex) })
         updateDiskChecks()
         updateSpeedChecks()
-        _ = config_write_config_kegs_file(0)
+        EmulatorCore.writeConfiguration()
         committed = true
     }
 

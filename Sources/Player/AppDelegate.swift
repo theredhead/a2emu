@@ -11,33 +11,33 @@
 import Cocoa
 
 /// Selects direct context-memory rendering instead of the default bitmap-image path.
-let Context_draw = false
+let usesDirectContextDrawing = false
 
 /// Coordinates an AppKit window with an image borrowed from the emulator core.
-class Window_info {
-    var x_win: NSWindow? = nil
-    var mac_view: MainView? = nil
-    var kimage_ptr: UnsafeMutablePointer<Kimage>! = nil
+class EmulatorWindow {
+    var window: NSWindow? = nil
+    var view: MainView? = nil
+    var imagePointer: EmulatorCore.Image! = nil
     var title: String = ""
-    var app_delegate: AppDelegate! = nil
-    var mac_a2_height: Int = 0
+    var delegate: AppDelegate! = nil
+    var cachedImageHeight: Int = 0
 
-    func set_kimage(
-        _ kimage_ptr: UnsafeMutablePointer<Kimage>!,
+    func setImage(
+        _ imagePointer: EmulatorCore.Image!,
         title: String, delegate: AppDelegate!
     ) {
-        self.kimage_ptr = kimage_ptr
+        self.imagePointer = imagePointer
         self.title = title
-        self.app_delegate = delegate
+        self.delegate = delegate
     }
 
-    func create_window() {
-        let x_xpos = Int(video_get_x_xpos(kimage_ptr))
-        let x_ypos = Int(video_get_x_ypos(kimage_ptr))
-        let width = Int(video_get_x_width(kimage_ptr))
-        let height = Int(video_get_x_height(kimage_ptr))
+    func createWindow() {
+        let windowX = Int(EmulatorCore.windowX(imagePointer))
+        let windowY = Int(EmulatorCore.windowY(imagePointer))
+        let width = Int(EmulatorCore.imageWidth(imagePointer))
+        let height = Int(EmulatorCore.imageHeight(imagePointer))
         let windowRect = NSRect(
-            x: x_xpos, y: x_ypos, width: width,
+            x: windowX, y: windowY, width: width,
             height: height)
         var window: NSWindow!
         var view: MainView!
@@ -56,15 +56,15 @@ class Window_info {
             height: windowRect.size.height)
         print("About to init MainView")
         view = MainView(frame: viewRect)
-        print("About to set kimage_ptr")
-        view.kimage_ptr = kimage_ptr
+        print("About to set imagePointer")
+        view.imagePointer = imagePointer
         print("About to call initialize")
         view.initialize()
         view.closed = false
 
-        window.delegate = app_delegate
+        window.delegate = delegate
         window.contentView = view
-        window.makeKeyAndOrderFront(app_delegate)
+        window.makeKeyAndOrderFront(delegate)
         window.acceptsMouseMovedEvents = true
         window.title = title
         window.showsToolbarButton = false
@@ -73,76 +73,76 @@ class Window_info {
         window.center()
         window.contentAspectRatio = NSSize(width: width, height: height)
 
-        video_set_active(kimage_ptr, Int32(1))
-        video_update_scale(
-            kimage_ptr, Int32(width), Int32(height),
-            Int32(1))
+        EmulatorCore.setImageActivity(imagePointer, active: Int32(1))
+        EmulatorCore.updateImageScale(
+            imagePointer, width: Int32(width), height: Int32(height),
+            force: true)
 
-        x_win = window
-        mac_view = view
-        mac_a2_height = height
+        self.window = window
+        self.view = view
+        cachedImageHeight = height
         window.makeKey()
     }
 
     /// Synchronizes window visibility, size, and pixels with the emulator image.
     func update() {
-        let new_height = Int(video_get_a2_height(kimage_ptr))
-        let a2_active = video_get_active(kimage_ptr)
-        if let view = mac_view {
-            if new_height != mac_a2_height {
-                mac_resize_window()
+        let newHeight = Int(EmulatorCore.emulatedImageHeight(imagePointer))
+        let imageActive = EmulatorCore.imageActivity(imagePointer)
+        if let view = view {
+            if newHeight != cachedImageHeight {
+                resizeWindow()
             }
-            if a2_active == 0 && !view.closed {
-                print("a2_active 0 on \(title), calling close")
-                x_win!.orderOut(x_win)
+            if imageActive == 0 && !view.closed {
+                print("imageActive 0 on \(title), calling close")
+                window!.orderOut(window)
                 view.closed = true
-            } else if a2_active != 0 && view.closed {
+            } else if imageActive != 0 && view.closed {
                 print("Opening closed window \(title)")
                 view.closed = false
-                x_win!.orderFront(x_win)
-                x_win!.makeKey()  // Move to front
-            } else if a2_active != 0 {
-                view.mac_update_display()
+                window!.orderFront(window)
+                window!.makeKey()  // Move to front
+            } else if imageActive != 0 {
+                view.updateDisplay()
             }
-            if (a2_active != 0) && !view.closed {
-                if adb_get_copy_requested() != 0 {
-                    view.do_copy_text(view)
+            if (imageActive != 0) && !view.closed {
+                if EmulatorCore.copyRequested() != 0 {
+                    view.copyTextScreen(view)
                 }
             }
         } else {
-            if a2_active != 0 {
+            if imageActive != 0 {
                 print("Opening window \(title)")
-                create_window()
+                createWindow()
             }
         }
     }
 
-    func mac_resize_window() {
-        let a2_height = Int(video_get_a2_height(kimage_ptr))
-        let a2_width = Int(video_get_a2_width(kimage_ptr))
-        let ratio = CGFloat(a2_height) / CGFloat(a2_width)
+    func resizeWindow() {
+        let imageHeight = Int(EmulatorCore.emulatedImageHeight(imagePointer))
+        let imageWidth = Int(EmulatorCore.emulatedImageWidth(imagePointer))
+        let ratio = CGFloat(imageHeight) / CGFloat(imageWidth)
 
-        let contentWidth = x_win!.contentView!.bounds.width
-        mac_a2_height = a2_height
-        x_win!.contentAspectRatio = NSSize(
-            width: a2_width,
-            height: a2_height)
-        if !x_win!.styleMask.contains(.fullScreen), !app_delegate.changingFullScreen {
-            x_win!.setContentSize(NSSize(width: contentWidth, height: contentWidth * ratio))
-            app_delegate.snapWindowToIntegerSize()
+        let contentWidth = window!.contentView!.bounds.width
+        cachedImageHeight = imageHeight
+        window!.contentAspectRatio = NSSize(
+            width: imageWidth,
+            height: imageHeight)
+        if !window!.styleMask.contains(.fullScreen), !delegate.changingFullScreen {
+            window!.setContentSize(NSSize(width: contentWidth, height: contentWidth * ratio))
+            delegate.snapWindowToIntegerSize()
         }
         // Recreate the bitmap because enabling status lines changes the display height.
-        mac_view!.initialize()
-        video_update_scale(
-            kimage_ptr, Int32(x_win!.frame.width),
-            Int32(x_win!.frame.height), 0)
-        video_update_xpos_ypos(
-            kimage_ptr, Int32(x_win!.frame.origin.x),
-            Int32(x_win!.frame.origin.y))
+        view!.initialize()
+        EmulatorCore.updateImageScale(
+            imagePointer, width: Int32(window!.frame.width),
+            height: Int32(window!.frame.height), force: false)
+        EmulatorCore.updateWindowPosition(
+            imagePointer, x: Int32(window!.frame.origin.x),
+            y: Int32(window!.frame.origin.y))
     }
 
-    func update_window_size(width: Int, height: Int) {
-        video_update_scale(kimage_ptr, Int32(width), Int32(height), 0)
+    func updateWindowSize(width: Int, height: Int) {
+        EmulatorCore.updateImageScale(imagePointer, width: Int32(width), height: Int32(height), force: false)
     }
 }
 
@@ -155,32 +155,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
     }
 
-    var mainwin_info = Window_info()
-    var debugwin_info = Window_info()
+    var mainWindowInfo = EmulatorWindow()
+    var debugWindowInfo = EmulatorWindow()
 
-    func find_win_info(_ window: NSWindow) -> Window_info {
-        if mainwin_info.x_win == window {
-            return mainwin_info
+    func windowInfo(for window: NSWindow) -> EmulatorWindow {
+        if mainWindowInfo.window == window {
+            return mainWindowInfo
         }
-        return debugwin_info
+        return debugWindowInfo
     }
 
     let gamepadInput = GamepadInput()
     let aboutPanel = AppAbout()
 
-    @objc func do_about(_: AnyObject) {
+    @objc func showAbout(_: AnyObject) {
         aboutPanel.show()
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("start!")
         gamepadInput.controllerDisconnected = { [weak self] in
-            guard let self = self, self.emulatorStarted, g_joystick_type == 4 || g_joystick_type == 2 else {
+            guard let self = self, self.emulatorStarted,
+                EmulatorCore.joystickType == 4 || EmulatorCore.joystickType == 2
+            else {
                 return
             }
             self.setEmulationPaused(true, reason: "Controller disconnected")
         }
-        set_menu_for_kegs()
+        setUpMenus()
         NSApp.activate(ignoringOtherApps: true)  // Bring window to front
         do {
             try prepareGameFiles()
@@ -188,11 +190,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 NSApp.terminate(nil)
                 return
             }
-            set_menu_for_kegs()
+            setUpMenus()
             addDiskMenus()
             addSpeedMenu()
             addControlsMenu()
-            main_init()
+            initializeEmulator()
             emulatorStarted = true
             findSnapshotWorkingDisks()
             if machine.startupSnapshot == true {
@@ -210,7 +212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             updatePauseMenu()
             updateSpeedChecks()
             if machine.startInFullScreen == true {
-                DispatchQueue.main.async { self.mainwin_info.x_win?.toggleFullScreen(nil) }
+                DispatchQueue.main.async { self.mainWindowInfo.window?.toggleFullScreen(nil) }
             }
         } catch {
             let alert = NSAlert()
@@ -225,10 +227,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         guard emulatorStarted else {
             return
         }
-        _ = config_write_config_kegs_file(0)
+        EmulatorCore.writeConfiguration()
         // Save mounted drives before ejecting to flush disk writes on shutdown.
         for address in DriveAddress.all {
-            iwm_eject_disk_by_num(Int32(address.slot), Int32(address.drive))
+            EmulatorCore.ejectDisk(slot: Int32(address.slot), drive: Int32(address.drive))
         }
     }
 
@@ -241,27 +243,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     func windowDidBecomeKey(_ notification: Notification) {
         if let w = notification.object as? NSWindow {
-            if w == mainwin_info.x_win {
-                adb_mainwin_focus(Int32(1))
+            if w == mainWindowInfo.window {
+                EmulatorCore.setKeyboardFocus(true)
             }
         }
         // If window focus is changing, turn off key repeat
-        adb_kbd_repeat_off()
+        EmulatorCore.stopKeyRepeat()
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        adb_kbd_repeat_off()
-        adb_mainwin_focus(Int32(0))
+        EmulatorCore.stopKeyRepeat()
+        EmulatorCore.setKeyboardFocus(false)
         CGDisplayShowCursor(CGMainDisplayID())
     }
 
     func windowDidMove(_ notification: Notification) {
         if let w = notification.object as? NSWindow {
-            let win_info = find_win_info(w)
-            video_update_xpos_ypos(
-                win_info.kimage_ptr,
-                Int32(w.frame.origin.x),
-                Int32(w.frame.origin.y))
+            let info = windowInfo(for: w)
+            EmulatorCore.updateWindowPosition(
+                info.imagePointer,
+                x: Int32(w.frame.origin.x),
+                y: Int32(w.frame.origin.y))
         }
     }
 
@@ -269,7 +271,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         -> NSSize
     {
         var result = frameSize
-        if window == mainwin_info.x_win, integerResize, !changingFullScreen,
+        if window == mainWindowInfo.window, integerResize, !changingFullScreen,
             !window.styleMask.contains(.fullScreen)
         {
             let content = window.contentRect(forFrameRect: NSRect(origin: .zero, size: frameSize)).size
@@ -284,7 +286,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         }
 
         let content = window.contentRect(forFrameRect: NSRect(origin: .zero, size: result)).size
-        find_win_info(window).update_window_size(width: Int(content.width), height: Int(content.height))
+        windowInfo(for: window).updateWindowSize(width: Int(content.width), height: Int(content.height))
         return result
     }
 
@@ -293,8 +295,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     var integerResizeItem: NSMenuItem?
     var nativeDisplaySize: NSSize {
         NSSize(
-            width: max(1, Int(video_get_a2_width(mainwin_info.kimage_ptr))),
-            height: max(1, Int(video_get_a2_height(mainwin_info.kimage_ptr))))
+            width: max(1, Int(EmulatorCore.emulatedImageWidth(mainWindowInfo.imagePointer))),
+            height: max(1, Int(EmulatorCore.emulatedImageHeight(mainWindowInfo.imagePointer))))
     }
 
     func windowWillEnterFullScreen(_ notification: Notification) {
@@ -319,7 +321,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     func snapWindowToIntegerSize() {
-        guard integerResize, let window = mainwin_info.x_win, !changingFullScreen,
+        guard integerResize, let window = mainWindowInfo.window, !changingFullScreen,
             !window.styleMask.contains(.fullScreen), let content = window.contentView
         else {
             return
@@ -349,15 +351,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     func windowShouldClose(_ window: NSWindow) -> Bool {
         print("windowShouldClose")
-        let win_info = find_win_info(window)
-        if mainwin_info.x_win == window {
+        let info = windowInfo(for: window)
+        if mainWindowInfo.window == window {
             // User has clicked the close box on the main emulator
             //  window.  Just exit the app
             NSApp.terminate(window)
             return true  // Let main window close
         } else {
-            video_set_active(win_info.kimage_ptr, Int32(0))
-            win_info.update()
+            EmulatorCore.setImageActivity(info.imagePointer, active: Int32(0))
+            info.update()
             return false
         }
     }
@@ -366,7 +368,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     private(set) var advancedMenus = false
     var menuModifierFlags: () -> NSEvent.ModifierFlags = { NSEvent.modifierFlags }
 
-    func set_menu_for_kegs() {
+    func setUpMenus() {
         let entries = PlayerMenuLayout.main(
             appName: PlayerManifest.displayName,
             isRunning: { [weak self] in self?.emulatorStarted == true },
@@ -387,7 +389,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     var mainWindow: NSWindow!
-    var mainwin_view: MainView!
+    var mainView: MainView!
 
     var snapshotDiskDirectory: URL?
     var snapshotNeedsVideoRefresh = false
@@ -467,7 +469,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 to: supportDirectory.appendingPathComponent("Applied-Defaults.txt"), atomically: true,
                 encoding: .utf8)
         }
-        config.path.withCString { config_set_config_kegs_name($0) }
+        EmulatorCore.setConfigurationPath(config)
     }
 
     var mountedImages: [DriveAddress: Int] = [:]
@@ -497,11 +499,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             completion: { [weak self] mapping, controllerID in
                 self?.gamepadInput.selectedControllerID = controllerID
                 self?.gamepadInput.mapping = mapping
-                g_joystick_type = 4
-                _ = config_write_config_kegs_file(0)
-                self?.mainwin_info.x_win?.makeKeyAndOrderFront(nil)
-                if let view = self?.mainwin_info.mac_view {
-                    self?.mainwin_info.x_win?.makeFirstResponder(view)
+                EmulatorCore.joystickType = 4
+                EmulatorCore.writeConfiguration()
+                self?.mainWindowInfo.window?.makeKeyAndOrderFront(nil)
+                if let view = self?.mainWindowInfo.view {
+                    self?.mainWindowInfo.window?.makeFirstResponder(view)
                 }
             })
     }
@@ -526,8 +528,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         guard emulatorStarted else {
             return
         }
-        g_joystick_type = Int32(sender.tag)
-        _ = config_write_config_kegs_file(0)
+        EmulatorCore.joystickType = Int32(sender.tag)
+        EmulatorCore.writeConfiguration()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -538,30 +540,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         updatePauseMenu()
         updateSpeedChecks()
         for item in controlMenuItems {
-            item.state = item.tag == Int(g_joystick_type) ? .on : .off
+            item.state = item.tag == Int(EmulatorCore.joystickType) ? .on : .off
         }
         controllerStatusItem?.title = gamepadInput.controllerName
     }
 
     /// Reflects the core's configured limit and retains discovered Zip speeds for this session.
     func updateSpeedChecks() {
-        let knownLimit = EmulationSpeed(rawValue: Int(g_limit_speed))
-        let customZip = knownLimit == .eightMHz && g_zip_speed_mhz != 8
+        let knownLimit = EmulationSpeed(rawValue: Int(EmulatorCore.speedLimit))
+        let customZip = knownLimit == .eightMHz && EmulatorCore.acceleratorSpeedMHz != 8
         guard let menu = speedMenuItems.first?.menu else { return }
-        if customZip, g_zip_speed_mhz > 0, customSpeedItems[g_zip_speed_mhz] == nil {
+        if customZip, EmulatorCore.acceleratorSpeedMHz > 0,
+            customSpeedItems[EmulatorCore.acceleratorSpeedMHz] == nil
+        {
             let item = NSMenuItem(
-                title: "\(g_zip_speed_mhz) MHz", action: #selector(changeCustomSpeed(_:)), keyEquivalent: "")
+                title: "\(EmulatorCore.acceleratorSpeedMHz) MHz", action: #selector(changeCustomSpeed(_:)),
+                keyEquivalent: "")
             item.target = self
-            item.representedObject = [Int(EmulationSpeed.eightMHz.rawValue), Int(g_zip_speed_mhz)]
+            item.representedObject = [
+                Int(EmulationSpeed.eightMHz.rawValue), Int(EmulatorCore.acceleratorSpeedMHz),
+            ]
             // Keep discovered speeds ordered, immediately before Unlimited.
-            let higher = customSpeedItems.keys.filter { $0 > g_zip_speed_mhz }.min()
+            let higher = customSpeedItems.keys.filter { $0 > EmulatorCore.acceleratorSpeedMHz }.min()
             let next =
                 higher.flatMap { customSpeedItems[$0] }
                 ?? speedMenuItems.first { $0.tag == EmulationSpeed.unlimited.rawValue }
             menu.insertItem(item, at: next.map { menu.index(of: $0) } ?? menu.numberOfItems)
-            customSpeedItems[g_zip_speed_mhz] = item
+            customSpeedItems[EmulatorCore.acceleratorSpeedMHz] = item
         }
-        let unknown = knownLimit == nil || (customZip && g_zip_speed_mhz <= 0)
+        let unknown = knownLimit == nil || (customZip && EmulatorCore.acceleratorSpeedMHz <= 0)
         if unknown {
             if unknownSpeedItem == nil {
                 let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -571,17 +578,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             }
             unknownSpeedItem?.title =
                 knownLimit == nil
-                ? "Custom speed (mode \(g_limit_speed))" : "\(g_zip_speed_mhz) MHz (invalid setting)"
+                ? "Custom speed (mode \(EmulatorCore.speedLimit))"
+                : "\(EmulatorCore.acceleratorSpeedMHz) MHz (invalid setting)"
             unknownSpeedItem?.state = .on
         } else if let item = unknownSpeedItem {
             menu.removeItem(item)
             unknownSpeedItem = nil
         }
         for (mhz, item) in customSpeedItems {
-            item.state = customZip && g_zip_speed_mhz == mhz ? .on : .off
+            item.state = customZip && EmulatorCore.acceleratorSpeedMHz == mhz ? .on : .off
         }
         for item in speedMenuItems {
-            item.state = item.tag == Int(g_limit_speed) && !customZip ? .on : .off
+            item.state = item.tag == Int(EmulatorCore.speedLimit) && !customZip ? .on : .off
         }
     }
 
@@ -589,24 +597,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         guard emulatorStarted, let values = sender.representedObject as? [Int], values.count == 2,
             values[0] == EmulationSpeed.eightMHz.rawValue, values[1] > 0
         else { return }
-        g_limit_speed = Int32(values[0])
-        g_zip_speed_mhz = Int32(values[1])
-        setup_zip_speeds()
+        EmulatorCore.speedLimit = Int32(values[0])
+        EmulatorCore.acceleratorSpeedMHz = Int32(values[1])
+        EmulatorCore.updateAcceleratorSpeeds()
         updateSpeedChecks()
-        _ = config_write_config_kegs_file(0)
+        EmulatorCore.writeConfiguration()
     }
 
     @objc func changeSpeed(_ sender: NSMenuItem) {
         guard emulatorStarted, let speed = EmulationSpeed(rawValue: sender.tag) else {
             return
         }
-        g_limit_speed = Int32(speed.rawValue)
+        EmulatorCore.speedLimit = Int32(speed.rawValue)
         if speed == .eightMHz {
-            g_zip_speed_mhz = 8
-            setup_zip_speeds()
+            EmulatorCore.acceleratorSpeedMHz = 8
+            EmulatorCore.updateAcceleratorSpeeds()
         }
         updateSpeedChecks()
-        _ = config_write_config_kegs_file(0)
+        EmulatorCore.writeConfiguration()
     }
 
     @objc func togglePause(_ sender: Any?) {
@@ -618,18 +626,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         guard emulatorStarted, paused != emulationPaused else { return }
         emulationPaused = paused
         if paused {
-            adb_kbd_repeat_off()
-            adb_mainwin_focus(0)
+            EmulatorCore.stopKeyRepeat()
+            EmulatorCore.setKeyboardFocus(false)
         } else {
             // Exclude paused wall-clock time from the core's frame pacing estimates.
-            let now = get_dtime()
-            g_dtime_last_vbl = now
-            g_dtime_expected = now
-            g_dtime_end_16ms = now
-            adb_mainwin_focus(mainwin_info.x_win?.isKeyWindow == true ? 1 : 0)
+            EmulatorCore.resetFrameClock()
+            EmulatorCore.setKeyboardFocus(mainWindowInfo.window?.isKeyWindow == true)
         }
         let suffix = paused ? " — Paused" + (reason.map { " (\($0))" } ?? "") : ""
-        mainwin_info.x_win?.title = PlayerManifest.displayName + suffix
+        mainWindowInfo.window?.title = PlayerManifest.displayName + suffix
         updatePauseMenu()
     }
 
@@ -699,20 +704,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         }
 
         let (_, address, index) = diskMenuItems[sender.tag]
-        iwm_eject_disk_by_num(Int32(address.slot), Int32(address.drive))
+        EmulatorCore.ejectDisk(slot: Int32(address.slot), drive: Int32(address.drive))
         mountedImages.removeValue(forKey: address)
         if let index = index {
             for (old, mounted) in Array(mountedImages) where mounted == index {
-                iwm_eject_disk_by_num(Int32(old.slot), Int32(old.drive))
+                EmulatorCore.ejectDisk(slot: Int32(old.slot), drive: Int32(old.drive))
                 mountedImages.removeValue(forKey: old)
             }
-            currentDiskDirectory.appendingPathComponent(machine.diskFiles[index]).path.withCString {
-                insert_disk(Int32(address.slot), Int32(address.drive), $0, 0, nil, -1, 0)
-            }
+            EmulatorCore.mountDisk(
+                at: currentDiskDirectory.appendingPathComponent(machine.diskFiles[index]), in: address)
             mountedImages[address] = index
         }
         updateDiskChecks()
-        _ = config_write_config_kegs_file(0)
+        EmulatorCore.writeConfiguration()
     }
 
     @objc func changeROM(_ sender: Any?) {
@@ -723,21 +727,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         defer { settingUpROM = false }
         if let rom = ROMSetup.choose(directory: supportDirectory) {
             selectedROM = rom
-            rom.path.withCString { cfg_file_update_rom($0) }
+            EmulatorCore.setROMPath(rom)
         }
     }
 
     @objc func takeScreenshot(_ sender: Any?) {
-        mainwin_info.mac_view?.do_screenshot(sender)
+        mainWindowInfo.view?.saveScreenshot(sender)
     }
 
     @objc func toggleFullscreen(_ sender: Any?) {
-        mainwin_info.x_win?.toggleFullScreen(sender)
+        mainWindowInfo.window?.toggleFullScreen(sender)
+    }
+
+    @objc func showDebugger(_ sender: Any?) {
+        guard emulatorStarted else { return }
+        EmulatorCore.showDebugger()
+        debugWindowInfo.update()
+        debugWindowInfo.view?.updateDisplay()
+        debugWindowInfo.window?.makeKeyAndOrderFront(sender)
     }
 
     @objc func resetGame(_ sender: Any?) {
         guard emulatorStarted else { return }
-        a2_restart_emulation()
+        EmulatorCore.restart()
         updateSpeedChecks()
     }
 
@@ -745,68 +757,69 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         NSWorkspace.shared.open(supportDirectory)
     }
 
-    func main_init() {
-        var kimage_ptr: UnsafeMutablePointer<Kimage>!
+    func initializeEmulator() {
+        var imagePointer: EmulatorCore.Image!
         var rect = NSRect.zero
 
         let argc = CommandLine.argc
         let argv = CommandLine.unsafeArgv
-        parse_argv(argc, argv, 3)
+        EmulatorCore.parseArguments(argc, arguments: argv, pathComponentsToStrip: 3)
 
         rect.size.width = 2560
         rect.size.height = 1440
         if let screen = NSScreen.main {
             rect = screen.frame
         }
-        kegs_init(
-            24, Int32(rect.size.width), Int32(rect.size.height),
-            Int32(1))
-        if Context_draw {
-            video_set_blue_mask(UInt32(0x0000ff))
-            video_set_green_mask(UInt32(0x00ff00))
-            video_set_red_mask(UInt32(0xff0000))
+        EmulatorCore.initialize(
+            colorDepth: 24, screenWidth: Int32(rect.size.width), screenHeight: Int32(rect.size.height),
+            disableScaling: Int32(1))
+        if usesDirectContextDrawing {
+            EmulatorCore.setBlueMask(UInt32(0x0000ff))
+            EmulatorCore.setGreenMask(UInt32(0x00ff00))
+            EmulatorCore.setRedMask(UInt32(0xff0000))
         } else {
-            video_set_red_mask(UInt32(0x0000ff))
-            video_set_green_mask(UInt32(0x00ff00))
-            video_set_blue_mask(UInt32(0xff0000))
+            EmulatorCore.setRedMask(UInt32(0x0000ff))
+            EmulatorCore.setGreenMask(UInt32(0x00ff00))
+            EmulatorCore.setBlueMask(UInt32(0xff0000))
         }
-        video_set_palette()
-        kimage_ptr = video_get_kimage(Int32(0))
-        mainwin_info.set_kimage(
-            kimage_ptr, title: PlayerManifest.displayName,
+        EmulatorCore.updatePalette()
+        imagePointer = EmulatorCore.image(Int32(0))
+        mainWindowInfo.setImage(
+            imagePointer, title: PlayerManifest.displayName,
             delegate: self)
-        kimage_ptr = video_get_kimage(Int32(1))
-        debugwin_info.set_kimage(
-            kimage_ptr, title: "Debugger",
+        imagePointer = EmulatorCore.image(Int32(1))
+        debugWindowInfo.setImage(
+            imagePointer, title: "Debugger",
             delegate: self)
 
-        mainwin_info.create_window()
+        mainWindowInfo.createWindow()
         NSApp.activate(ignoringOtherApps: true)
-        main_run_loop()
+        runEmulationLoop()
     }
 
     /// Schedules the next main-thread tick and pauses core execution during ROM setup.
-    func main_run_loop() {
+    func runEmulationLoop() {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(emulationPaused ? 33 : 1)) {
-            self.main_run_loop()
+            self.runEmulationLoop()
         }
         guard !settingUpROM else {
             return
         }
         gamepadInput.update(
-            active: !emulationPaused && NSApp.isActive && mainwin_info.x_win?.isKeyWindow == true
-                && (g_joystick_type == 4 || g_joystick_type == 2)
+            active: !emulationPaused && NSApp.isActive && mainWindowInfo.window?.isKeyWindow == true
+                && (EmulatorCore.joystickType == 4 || EmulatorCore.joystickType == 2)
         ) { key, isUp in
-            adb_physical_key_update(self.mainwin_info.kimage_ptr, key, 0, isUp ? 1 : 0)
+            EmulatorCore.updateKey(
+                self.mainWindowInfo.imagePointer, keyCode: key, unicode: 0, isUp: isUp)
         }
 
         guard !emulationPaused else { return }
         refreshSnapshotDisplayIfNeeded()
-        let ret = run_16ms()
+        let ret = EmulatorCore.runFrame()
         if ret != 0 {
             exit(ret)
         }
-        mainwin_info.update()
-        debugwin_info.update()
+        mainWindowInfo.update()
+        debugWindowInfo.update()
     }
 }

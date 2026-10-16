@@ -10,7 +10,7 @@ enum PlayerMenuLayout {
             .menu(
                 appName,
                 [
-                    .command("About \(appName)", action: #selector(AppDelegate.do_about(_:))),
+                    .command("About \(appName)", action: #selector(AppDelegate.showAbout(_:))),
                     .separator,
                     .command(
                         "Quit \(appName)", action: #selector(NSApplication.terminate(_:)),
@@ -20,10 +20,10 @@ enum PlayerMenuLayout {
                 "Edit",
                 [
                     .command(
-                        "Copy Text Screen", action: #selector(MainView.do_copy_text(_:)),
+                        "Copy Text Screen", action: #selector(MainView.copyTextScreen(_:)),
                         target: .responderChain),
                     .separator,
-                    .command("Paste", action: #selector(MainView.do_paste(_:)), target: .responderChain),
+                    .command("Paste", action: #selector(MainView.pasteText(_:)), target: .responderChain),
                 ]),
             .menu(
                 "Configuration", id: .configuration, enabledWhen: isRunning,
@@ -34,8 +34,11 @@ enum PlayerMenuLayout {
                     .command("Change ROM…", action: #selector(AppDelegate.changeROM(_:))),
                     .separator,
                     .command(
-                        "Configuration  F4", action: #selector(MainView.do_config(_:)),
+                        "Configuration  F4", action: #selector(MainView.showEmulatorConfiguration(_:)),
                         target: .responderChain, visibleWhen: showAdvanced),
+                    .command(
+                        "Show Debugger", action: #selector(AppDelegate.showDebugger(_:)),
+                        visibleWhen: showAdvanced),
                 ]),
             .menu(
                 "View",

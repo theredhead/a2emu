@@ -1,5 +1,5 @@
-# swift-format owns layout. Keep this allowlist focused on likely mistakes,
-# without enforcing naming/size limits on AppKit and C-bridge code.
+# swift-format owns layout and Swift naming. Keep this allowlist focused on
+# likely mistakes without size limits or competing shorthand preferences.
 included:
   - Sources
 only_rules:

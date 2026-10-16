@@ -19,9 +19,9 @@ BRIDGE
 xcrun swiftc -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
     -module-cache-path "$stage/module-cache" -Xcc "-I$repo_root/Sources/Player" \
     -Xcc "-I$repo_root/Vendor/gsplus/gsplus/src" -import-objc-header "$stage/Bridge.h" \
-    Sources/Player/PlayerMenu.swift Sources/Player/PlayerMenuLayout.swift \
+    Sources/Player/EmulatorCore.swift Sources/Player/PlayerMenu.swift Sources/Player/PlayerMenuLayout.swift \
     "$stage/AppDelegate.swift" Sources/Player/MainView.swift Sources/Player/ROMSetup.swift \
-    Sources/Player/GamepadInput.swift Sources/Player/ControllerMapping.swift \
+    Sources/Player/ControllerHardware.swift Sources/Player/GamepadInput.swift Sources/Player/ControllerMapping.swift \
     Sources/Player/JoystickConfigurationView.swift Sources/Player/KeypadConfigurationView.swift \
     Sources/Player/Snapshots.swift Sources/Player/SnapshotBrowser.swift Sources/Shared/PlayerSnapshot.swift \
     Sources/Shared/PlayerManifest.swift Sources/Shared/About.swift Sources/Builder/PlayerExporter.swift \

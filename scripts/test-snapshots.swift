@@ -39,17 +39,17 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         NSApp.delegate = delegate
         delegate.supportDirectory = temporary
         delegate.machine = machine
-        delegate.set_menu_for_kegs()
+        delegate.setUpMenus()
         delegate.addDiskMenus()
         delegate.addSpeedMenu()
         g_audio_enable = 0
-        delegate.main_init()
+        delegate.initializeEmulator()
         delegate.emulatorStarted = true
         if let package = ProcessInfo.processInfo.environment["A2_SNAPSHOT_CHILD_PACKAGE"] {
             let url = URL(fileURLWithPath: package)
             try delegate.restoreSnapshot(at: url)
             let result = temporary.appendingPathComponent("Cold.state")
-            try delegate.snapshotCore(a2_snapshot_save, at: result)
+            try EmulatorCore.saveSnapshot(at: result)
             require(
                 try Data(contentsOf: result)
                     == { () throws -> Data in
@@ -66,7 +66,7 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
             return
         }
         for _ in 0..<(floppy ? 120 : 900) { require(run_16ms() == 0) }
-        delegate.mainwin_info.update()
+        delegate.mainWindowInfo.update()
         let saved = try delegate.saveSnapshot(title: "GS/OS checkpoint")
         let metadata = try PlayerSnapshot.read(at: saved)
         require(metadata.diskFiles == [diskName] && metadata.mounts.count == 1)
@@ -85,7 +85,7 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         try delegate.restoreSnapshot(at: saved)
         require(g_vbl_count == frameCount && g_limit_speed == 2)
         let restored = temporary.appendingPathComponent("Restored.state")
-        try delegate.snapshotCore(a2_snapshot_save, at: restored)
+        try EmulatorCore.saveSnapshot(at: restored)
         require(
             try Data(contentsOf: restored) == original,
             "Restoration must reproduce the complete machine payload")
@@ -168,13 +168,13 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
                 disks: [diskName], mounts: metadata.mounts)
             let before = temporary.appendingPathComponent("Before failure.state")
             let after = temporary.appendingPathComponent("After failure.state")
-            try delegate.snapshotCore(a2_snapshot_save, at: before)
+            try EmulatorCore.saveSnapshot(at: before)
             let previousDirectory = delegate.currentDiskDirectory
             do {
                 try delegate.restoreSnapshot(at: badDisks)
                 preconditionFailure("Wrong disk dimensions must fail restoration")
             } catch {}
-            try delegate.snapshotCore(a2_snapshot_save, at: after)
+            try EmulatorCore.saveSnapshot(at: after)
             require(
                 try Data(contentsOf: before) == Data(contentsOf: after),
                 "Failed restore must recover every machine field")

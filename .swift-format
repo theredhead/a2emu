@@ -32,7 +32,7 @@
   "rules": {
     "AllPublicDeclarationsHaveDocumentation": false,
     "AlwaysUseLiteralForEmptyCollectionInit": false,
-    "AlwaysUseLowerCamelCase": false,
+    "AlwaysUseLowerCamelCase": true,
     "AmbiguousTrailingClosureOverload": true,
     "AvoidRetroactiveConformances": true,
     "BeginDocumentationCommentWithOneLineSummary": false,
@@ -63,7 +63,7 @@
     "OrderedImports": true,
     "ReplaceForEachWithForLoop": true,
     "ReturnVoidInsteadOfEmptyTuple": true,
-    "TypeNamesShouldBeCapitalized": false,
+    "TypeNamesShouldBeCapitalized": true,
     "UseEarlyExits": false,
     "UseExplicitNilCheckInConditions": true,
     "UseLetInEveryBoundCaseVariable": true,

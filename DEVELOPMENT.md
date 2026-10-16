@@ -34,9 +34,17 @@ scripts/swift-style.sh test
 ```
 
 Use four spaces, a 110-column target, and blank lines between methods and logical
-sections. Keep explicit returns, straightforward loops and C-facing names. Layout
-belongs to swift-format; SwiftLint checks likely mistakes without imposing competing
-layout or shorthand rules. Vendor code and generated bundles are excluded.
+sections. Use lowerCamelCase for Swift functions, properties, variables and argument
+labels, and UpperCamelCase for types. Keep explicit returns and straightforward loops.
+Layout and Swift naming belong to swift-format; SwiftLint checks likely mistakes
+without imposing competing layout or shorthand rules. Vendor code and generated
+bundles are excluded.
+
+`EmulatorCore` and `ControllerHardware` isolate the imported emulator/HID C symbols.
+Keep native names in these boundaries and Swift names at call sites. The core is
+process-wide and accessed on the main thread; image pointers are borrowed, never
+owned by Swift. Snapshot failures become Swift errors and C strings are copied
+before returning to callers. Raw C configuration keys remain unchanged on disk.
 
 Use `///` for purpose, contracts, ownership and failure behavior, immediately above
 the declaration and its attributes. Put separating blank lines before documentation.

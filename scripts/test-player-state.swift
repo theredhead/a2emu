@@ -12,9 +12,15 @@ import Cocoa
         defer { try? FileManager.default.removeItem(at: directory) }
         g_limit_speed = 1
         g_zip_speed_mhz = 8
+        precondition(EmulatorCore.speedLimit == 1 && EmulatorCore.acceleratorSpeedMHz == 8)
+        EmulatorCore.speedLimit = 2
+        EmulatorCore.acceleratorSpeedMHz = 12
+        precondition(g_limit_speed == 2 && g_zip_speed_mhz == 12)
+        g_limit_speed = 1
+        g_zip_speed_mhz = 8
         let delegate = AppDelegate()
         NSApp.delegate = delegate
-        delegate.set_menu_for_kegs()
+        delegate.setUpMenus()
         delegate.addSpeedMenu()
         delegate.emulatorStarted = true
         delegate.supportDirectory = directory
@@ -36,14 +42,17 @@ import Cocoa
         precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…"])
         delegate.menuModifierFlags = { .option }
         layout.menuWillOpen(configuration)
-        precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…", "---", "Configuration  F4"])
-        let advanced = configuration.items.last!
-        precondition(advanced.action == #selector(MainView.do_config(_:)) && advanced.target == nil)
+        precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…", "---", "Configuration  F4", "Show Debugger"])
+        let advanced = configuration.items[configuration.numberOfItems - 2]
+        let debugger = configuration.items.last!
+        precondition(debugger.action == #selector(AppDelegate.showDebugger(_:)) && debugger.target === delegate)
+        precondition(advanced.action == #selector(MainView.showEmulatorConfiguration(_:)) && advanced.target == nil)
         delegate.menuModifierFlags = { [] }
         layout.menuWillOpen(layout.submenu(.speed)!)
+        precondition(!debugger.isHidden)
         precondition(!advanced.isHidden, "Submenus must retain the mode selected when opening the menu")
         layout.menuWillOpen(configuration)
-        precondition(advanced.isHidden)
+        precondition(advanced.isHidden && debugger.isHidden)
         precondition(visibleTitles(configuration) == ["Speed", "Controls", "---", "Change ROM…"])
         precondition(configuration.items.contains { $0 === layout.item(.speed) })
         precondition(configuration.items.contains { $0 === layout.item(.controls) })
@@ -206,7 +215,7 @@ import Cocoa
         precondition(delegate.emulationPaused)
         precondition(menu.items.contains { $0.title == "Resume" })
         let frames = g_vbl_count
-        delegate.main_run_loop()
+        delegate.runEmulationLoop()
         RunLoop.current.run(until: Date().addingTimeInterval(0.12))
         precondition(g_vbl_count == frames, "Paused ticks must not advance the emulator")
         delegate.togglePause(nil)

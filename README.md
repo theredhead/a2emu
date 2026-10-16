@@ -47,6 +47,9 @@ another Mac may need the same first-launch approval.
 - **View → Save Screenshot** (**F3**): save a PNG to
   `~/Pictures/Apple II Player/<game-name>/`. Use Fn-F3 if macOS reserves F3.
 
+Hold **Option** while opening **Configuration** to reveal the advanced configuration
+and **Show Debugger** commands.
+
 Player disk changes and snapshots are kept in Application Support, separately from
 its bundled originals. **Disks → Show Saved Disk** opens that player’s folder.
 

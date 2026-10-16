@@ -244,7 +244,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
             try player.restoreSnapshot(at: url)
             player.setEmulationPaused(false)
             window?.close()
-            player.mainwin_info.x_win?.makeKeyAndOrderFront(nil)
+            player.mainWindowInfo.window?.makeKeyAndOrderFront(nil)
         } catch { showError(error) }
     }
 

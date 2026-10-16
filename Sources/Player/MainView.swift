@@ -14,27 +14,27 @@ class MainView: NSView {
     var bitmapContext: CGContext!
     var bitmapData: UnsafeMutableRawPointer!
     var rawData: UnsafeMutablePointer<UInt32>!
-    var current_flags: UInt = 0
-    var mouse_moved: Bool = false
-    var mac_warp_pointer: Int32 = 0
-    var mac_hide_pointer: Int32 = 0
+    var currentModifiers: UInt = 0
+    var mouseMovedSinceWarp: Bool = false
+    var pointerWarpState: Int32 = 0
+    var pointerHiddenState: Int32 = 0
 
     /// Borrowed from the C core; the emulator retains ownership.
-    var kimage_ptr: UnsafeMutablePointer<Kimage>!
+    var imagePointer: EmulatorCore.Image!
     var closed: Bool = false
-    var pixels_per_line = 640
-    var max_height = 600
+    var pixelsPerLine = 640
+    var maximumHeight = 600
     // Retain the sound until playback finishes; system resources can be absent on future macOS versions.
     private let screenshotSound = NSSound(
         contentsOfFile:
             "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Screen Capture.aif",
         byReference: true)
 
-    let is_cmd = UInt(NSEvent.ModifierFlags.command.rawValue)
-    let is_control = UInt(NSEvent.ModifierFlags.control.rawValue)
-    let is_shift = NSEvent.ModifierFlags.shift.rawValue
-    let is_capslock = NSEvent.ModifierFlags.capsLock.rawValue
-    let is_option = NSEvent.ModifierFlags.option.rawValue
+    let commandModifierMask = UInt(NSEvent.ModifierFlags.command.rawValue)
+    let controlModifierMask = UInt(NSEvent.ModifierFlags.control.rawValue)
+    let shiftModifierMask = NSEvent.ModifierFlags.shift.rawValue
+    let capsLockModifierMask = NSEvent.ModifierFlags.capsLock.rawValue
+    let optionModifierMask = NSEvent.ModifierFlags.option.rawValue
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -52,19 +52,19 @@ class MainView: NSView {
         if event.keyCode == 99 { return false }  // Leave F3 to the screenshot menu command or keyDown.
         guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return false }
         let keycode = event.keyCode
-        let is_repeat = event.isARepeat
-        let unicode_key = get_unicode_key_from_event(event)
-        if ((current_flags & is_cmd) == 0) || is_repeat {
+        let isRepeat = event.isARepeat
+        let keyValue = unicodeKey(for: event)
+        if ((currentModifiers & commandModifierMask) == 0) || isRepeat {
             // Leave non-command keys and repeats to normal event handling.
             return false
         }
         // Otherwise, manually do down, then up, for this key
-        adb_physical_key_update(
-            kimage_ptr, Int32(keycode),
-            UInt32(unicode_key), 0)
-        adb_physical_key_update(
-            kimage_ptr, Int32(keycode),
-            UInt32(unicode_key), 1)
+        EmulatorCore.updateKey(
+            imagePointer, keyCode: Int32(keycode),
+            unicode: UInt32(keyValue), isUp: false)
+        EmulatorCore.updateKey(
+            imagePointer, keyCode: Int32(keycode),
+            unicode: UInt32(keyValue), isUp: true)
         return true
     }
 
@@ -72,64 +72,67 @@ class MainView: NSView {
         return true
     }
 
-    func get_unicode_key_from_event(_ event: NSEvent) -> UInt32 {
-        var unicode_key = UInt32(0)
+    func unicodeKey(for event: NSEvent) -> UInt32 {
+        var keyValue = UInt32(0)
         if let str = event.charactersIgnoringModifiers {
-            let arr_chars = Array(str.unicodeScalars)
-            if arr_chars.count == 1 {
-                unicode_key = UInt32(arr_chars[0])
+            let scalars = Array(str.unicodeScalars)
+            if scalars.count == 1 {
+                keyValue = UInt32(scalars[0])
             }
         }
-        return unicode_key
+        return keyValue
     }
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 99 {
-            if !event.isARepeat { do_screenshot(nil) }
+            if !event.isARepeat { saveScreenshot(nil) }
             return
         }
         guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return }
         let keycode = event.keyCode
-        let is_repeat = event.isARepeat
-        let unicode_key = get_unicode_key_from_event(event)
-        if is_repeat {
+        let isRepeat = event.isARepeat
+        let keyValue = unicodeKey(for: event)
+        if isRepeat {
             // Command shortcuts can produce repeats without a matching key-down.
             return
         }
-        adb_physical_key_update(
-            kimage_ptr, Int32(keycode),
-            UInt32(unicode_key), 0)
+        EmulatorCore.updateKey(
+            imagePointer, keyCode: Int32(keycode),
+            unicode: UInt32(keyValue), isUp: false)
     }
 
     override func keyUp(with event: NSEvent) {
         if event.keyCode == 99 { return }  // F3 belongs to the host, never the emulated keyboard.
         let keycode = event.keyCode
-        let unicode_key = get_unicode_key_from_event(event)
-        adb_physical_key_update(
-            kimage_ptr, Int32(keycode),
-            UInt32(unicode_key), 1)
+        let keyValue = unicodeKey(for: event)
+        EmulatorCore.updateKey(
+            imagePointer, keyCode: Int32(keycode),
+            unicode: UInt32(keyValue), isUp: true)
     }
 
     override func flagsChanged(with event: NSEvent) {
-        let flags = event.modifierFlags.rawValue & (is_cmd | is_control | is_shift | is_capslock | is_option)
-        var c025_val = UInt32(0)
-        if (flags & is_shift) != 0 {
-            c025_val |= 1
+        let flags =
+            event.modifierFlags.rawValue
+            & (commandModifierMask | controlModifierMask | shiftModifierMask | capsLockModifierMask
+                | optionModifierMask)
+        var modifierBits = UInt32(0)
+        if (flags & shiftModifierMask) != 0 {
+            modifierBits |= 1
         }
-        if (flags & is_control) != 0 {
-            c025_val |= 2
+        if (flags & controlModifierMask) != 0 {
+            modifierBits |= 2
         }
-        if (flags & is_capslock) != 0 {
-            c025_val |= 4
+        if (flags & capsLockModifierMask) != 0 {
+            modifierBits |= 4
         }
-        if (flags & is_option) != 0 {
-            c025_val |= 0x40
+        if (flags & optionModifierMask) != 0 {
+            modifierBits |= 0x40
         }
-        if (flags & is_cmd) != 0 {
-            c025_val |= 0x80
+        if (flags & commandModifierMask) != 0 {
+            modifierBits |= 0x80
         }
-        adb_update_c025_mask(kimage_ptr, c025_val, UInt32(0xc7))
-        current_flags = flags
+        EmulatorCore.updateModifiers(imagePointer, value: modifierBits, mask: UInt32(0xc7))
+        currentModifiers = flags
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -138,21 +141,21 @@ class MainView: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        mac_update_mouse(event: event, buttons_state: 0, buttons_valid: 0)
+        updateMouse(with: event, buttonsState: 0, validButtons: 0)
     }
 
     override func mouseDragged(with event: NSEvent) {
-        mac_update_mouse(
-            event: event, buttons_state: 0,
-            buttons_valid: 0)
+        updateMouse(
+            with: event, buttonsState: 0,
+            validButtons: 0)
     }
 
     override func otherMouseDown(with event: NSEvent) {
-        mac_update_mouse(event: event, buttons_state: 2, buttons_valid: 2)
+        updateMouse(with: event, buttonsState: 2, validButtons: 2)
     }
 
     override func otherMouseUp(with event: NSEvent) {
-        mac_update_mouse(event: event, buttons_state: 0, buttons_valid: 2)
+        updateMouse(with: event, buttonsState: 0, validButtons: 2)
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -160,112 +163,112 @@ class MainView: NSView {
     }
 
     override func rightMouseUp(with event: NSEvent) {
-        mac_update_mouse(event: event, buttons_state: 0, buttons_valid: 4)
+        updateMouse(with: event, buttonsState: 0, validButtons: 4)
     }
 
     override func rightMouseDown(with event: NSEvent) {
         print("Right mouse down")
-        mac_update_mouse(event: event, buttons_state: 4, buttons_valid: 4)
+        updateMouse(with: event, buttonsState: 4, validButtons: 4)
     }
 
     override func mouseUp(with event: NSEvent) {
-        mac_update_mouse(event: event, buttons_state: 0, buttons_valid: 1)
+        updateMouse(with: event, buttonsState: 0, validButtons: 1)
     }
 
     override func mouseDown(with event: NSEvent) {
-        mac_update_mouse(event: event, buttons_state: 1, buttons_valid: 1)
+        updateMouse(with: event, buttonsState: 1, validButtons: 1)
     }
 
-    func mac_update_mouse(
-        event: NSEvent, buttons_state: Int,
-        buttons_valid: Int
+    func updateMouse(
+        with event: NSEvent, buttonsState: Int,
+        validButtons: Int
     ) {
         var warp = Int32(0)
-        var x_width = 0
-        var y_height = 0
+        var viewWidth = 0
+        var viewHeight = 0
         var x = Int32(0)
         var y = Int32(0)
-        var do_delta = Int(0)
-        let hide = adb_get_hide_warp_info(kimage_ptr, &warp)
-        if warp != mac_warp_pointer {
-            mouse_moved = true
+        var deltaMode = Int(0)
+        let hide = EmulatorCore.pointerVisibility(imagePointer, warp: &warp)
+        if warp != pointerWarpState {
+            mouseMovedSinceWarp = true
         }
-        mac_warp_pointer = warp
-        if mac_hide_pointer != hide {
-            mac_hide_pointer(hide: hide)
+        pointerWarpState = warp
+        if pointerHiddenState != hide {
+            setPointerHidden(hide)
         }
-        mac_hide_pointer = hide
+        pointerHiddenState = hide
         let location = event.locationInWindow
-        if !Context_draw {
+        if !usesDirectContextDrawing {
             // We're letting the Mac scale the window for us,
             //  so video_scale_mouse*() doesn't know the scale
             //  factor, so pass it in
-            x_width = Int(bounds.size.width)
-            y_height = Int(bounds.size.height)
+            viewWidth = Int(bounds.size.width)
+            viewHeight = Int(bounds.size.height)
         }
 
-        let raw_x = location.x
+        let rawX = location.x
         // Convert AppKit’s bottom-origin coordinates to the emulator’s top origin.
-        let raw_y = bounds.size.height - 1 - location.y
-        x = video_scale_mouse_x(
-            kimage_ptr, Int32(raw_x),
-            Int32(x_width))
-        y = video_scale_mouse_y(
-            kimage_ptr, Int32(raw_y),
-            Int32(y_height))
-        do_delta = 0
-        if mac_warp_pointer != 0 {
-            do_delta |= 0x1000  // x,y are deltas
+        let rawY = bounds.size.height - 1 - location.y
+        x = EmulatorCore.scaleMouseX(
+            imagePointer, x: Int32(rawX),
+            width: Int32(viewWidth))
+        y = EmulatorCore.scaleMouseY(
+            imagePointer, y: Int32(rawY),
+            height: Int32(viewHeight))
+        deltaMode = 0
+        if pointerWarpState != 0 {
+            deltaMode |= 0x1000  // x,y are deltas
             x = Int32(event.deltaX)
             y = Int32(event.deltaY)
         }
 
-        let ret = adb_update_mouse(
-            kimage_ptr, x, y,
-            Int32(buttons_state),
-            Int32(buttons_valid | do_delta))
+        let ret = EmulatorCore.updateMouse(
+            imagePointer, x: x, y: y,
+            buttons: Int32(buttonsState),
+            validButtons: Int32(validButtons | deltaMode))
         if ret != 0 {
-            mouse_moved = true
+            mouseMovedSinceWarp = true
         }
         guard let win = window else {
             return  // No valid window
         }
-        if mouse_moved {
+        if mouseMovedSinceWarp {
             var rect1 = NSRect.zero
 
             // If warp, warp cursor to middle of window.  Moving
             //  the cursor requires absolute screen coordinates,
             //  where y=0 is the top of the screen.  We must convert
             //  window coords (where y=0 is the bottom of the win).
-            mouse_moved = false
-            let warp_x = CGFloat(
-                video_unscale_mouse_x(
-                    kimage_ptr,
-                    Int32(A2_WINDOW_WIDTH / 2), Int32(x_width)))
-            let warp_y = CGFloat(
-                video_unscale_mouse_y(
-                    kimage_ptr,
-                    Int32(A2_WINDOW_HEIGHT / 2), Int32(y_height)))
-            let scr_height = CGDisplayPixelsHigh(CGMainDisplayID())
-            rect1.origin.x = CGFloat(warp_x)
-            rect1.origin.y = bounds.size.height - 1 - CGFloat(warp_y)
+            mouseMovedSinceWarp = false
+            let warpX = CGFloat(
+                EmulatorCore.unscaleMouseX(
+                    imagePointer,
+                    x: Int32(EmulatorCore.defaultImageWidth / 2), width: Int32(viewWidth)))
+            let warpY = CGFloat(
+                EmulatorCore.unscaleMouseY(
+                    imagePointer,
+                    y: Int32(EmulatorCore.defaultImageHeight / 2), height: Int32(viewHeight)))
+            let screenHeight = CGDisplayPixelsHigh(CGMainDisplayID())
+            rect1.origin.x = CGFloat(warpX)
+            rect1.origin.y = bounds.size.height - 1 - CGFloat(warpY)
             rect1.size.width = 1
             rect1.size.height = 0
-            let screen_rect = win.convertToScreen(rect1)
-            let screen_rect_y = CGFloat(scr_height) - screen_rect.origin.y
-            let cg_loc = CGPoint(
-                x: screen_rect.origin.x,
-                y: CGFloat(screen_rect_y))
+            let screenRect = win.convertToScreen(rect1)
+            let screenRectY = CGFloat(screenHeight) - screenRect.origin.y
+            let cursorLocation = CGPoint(
+                x: screenRect.origin.x,
+                y: CGFloat(screenRectY))
             if warp != 0 {
                 // Warp to middle of the window
                 CGDisplayMoveCursorToPoint(
                     CGMainDisplayID(),
-                    cg_loc)
+                    cursorLocation)
             }
         }
     }
 
-    func mac_hide_pointer(hide: Int32) {
+    func setPointerHidden(_ hide: Int32) {
         if hide != 0 {
             CGDisplayHideCursor(CGMainDisplayID())
         } else {
@@ -277,17 +280,17 @@ class MainView: NSView {
     func initialize() {
         print("Initialize view called")
         // Get width,height from video.c to handle toggling status lines
-        let width = Int(video_get_a2_width(kimage_ptr))
-        let height = Int(video_get_a2_height(kimage_ptr))
-        pixels_per_line = width
-        max_height = height
+        let width = Int(EmulatorCore.emulatedImageWidth(imagePointer))
+        let height = Int(EmulatorCore.emulatedImageHeight(imagePointer))
+        pixelsPerLine = width
+        maximumHeight = height
 
-        let color_space = CGDisplayCopyColorSpace(CGMainDisplayID())
+        let colorSpace = CGDisplayCopyColorSpace(CGMainDisplayID())
         bitmapContext = CGContext(
             data: nil, width: width,
             height: height, bitsPerComponent: 8,
             bytesPerRow: width * 4,
-            space: color_space,
+            space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
 
         bitmapData = bitmapContext.data!
@@ -298,22 +301,22 @@ class MainView: NSView {
         rawData = bitmapData.bindMemory(
             to: UInt32.self,
             capacity: height * width)
-        let x_width = Int(video_get_x_width(kimage_ptr))
-        let x_height = Int(video_get_x_height(kimage_ptr))
-        video_update_scale(
-            kimage_ptr, Int32(x_width), Int32(x_height),
-            Int32(1))
-        if Context_draw {
-            video_set_alpha_mask(UInt32(0xff00_0000))
+        let viewWidth = Int(EmulatorCore.imageWidth(imagePointer))
+        let viewHeight = Int(EmulatorCore.imageHeight(imagePointer))
+        EmulatorCore.updateImageScale(
+            imagePointer, width: Int32(viewWidth), height: Int32(viewHeight),
+            force: true)
+        if usesDirectContextDrawing {
+            EmulatorCore.setAlphaMask(UInt32(0xff00_0000))
             // Set video.c alpha mask, since 0 means transparent
         }
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        var rect: Change_rect
+        var rect: EmulatorCore.ChangeRect
         // Draw the current image buffer to the screen
         let context = NSGraphicsContext.current!.cgContext
-        if !Context_draw {
+        if !usesDirectContextDrawing {
             // Safe, simple drawing
             let image = bitmapContext.makeImage()!
             context.setFillColor(NSColor.black.cgColor)
@@ -329,18 +332,18 @@ class MainView: NSView {
             // Unsafe, more direct drawing by peeking into
             // NSGraphicsContext.current.data
             if let data = context.data {
-                rect = Change_rect(
+                rect = EmulatorCore.ChangeRect(
                     x: 0, y: 0,
                     width: Int32(context.width),
                     height: Int32(context.height))
-                video_update_scale(
-                    kimage_ptr,
-                    Int32(context.width),
-                    Int32(context.height), Int32(0))
-                video_out_data_scaled(
-                    data, kimage_ptr,
-                    Int32(context.bytesPerRow / 4), &rect)
-                video_out_done(kimage_ptr)
+                EmulatorCore.updateImageScale(
+                    imagePointer,
+                    width: Int32(context.width),
+                    height: Int32(context.height), force: false)
+                EmulatorCore.drawScaledImage(
+                    into: data, image: imagePointer,
+                    pixelsPerRow: Int32(context.bytesPerRow / 4), rect: &rect)
+                EmulatorCore.finishDrawing(imagePointer)
                 print("Did out_data_scaled, rect:\(rect)")
             }
         }
@@ -376,7 +379,7 @@ class MainView: NSView {
         return destination
     }
 
-    @objc func do_screenshot(_ sender: Any?) {
+    @objc func saveScreenshot(_ sender: Any?) {
         if let event = NSApp.currentEvent, event.type == .keyDown, event.isARepeat { return }
         do {
             let pictures = try FileManager.default.url(
@@ -395,16 +398,15 @@ class MainView: NSView {
         }
     }
 
-    @objc func do_config(_: AnyObject) {
+    @objc func showEmulatorConfiguration(_: AnyObject) {
         // Send a complete F4 press to open the emulator configuration.
-        adb_physical_key_update(kimage_ptr, Int32(0x76), 0, 0)
+        EmulatorCore.updateKey(imagePointer, keyCode: Int32(0x76), unicode: 0, isUp: false)
 
-        adb_physical_key_update(kimage_ptr, Int32(0x76), 0, 1)
+        EmulatorCore.updateKey(imagePointer, keyCode: Int32(0x76), unicode: 0, isUp: true)
     }
 
-    @objc func do_copy_text(_: AnyObject) {
-        if let cstr = cfg_text_screen_str() {
-            let str = String(cString: cstr)
+    @objc func copyTextScreen(_: AnyObject) {
+        if let str = EmulatorCore.textScreen() {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(
                 str,
@@ -412,15 +414,15 @@ class MainView: NSView {
         }
     }
 
-    @objc func do_paste(_: AnyObject) {
+    @objc func pasteText(_: AnyObject) {
         let general = NSPasteboard.general
         guard let str = general.string(forType: .string) else {
             print("Cannot paste, nothing in clipboard")
             return
         }
-        for raw_c in str.utf8 {
-            let c = UInt32(raw_c)
-            let ret = adb_paste_add_buf(c)
+        for rawCharacter in str.utf8 {
+            let c = UInt32(rawCharacter)
+            let ret = EmulatorCore.pasteCharacter(c)
             if ret != 0 {
                 print("Paste too large!")
                 return
@@ -428,15 +430,15 @@ class MainView: NSView {
         }
     }
 
-    func mac_update_display() {
+    func updateDisplay() {
         var valid: Int32
-        var rect: Change_rect
-        var dirty_rect = NSRect.zero
+        var rect: EmulatorCore.ChangeRect
+        var dirtyRect = NSRect.zero
 
-        if Context_draw {
+        if usesDirectContextDrawing {
             // We just need to know if there are any changes,
             //  don't actually do the copies now
-            valid = video_out_query(kimage_ptr)
+            valid = EmulatorCore.imageChanges(imagePointer)
             if valid != 0 {
                 self.setNeedsDisplay(bounds)
                 print("Needs display")
@@ -444,18 +446,18 @@ class MainView: NSView {
             return
         }
         // Otherwise, update rawData in our Bitmap now
-        rect = Change_rect(x: 0, y: 0, width: 0, height: 0)
-        for i in 0..<MAX_CHANGE_RECTS {
-            valid = video_out_data(
-                rawData, kimage_ptr,
-                Int32(pixels_per_line), &rect, Int32(i))
+        rect = EmulatorCore.ChangeRect(x: 0, y: 0, width: 0, height: 0)
+        for i in 0..<EmulatorCore.maximumChangeRects {
+            valid = EmulatorCore.drawImageChanges(
+                into: rawData, image: imagePointer,
+                pixelsPerRow: Int32(pixelsPerLine), rect: &rect, index: Int32(i))
             if valid == 0 {
                 break
             }
-            dirty_rect.origin.x = CGFloat(rect.x)
-            dirty_rect.origin.y = bounds.size.height - CGFloat(rect.y) - CGFloat(rect.height)
-            dirty_rect.size.width = CGFloat(rect.width)
-            dirty_rect.size.height = CGFloat(rect.height)
+            dirtyRect.origin.x = CGFloat(rect.x)
+            dirtyRect.origin.y = bounds.size.height - CGFloat(rect.y) - CGFloat(rect.height)
+            dirtyRect.size.width = CGFloat(rect.width)
+            dirtyRect.size.height = CGFloat(rect.height)
 
             // Redraw the full view: emulator dirty rectangles are not transformed to view coordinates.
             self.setNeedsDisplay(bounds)

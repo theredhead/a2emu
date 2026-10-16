@@ -36,7 +36,7 @@ import Cocoa
         delegate.supportDirectory = temporary
         delegate.machine = machine
         g_audio_enable = 0
-        delegate.main_init()
+        delegate.initializeEmulator()
         delegate.emulatorStarted = true
         a2_audio_test_enable()
         for pass in 0..<4 {

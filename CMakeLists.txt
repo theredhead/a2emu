@@ -50,6 +50,7 @@ set_source_files_properties(Vendor/gsplus/gsplus/src/joystick_driver.c
 add_executable(a2emu-player MACOSX_BUNDLE
     Sources/Shared/PlayerManifest.swift
     Sources/Shared/PlayerSnapshot.swift
+    Sources/Player/EmulatorCore.swift
     Sources/Player/Snapshots.swift
     Sources/Player/SnapshotBrowser.swift
     Sources/Player/EmulatorReset.c
@@ -57,6 +58,7 @@ add_executable(a2emu-player MACOSX_BUNDLE
     Sources/Player/JoystickConfigurationView.swift
     Sources/Player/KeypadConfigurationView.swift
     Sources/Player/ControllerMapping.swift
+    Sources/Player/ControllerHardware.swift
     Sources/Player/GamepadInput.swift
     Sources/Shared/About.swift
     Sources/Player/PlayerMenu.swift

@@ -18,7 +18,7 @@ final class GamepadInput {
 
     init() {
         GCController.shouldMonitorBackgroundEvents = false
-        a2_hid_gamepad_init()
+        ControllerHardware.initialize()
     }
 
     var controllerName: String {
@@ -45,11 +45,12 @@ final class GamepadInput {
             )
         }
         let nativeNames = Set(choices.map { $0.name })
-        for index in 0..<a2_hid_gamepad_count() {
-            let name = String(cString: a2_hid_gamepad_name_at(index))
+        for index in 0..<ControllerHardware.count {
+            let name = ControllerHardware.name(at: index)
             // Some devices expose both connections. Keep direct input available as a fallback.
             let label = nativeNames.contains(name) ? "\(name) (direct input)" : name
-            choices.append(ControllerChoice(id: "hid:\(a2_hid_gamepad_id(index))", name: label))
+            choices.append(
+                ControllerChoice(id: "hid:\(ControllerHardware.identifier(at: index))", name: label))
         }
         let counts = Dictionary(grouping: choices, by: { $0.name }).mapValues { $0.count }
         var occurrences: [String: Int] = [:]
@@ -85,19 +86,19 @@ final class GamepadInput {
         guard let pad = input?.pad else {
             sendKeys([], event: keyEvent)
             if connected {
-                joystick_callback_update(0, 0, 0)
-                joystick_update_buttons()
+                ControllerHardware.updateJoystick(buttons: 0, x: 0, y: 0)
+                ControllerHardware.refreshButtons()
             }
-            joystick_callback_init(-1)
+            ControllerHardware.setJoystickMode(-1)
             connected = false
             return
         }
-        joystick_callback_init(1)
+        ControllerHardware.setJoystickMode(1)
         connected = true
         guard active && !interrupted else {
             sendKeys([], event: keyEvent)
-            joystick_callback_update(0, 0, 0)
-            joystick_update_buttons()
+            ControllerHardware.updateJoystick(buttons: 0, x: 0, y: 0)
+            ControllerHardware.refreshButtons()
             return
         }
 
@@ -105,10 +106,10 @@ final class GamepadInput {
         if mapping.keyboardMode == true {
             let keys = keyboardKeys(for: pad, mapping: mapping, state: state)
             sendKeys(keys, event: keyEvent)
-            joystick_callback_update(0, 0, 0)
+            ControllerHardware.updateJoystick(buttons: 0, x: 0, y: 0)
         } else {
             sendKeys([], event: keyEvent)
-            joystick_callback_update(state.buttons, state.x, state.y)
+            ControllerHardware.updateJoystick(buttons: state.buttons, x: state.x, y: state.y)
         }
     }
 
@@ -133,14 +134,17 @@ final class GamepadInput {
             else { return nil }
             return (choice.id, pad)
         }
-        guard let identifier = UInt64(choice.id.dropFirst(4)), a2_hid_gamepad_select(identifier) != 0,
+        guard let identifier = UInt64(choice.id.dropFirst(4)), ControllerHardware.select(identifier),
             let snapshot = hidSnapshot.extendedGamepad
         else { return nil }
-        snapshot.leftThumbstick.setValueForXAxis(a2_hid_gamepad_value(0), yAxis: a2_hid_gamepad_value(1))
-        snapshot.rightThumbstick.setValueForXAxis(a2_hid_gamepad_value(2), yAxis: a2_hid_gamepad_value(3))
-        snapshot.dpad.setValueForXAxis(a2_hid_gamepad_value(4), yAxis: a2_hid_gamepad_value(5))
+        snapshot.leftThumbstick.setValueForXAxis(
+            ControllerHardware.value(at: 0), yAxis: ControllerHardware.value(at: 1))
+        snapshot.rightThumbstick.setValueForXAxis(
+            ControllerHardware.value(at: 2), yAxis: ControllerHardware.value(at: 3))
+        snapshot.dpad.setValueForXAxis(
+            ControllerHardware.value(at: 4), yAxis: ControllerHardware.value(at: 5))
         for index in 0..<8 {
-            mapping.button(index, on: snapshot).setValue(a2_hid_gamepad_value(Int32(index + 6)))
+            mapping.button(index, on: snapshot).setValue(ControllerHardware.value(at: Int32(index + 6)))
         }
         return (choice.id, snapshot)
     }
