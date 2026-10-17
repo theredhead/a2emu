@@ -112,6 +112,36 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
     private var zoomSlider: NSSlider!
     private var requestID = 0
     private var completion: ((Data) -> Void)?
+    var cropClosed: ((Bool) -> Void)?
+    private var acceptedCrop = false
+
+    /// Lets local and pasted images use the same crop controls without starting a search.
+    func showCrop(image: NSImage, completion: @escaping (Data) -> Void) {
+        self.completion = completion
+        window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 450),
+            styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.title = iconPickerIntl.choosePlayerIcon
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        let root = window.contentView!
+        crop.frame = NSRect(x: 40, y: 110, width: 300, height: 300)
+        crop.image = image
+        root.addSubview(crop)
+        let instruction = NSTextField(labelWithString: iconPickerIntl.dragToPositionTheSquareCrop)
+        instruction.frame = NSRect(x: 20, y: 418, width: 340, height: 24)
+        root.addSubview(instruction)
+        zoomSlider = NSSlider(
+            value: 1, minValue: 1, maxValue: 4, target: self, action: #selector(zoomChanged(_:)))
+        zoomSlider.frame = NSRect(x: 40, y: 70, width: 300, height: 24)
+        root.addSubview(zoomSlider)
+        let use = NSButton(title: iconPickerIntl.useThisCrop, target: self, action: #selector(useCrop(_:)))
+        use.bezelStyle = .rounded
+        use.frame = NSRect(x: 40, y: 20, width: 300, height: 32)
+        root.addSubview(use)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+    }
 
     func show(searchName: String, completion: @escaping (Data) -> Void) {
         self.completion = completion
@@ -359,17 +389,21 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
             status.stringValue = iconPickerIntl.chooseAnImageFirst
             return
         }
+        acceptedCrop = true
         completion?(data)
         window.close()
     }
 
     func windowWillClose(_ notification: Notification) {
         requestID += 1
-        browser.configuration.userContentController.removeScriptMessageHandler(forName: "iconImage")
-        searchBrowser.stopLoading()
-        searchBrowser.configuration.userContentController.removeScriptMessageHandler(forName: "iconResults")
-        searchBrowser.navigationDelegate = nil
-        browser.navigationDelegate = nil
+        browser?.configuration.userContentController.removeScriptMessageHandler(forName: "iconImage")
+        searchBrowser?.stopLoading()
+        searchBrowser?.configuration.userContentController.removeScriptMessageHandler(forName: "iconResults")
+        searchBrowser?.navigationDelegate = nil
+        browser?.navigationDelegate = nil
         completion = nil
+        let closed = cropClosed
+        cropClosed = nil
+        closed?(acceptedCrop)
     }
 }

@@ -4,6 +4,24 @@ import Foundation
 final class BuilderIntl {
     private let bundle: Bundle
 
+    var editMenu: String {
+        NSLocalizedString(
+            "editMenu", tableName: "Builder", bundle: bundle, value: "Edit", comment: "Edit menu title.")
+    }
+
+    var paste: String {
+        NSLocalizedString(
+            "paste", tableName: "Builder", bundle: bundle, value: "Paste", comment: "Paste menu command.")
+    }
+
+    func unhandledFiles(files: String) -> String {
+        String.localizedStringWithFormat(
+            NSLocalizedString(
+                "unhandledFiles", tableName: "Builder", bundle: bundle,
+                value: "These files could not be handled:\n%1$@",
+                comment: "Unprocessed dropped file paths. files: newline-separated paths."), files)
+    }
+
     init(bundle: Bundle = .main) {
         self.bundle = bundle
     }

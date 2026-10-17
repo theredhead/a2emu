@@ -152,3 +152,7 @@
 
 /* Suggested new disk filename. The extension is a technical identifier and must be preserved. */
 "untitledDisk" = "Untitled.%1$@";
+
+"editMenu" = "Edit";
+"paste" = "Paste";
+"unhandledFiles" = "These files could not be handled:\n%1$@";

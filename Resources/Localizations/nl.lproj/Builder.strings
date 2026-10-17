@@ -152,3 +152,7 @@
 
 /* Suggested new disk filename. The extension is a technical identifier and must be preserved. */
 "untitledDisk" = "Naamloos.%1$@";
+
+"editMenu" = "Wijzig";
+"paste" = "Plak";
+"unhandledFiles" = "Deze bestanden konden niet worden verwerkt:\n%1$@";

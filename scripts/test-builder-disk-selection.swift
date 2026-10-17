@@ -1,5 +1,7 @@
 import Cocoa
 
+var dropErrors: [String] = []
+
 @main struct BuilderDiskSelectionTests {
     static func main() {
         _ = NSApplication.shared
@@ -49,9 +51,64 @@ import Cocoa
         defer { try? FileManager.default.removeItem(at: temporary) }
         let disk = temporary.appendingPathComponent("Drop.2mg")
         try! Data(repeating: 0, count: 819200).write(to: disk)
-        builder.acceptDroppedFiles([disk])
-        precondition(builder.disks == [disk])
+        builder.selectDisks([disk])
+        builder.diskNameFields[0].stringValue = "Custom disk"
+        builder.mountChoices[0].selectItem(at: 0)
+        builder.appName.stringValue = "Custom player"
+        let extraDisk = temporary.appendingPathComponent("Extra.hdv")
+        try! Data(repeating: 0, count: 1024).write(to: extraDisk)
+        let originalSlot = builder.slot.indexOfSelectedItem
+        let originalSpeed = builder.speed.indexOfSelectedItem
+        let originalDrives = builder.configuredDrives
+        builder.acceptDroppedFiles([extraDisk, disk, extraDisk])
+        precondition(builder.disks == [disk, extraDisk])
+        precondition(builder.diskNameFields[0].stringValue == "Custom disk")
+        precondition(builder.mountChoices.allSatisfy { $0.indexOfSelectedItem == 0 })
+        precondition(builder.appName.stringValue == "Custom player")
+        precondition(builder.slot.indexOfSelectedItem == originalSlot)
+        precondition(builder.speed.indexOfSelectedItem == originalSpeed)
+        precondition(builder.configuredDrives == originalDrives)
+        builder.acceptDroppedFiles([disk, extraDisk])
+        precondition(builder.disks == [disk, extraDisk])
+        print("PASS disk drops append unique files and preserve existing names, mounts and settings")
         builder.memory.addItems(withTitles: PlayerManifest.expansionMemoryChoices.map(String.init))
+        let image = NSImage(size: NSSize(width: 32, height: 32))
+        image.lockFocus()
+        NSColor.red.setFill()
+        NSRect(x: 0, y: 0, width: 32, height: 32).fill()
+        image.unlockFocus()
+        let imageFile = temporary.appendingPathComponent("Icon.png")
+        let bitmap = NSBitmapImageRep(data: image.tiffRepresentation!)!
+        try! bitmap.representation(using: .png, properties: [:])!.write(to: imageFile)
+        builder.acceptDroppedFiles([imageFile, extraDisk, temporary.appendingPathComponent("Ignored.png")])
+        precondition(dropErrors.isEmpty, dropErrors.joined(separator: "\n"))
+        precondition(builder.iconData != nil && builder.disks == [disk, extraDisk])
+        let pastedImage = NSImage(data: builder.iconData!)!
+        precondition(pastedImage.size == NSSize(width: 1024, height: 1024))
+        print("PASS mixed image and disk drop applies first icon image and ignores subsequent images")
+        let oldClipboard = NSPasteboard.general.pasteboardItems?.compactMap { item -> NSPasteboardItem? in
+            let copy = NSPasteboardItem()
+            for type in item.types {
+                if let data = item.data(forType: type) { copy.setData(data, forType: type) }
+            }
+            return copy
+        } ?? []
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([image])
+        builder.iconData = nil
+        builder.paste(nil)
+        precondition(builder.iconData != nil)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects(oldClipboard)
+        print("PASS pasting an image updates the icon")
+        let unknown = temporary.appendingPathComponent("Unknown.txt")
+        let missing = temporary.appendingPathComponent("Missing.hdv")
+        builder.acceptDroppedFiles([unknown, disk, missing])
+        precondition(dropErrors.count == 1)
+        precondition(dropErrors[0].contains(unknown.path) && dropErrors[0].contains(missing.path))
+        precondition(builder.disks == [disk, extraDisk])
+        dropErrors.removeAll()
+        print("PASS mixed-drop failures are collected in one summary while supported files are handled")
         let package = temporary.appendingPathComponent("Game.a2snapshot")
         try! FileManager.default.createDirectory(
             at: package.appendingPathComponent("Disks"), withIntermediateDirectories: true)
@@ -64,14 +121,17 @@ import Cocoa
             at: package, title: "Ready", gameName: "Snapshot Game", disks: names,
             mounts: [DiskMount(diskIndex: 1, address: DriveAddress(slot: 5, drive: 1))],
             compress: true, expansionMemoryKB: 1024)
-        builder.acceptDroppedFiles([package])
+        builder.acceptDroppedFiles([disk, package])
         precondition(builder.appName.stringValue == "Snapshot Game")
-        precondition(builder.disks.map { $0.lastPathComponent } == names)
+        precondition(builder.disks.map { $0.lastPathComponent } == names + [disk.lastPathComponent])
+        precondition(builder.startupSnapshot == nil)
         precondition(try! Data(contentsOf: builder.disks[0]) == bytes)
         precondition(builder.configuredDrives == [DriveAddress(slot: 5, drive: 0), DriveAddress(slot: 5, drive: 1)])
         precondition(builder.mountChoices[0].indexOfSelectedItem == 0)
         precondition(builder.mountChoices[1].indexOfSelectedItem == 2)
         precondition(PlayerManifest.expansionMemoryChoices[builder.memory.indexOfSelectedItem] == 1024)
+        precondition(builder.memory.isEnabled && builder.speed.isEnabled)
+        builder.acceptDroppedFiles([package])
         precondition(!builder.memory.isEnabled && !builder.speed.isEnabled)
         let workingDisk = builder.disks[0]
         let damaged = package.appendingPathComponent("Snapshot.json")
@@ -83,6 +143,11 @@ import Cocoa
             precondition(builder.disks[0] == workingDisk)
             precondition(FileManager.default.fileExists(atPath: workingDisk.path))
         }
+        builder.acceptDroppedFiles([disk])
+        precondition(builder.disks.count == 3 && builder.disks[0] == workingDisk)
+        precondition(FileManager.default.fileExists(atPath: workingDisk.path))
+        precondition(builder.mountChoices.map { $0.indexOfSelectedItem } == [0, 2, 0])
+        precondition(builder.startupSnapshot == nil && builder.memory.isEnabled && builder.speed.isEnabled)
         builder.selectDisks([disk])
         precondition(builder.startupSnapshot == nil && builder.memory.isEnabled && builder.speed.isEnabled)
         precondition(!FileManager.default.fileExists(atPath: workingDisk.path))

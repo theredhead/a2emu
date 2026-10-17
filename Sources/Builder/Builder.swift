@@ -6,20 +6,25 @@ private let commonIntl = CommonIntl()
 
 final class PlayerDropView: NSView {
     var openFiles: (([URL]) -> Void)?
+    var openImage: ((NSImage) -> Void)?
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         .copy
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard
-            let urls = sender.draggingPasteboard().readObjects(
-                forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty
-        else {
-            return false
+        let pasteboard = sender.draggingPasteboard()
+        if let urls = pasteboard.readObjects(
+            forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty
+        {
+            openFiles?(urls)
+            return true
         }
-        openFiles?(urls)
-        return true
+        if let image = NSImage(pasteboard: pasteboard) {
+            openImage?(image)
+            return true
+        }
+        return false
     }
 }
 
@@ -140,13 +145,21 @@ final class BuilderArtworkView: NSView {
         }
         fileItem.submenu = fileMenu
         menu.addItem(fileItem)
+        let editItem = NSMenuItem()
+        let editMenu = NSMenu(title: builderIntl.editMenu)
+        let pasteItem = editMenu.addItem(
+            withTitle: builderIntl.paste, action: #selector(paste(_:)), keyEquivalent: "v")
+        pasteItem.target = self
+        editItem.submenu = editMenu
+        menu.addItem(editItem)
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1003, height: 760),
             styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = builderIntl.appleIigsPlayerBuilder
         let content = PlayerDropView(frame: window.contentView!.bounds)
-        content.registerForDraggedTypes([.fileURL])
+        content.registerForDraggedTypes([.fileURL, .png, .tiff])
         content.openFiles = { [weak self] in self?.acceptDroppedFiles($0) }
+        content.openImage = { [weak self] in self?.selectIconImage($0) }
         window.contentView = content
         // The form occupies the larger part of a golden-ratio split.
         let artwork = BuilderArtworkView(frame: NSRect(x: 0, y: 0, width: 383, height: 760))
@@ -310,30 +323,64 @@ final class BuilderArtworkView: NSView {
         do { try selectSnapshot(url) } catch { showError(error.localizedDescription) }
     }
 
-    /// Validates the entire drop before changing selection; snapshots supply their own disks.
+    /// Applies players and snapshots before additional disks, then uses only the first icon image.
     func acceptDroppedFiles(_ urls: [URL]) {
-        do {
-            if urls.count == 1, let url = urls.first {
-                if url.pathExtension.lowercased() == "app" {
-                    loadPlayer(url)
-                    return
-                }
-                if url.pathExtension.lowercased() == PlayerSnapshot.fileExtension {
+        var players: [URL] = []
+        var snapshots: [URL] = []
+        var otherFiles: [URL] = []
+        var firstImage: URL?
+        for url in urls {
+            let ext = url.pathExtension.lowercased()
+            if ext == "app" {
+                players.append(url)
+            } else if ext == PlayerSnapshot.fileExtension {
+                snapshots.append(url)
+            } else if let type = UTType(filenameExtension: ext), type.conforms(to: .image) {
+                if firstImage == nil { firstImage = url }
+            } else {
+                otherFiles.append(url)
+            }
+        }
+        var ordered = players + snapshots + otherFiles
+        if let image = firstImage { ordered.append(image) }
+        processDroppedFiles(ordered, unhandled: [])
+    }
+
+    /// Processes a mixed drop in order, waiting for each crop before moving to the next file.
+    private func processDroppedFiles(_ urls: [URL], unhandled: [URL]) {
+        var failures = unhandled
+        for (index, url) in urls.enumerated() {
+            do {
+                let ext = url.pathExtension.lowercased()
+                if ext == "app" {
+                    if !loadPlayer(url, reportError: false) { failures.append(url) }
+                } else if ext == PlayerSnapshot.fileExtension {
                     try selectSnapshot(url)
+                } else if let type = UTType(filenameExtension: ext), type.conforms(to: .image),
+                    let image = NSImage(contentsOf: url)
+                {
+                    let remaining = Array(urls.dropFirst(index + 1))
+                    let previousFailures = failures
+                    selectIconImage(image) { [weak self] accepted in
+                        self?.processDroppedFiles(
+                            remaining, unhandled: accepted ? previousFailures : previousFailures + [url])
+                    }
                     return
+                } else {
+                    let extensions = ["woz", "dsk", "do", "po", "2mg", "2img", "hdv", "nib"]
+                    guard extensions.contains(ext),
+                        (try url.resourceValues(forKeys: [.isRegularFileKey])).isRegularFile == true
+                    else {
+                        failures.append(url)
+                        continue
+                    }
+                    appendDroppedDisks([url])
                 }
-            }
-            let extensions = ["woz", "dsk", "do", "po", "2mg", "2img", "hdv", "nib"]
-            guard !urls.isEmpty,
-                urls.allSatisfy({
-                    extensions.contains($0.pathExtension.lowercased())
-                        && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
-                })
-            else {
-                throw PlayerManifest.failure(builderIntl.invalidDropError)
-            }
-            selectDisks(urls)
-        } catch { showError(error.localizedDescription) }
+            } catch { failures.append(url) }
+        }
+        if !failures.isEmpty {
+            showError(builderIntl.unhandledFiles(files: failures.map { $0.path }.joined(separator: "\n")))
+        }
     }
 
     /// Expands private working copies before applying the snapshot's name, RAM and mounted drives.
@@ -460,6 +507,36 @@ final class BuilderArtworkView: NSView {
         selectDisks(panel.urls)
     }
 
+    /// Adds dropped media without changing existing disk names, mounts or machine settings.
+    func appendDroppedDisks(_ urls: [URL]) {
+        var additions: [URL] = []
+        var knownURLs = Set(disks.map { $0.standardizedFileURL })
+        for url in urls {
+            if knownURLs.insert(url.standardizedFileURL).inserted {
+                additions.append(url)
+            }
+        }
+        guard !additions.isEmpty else { return }
+        if disks.isEmpty {
+            selectDisks(additions)
+            return
+        }
+
+        let previousMounts = mountChoices.map { $0.indexOfSelectedItem }
+        let previousSlot = slot.indexOfSelectedItem
+        let previousSpeed = speed.indexOfSelectedItem
+        // The snapshot describes an exact disk set; retain its working copies as selected media.
+        clearSnapshot(nil)
+        disks.append(contentsOf: additions)
+        rebuildMounts()
+        slot.selectItem(at: previousSlot)
+        speed.selectItem(at: previousSpeed)
+        for (index, choice) in mountChoices.enumerated() {
+            choice.selectItem(at: previousMounts.indices.contains(index) ? previousMounts[index] : 0)
+        }
+        summary.stringValue = builderIntl.diskImagesSelected(count: disks.count)
+    }
+
     /// Selects the initial boot drive from the first image; drive controls remain editable.
     func selectDisks(_ urls: [URL]) {
         guard let bootImage = urls.first else { return }
@@ -551,6 +628,40 @@ final class BuilderArtworkView: NSView {
             mountChoices.append(choice)
         }
         mountList.documentView = content
+    }
+
+    @objc func paste(_ sender: Any?) {
+        if let image = NSImage(pasteboard: .general) {
+            selectIconImage(image)
+        } else if let text = window.firstResponder as? NSText {
+            text.paste(sender)
+        }
+    }
+
+    func selectIconImage(_ image: NSImage, completion: ((Bool) -> Void)? = nil) {
+        guard image.size.width > 0, image.size.height > 0 else {
+            completion?(false)
+            return
+        }
+        if image.size.width == image.size.height {
+            let crop = SquareCropView(frame: NSRect(x: 0, y: 0, width: 300, height: 300))
+            crop.image = image
+            if let data = crop.png() {
+                iconData = data
+                iconPreview.image = NSImage(data: data)
+                completion?(true)
+            } else {
+                completion?(false)
+            }
+            return
+        }
+        let picker = IconPicker()
+        iconPicker = picker
+        picker.cropClosed = completion
+        picker.showCrop(image: image) { [weak self] data in
+            self?.iconData = data
+            self?.iconPreview.image = NSImage(data: data)
+        }
     }
 
     @objc func chooseIcon(_ sender: Any?) {
@@ -696,7 +807,8 @@ final class BuilderArtworkView: NSView {
         rebuildMounts()
     }
 
-    func loadPlayer(_ url: URL) {
+    @discardableResult
+    func loadPlayer(_ url: URL, reportError: Bool = true) -> Bool {
         do {
             let manifest = try PlayerExporter.read(app: url)
             let resources = url.appendingPathComponent("Contents/Resources")
@@ -745,8 +857,10 @@ final class BuilderArtworkView: NSView {
             window.title = builderIntl.edit(filename: url.lastPathComponent)
             summary.stringValue = builderIntl.editing(filename: url.lastPathComponent)
             window.makeKeyAndOrderFront(nil)
+            return true
         } catch {
-            showError(error.localizedDescription)
+            if reportError { showError(error.localizedDescription) }
+            return false
         }
     }
 
