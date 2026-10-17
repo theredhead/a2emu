@@ -10,6 +10,54 @@ import Cocoa
             "a2-player-state-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
+        let libraryDirectory = directory.appendingPathComponent("DiskLibrary")
+        try FileManager.default.createDirectory(at: libraryDirectory, withIntermediateDirectories: true)
+        let sourceDirectory = directory.appendingPathComponent("DropSources")
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        let sourceDisk = sourceDirectory.appendingPathComponent("Game.2mg")
+        try Data([1, 2, 3, 4]).write(to: sourceDisk)
+        let library = AppDelegate()
+        library.supportDirectory = libraryDirectory
+        library.machine = try PlayerManifest.make(disks: ["Game.2mg"], slot: 5)
+        let originalDisk = libraryDirectory.appendingPathComponent("Game.2mg")
+        try Data([9]).write(to: originalDisk)
+        let currentWorking = libraryDirectory.appendingPathComponent("Working")
+        try FileManager.default.createDirectory(at: currentWorking, withIntermediateDirectories: true)
+        library.snapshotDiskDirectory = currentWorking
+        let mounted = DriveAddress(slot: 5, drive: 0)
+        library.mountedImages = [mounted: 0]
+        var renameCount = 1
+        let imported = try library.importDiskImages([sourceDisk, sourceDisk]) { _ in
+            renameCount += 1
+            return "Game (\(renameCount)).2mg"
+        }
+        precondition(imported)
+        precondition(library.machine.diskFiles == ["Game.2mg", "Game (2).2mg", "Game (3).2mg"])
+        precondition(library.mountedImages[mounted] == 0)
+        precondition(try! Data(contentsOf: originalDisk) == Data([9]))
+        for name in library.machine.diskFiles.dropFirst() {
+            precondition(try! Data(contentsOf: libraryDirectory.appendingPathComponent(name)) == Data([1, 2, 3, 4]))
+            precondition(try! Data(contentsOf: currentWorking.appendingPathComponent(name)) == Data([1, 2, 3, 4]))
+        }
+        let reopened = AppDelegate()
+        reopened.supportDirectory = libraryDirectory
+        reopened.machine = try PlayerManifest.make(disks: ["Game.2mg"], slot: 5)
+        try reopened.loadImportedDisks()
+        precondition(reopened.machine.diskFiles == library.machine.diskFiles)
+        do {
+            try library.importDiskImages([sourceDisk, directory.appendingPathComponent("missing.2mg")])
+            preconditionFailure("Missing disk accepted")
+        } catch { precondition(library.machine.diskFiles.count == 3) }
+        let cancelled = try library.importDiskImages([sourceDisk]) { _ in nil }
+        precondition(!cancelled && library.machine.diskFiles.count == 3)
+        let beforeCancel = try FileManager.default.contentsOfDirectory(atPath: libraryDirectory.path).sorted()
+        let extraSource = sourceDirectory.appendingPathComponent("Fresh.po")
+        try Data([7]).write(to: extraSource)
+        let cancelledBatch = try library.importDiskImages([extraSource, sourceDisk]) { _ in nil }
+        precondition(!cancelledBatch && library.machine.diskFiles.count == 3)
+        precondition(try! FileManager.default.contentsOfDirectory(atPath: libraryDirectory.path).sorted() == beforeCancel)
+        print("PASS collision rename, cancel and multi-file import rollback")
+        print("PASS persistent disk imports, collision handling, snapshot working copies and unchanged mounts")
         g_limit_speed = 1
         g_zip_speed_mhz = 8
         precondition(EmulatorCore.speedLimit == 1 && EmulatorCore.acceleratorSpeedMHz == 8)

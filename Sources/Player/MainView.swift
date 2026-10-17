@@ -38,10 +38,41 @@ class MainView: NSView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        registerForDraggedTypes([.fileURL])
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        registerForDraggedTypes([.fileURL])
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard (NSApp.delegate as? AppDelegate)?.emulatorStarted == true else { return [] }
+        return .copy
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let player = NSApp.delegate as? AppDelegate, player.emulatorStarted,
+            let urls = sender.draggingPasteboard().readObjects(
+                forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]
+        else { return false }
+        player.setDialogOpen(true, reason: "Import Disks")
+        defer { player.setDialogOpen(false, reason: "Import Disks") }
+        do {
+            guard try player.importDiskImages(urls) else { return false }
+            let alert = NSAlert()
+            alert.messageText = "Disks Added"
+            alert.informativeText =
+                "Choose a drive in the Disks menu to insert an added image. Your current disks remain mounted."
+            alert.runModal()
+            return true
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Could Not Add Disks"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+            return false
+        }
     }
 
     func windowDidResize(_ notification: Notification) {

@@ -86,7 +86,7 @@ extension AppDelegate {
     /// Restores into new writable disks. Failed disk-layout validation rolls back the previous machine.
     func restoreSnapshot(at url: URL) throws {
         let snapshot = try PlayerSnapshot.read(at: url)
-        guard snapshot.diskFiles == machine.diskFiles else {
+        guard machine.diskFiles.starts(with: snapshot.diskFiles) else {
             throw PlayerManifest.failure("This snapshot belongs to a player with a different set of disks.")
         }
         let manager = FileManager.default
@@ -97,6 +97,12 @@ extension AppDelegate {
         defer { if !committed { try? manager.removeItem(at: working) } }
         for name in snapshot.diskFiles {
             try snapshot.extract(name, from: url, to: working.appendingPathComponent(name))
+        }
+        // Disks imported after this checkpoint remain available without rewriting the saved snapshot.
+        for name in machine.diskFiles.dropFirst(snapshot.diskFiles.count) {
+            try manager.copyItem(
+                at: currentDiskDirectory.appendingPathComponent(name),
+                to: working.appendingPathComponent(name))
         }
         let state = working.appendingPathComponent("Restore.state")
         try snapshot.extract(PlayerSnapshot.stateName, from: url, to: state)

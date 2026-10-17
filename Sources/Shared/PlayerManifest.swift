@@ -47,10 +47,10 @@ struct PlayerManifest: Codable {
     let startInFullScreen: Bool?
     let initialSpeed: EmulationSpeed?
     let availableDrives: [DriveAddress]?
-    let diskNames: [String]?
+    var diskNames: [String]?
     let initialMounts: [DiskMount]?
     let version: Int
-    let diskFiles: [String]
+    var diskFiles: [String]
     let bootSlot: Int
     let bram1: [UInt8]
     let bram3: [UInt8]

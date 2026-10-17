@@ -128,6 +128,7 @@ final class BuilderArtworkView: NSView {
         for (title, action, key) in [
             ("New Player", #selector(newPlayer(_:)), "n"),
             ("Open Player…", #selector(openPlayerPanel(_:)), "o"),
+            ("New Blank Disk Image…", #selector(createBlankDisk(_:)), ""),
         ] {
             let item = fileMenu.addItem(withTitle: title, action: action, keyEquivalent: key)
             item.target = self
@@ -172,6 +173,7 @@ final class BuilderArtworkView: NSView {
         root.addSubview(speedLabel)
         speed.frame = NSRect(x: 140, y: 462, width: 128, height: 28)
         speed.addItems(withTitles: EmulationSpeed.allCases.map { $0.label })
+        speed.selectItem(at: EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz)!)
         speed.target = self
         speed.action = #selector(speedChanged(_:))
         root.addSubview(speed)
@@ -384,6 +386,52 @@ final class BuilderArtworkView: NSView {
         snapshotLabel.toolTip = nil
     }
 
+    @objc func createBlankDisk(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "New Blank Disk Image"
+        alert.informativeText =
+            "Create an empty writable disk. Initialize it inside the emulated computer before saving files to it. Blank disks do not contain a bootable system."
+        alert.addButton(withTitle: "Continue…")
+        alert.addButton(withTitle: "Cancel")
+        let options = NSView(frame: NSRect(x: 0, y: 0, width: 340, height: 70))
+        let format = NSPopUpButton(frame: NSRect(x: 0, y: 38, width: 340, height: 28))
+        format.addItems(withTitles: BlankDiskImage.allCases.map { $0.label })
+        format.selectItem(at: 1)
+        options.addSubview(format)
+        let add = NSButton(checkboxWithTitle: "Add to this player's disks", target: nil, action: nil)
+        add.frame = NSRect(x: 0, y: 0, width: 340, height: 28)
+        add.isEnabled = startupSnapshot == nil
+        add.state = startupSnapshot == nil ? .on : .off
+        add.toolTip =
+            startupSnapshot == nil ? nil : "Clear the startup snapshot before changing its disk set."
+        options.addSubview(add)
+        alert.accessoryView = options
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let image = BlankDiskImage.allCases[format.indexOfSelectedItem]
+        let panel = NSSavePanel()
+        panel.title = "Save Blank Disk Image"
+        panel.nameFieldStringValue = "Untitled." + image.fileExtension
+        panel.allowedContentTypes = [UTType(filenameExtension: image.fileExtension) ?? .data]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            guard !disks.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) else {
+                throw PlayerManifest.failure(
+                    "Choose a new file instead of replacing a disk selected in this player.")
+            }
+            try image.write(to: url)
+            if add.state == .on {
+                if disks.isEmpty {
+                    selectDisks([url])
+                } else {
+                    disks.append(url)
+                    rebuildMounts()
+                    mountChoices.last?.selectItem(at: 0)
+                    summary.stringValue = "\(disks.count) disk images selected"
+                }
+            }
+        } catch { showError(error.localizedDescription) }
+    }
+
     @objc func chooseDisks(_ sender: Any?) {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
@@ -431,7 +479,9 @@ final class BuilderArtworkView: NSView {
 
     /// Only untouched defaults follow the boot device; explicit and saved speeds take precedence.
     private func updateAutomaticSpeed() {
-        guard !hasChosenSpeed, startupSnapshot == nil, slot.indexOfSelectedItem >= 0 else { return }
+        guard !disks.isEmpty, !hasChosenSpeed, startupSnapshot == nil, slot.indexOfSelectedItem >= 0 else {
+            return
+        }
         let bootSlot = [6, 5, 7][slot.indexOfSelectedItem]
         let defaultSpeed: EmulationSpeed = bootSlot == 6 ? .oneMHz : .twoPointEightMHz
         if let index = EmulationSpeed.allCases.firstIndex(of: defaultSpeed) {
@@ -620,7 +670,7 @@ final class BuilderArtworkView: NSView {
         fullScreen.state = .off
         hasChosenSpeed = false
         memory.selectItem(at: PlayerManifest.expansionMemoryChoices.firstIndex(of: 8192)!)
-        speed.selectItem(at: 0)
+        speed.selectItem(at: EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz)!)
         slot.selectItem(at: 0)
         for (i, count) in driveCounts.enumerated() {
             count.selectItem(at: i == 0 ? 1 : 0)

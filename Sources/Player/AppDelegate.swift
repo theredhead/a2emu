@@ -431,6 +431,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 try manager.copyItem(at: resource.appendingPathComponent(name), to: disk)
             }
         }
+        try loadImportedDisks()
         selectedROM = try ROMSetup.existing(directory: supportDirectory)
         if selectedROM == nil {
             selectedROM = ROMSetup.choose(directory: supportDirectory)
@@ -481,6 +482,127 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 encoding: .utf8)
         }
         EmulatorCore.setConfigurationPath(config)
+    }
+
+    private var importedDisksURL: URL { supportDirectory.appendingPathComponent("Imported-Disks.json") }
+
+    /// Restores the player's additional disk library without modifying its signed app bundle.
+    func loadImportedDisks() throws {
+        guard FileManager.default.fileExists(atPath: importedDisksURL.path) else { return }
+        let names = try JSONDecoder().decode([String].self, from: Data(contentsOf: importedDisksURL))
+        guard names.count <= 256, Set(names).count == names.count,
+            names.allSatisfy({ PlayerSnapshot.safeName($0) && !machine.diskFiles.contains($0) })
+        else {
+            throw PlayerManifest.failure("The imported disk library is invalid.")
+        }
+        var updated = machine!
+        updated.diskFiles += names
+        if let labels = updated.diskNames { updated.diskNames = labels + names }
+        try updated.validate()
+        machine = updated
+    }
+
+    /// Copies dropped images into saved storage and publishes the library only after every copy succeeds.
+    /// Existing media and mounted drives are preserved, including snapshot working copies.
+    @discardableResult
+    func importDiskImages(_ urls: [URL], rename: ((String) -> String?)? = nil) throws -> Bool {
+        let manager = FileManager.default
+        let extensions = ["woz", "dsk", "do", "po", "2mg", "2img", "hdv", "nib"]
+        guard !urls.isEmpty,
+            urls.allSatisfy({
+                extensions.contains($0.pathExtension.lowercased())
+                    && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+            })
+        else { throw PlayerManifest.failure("Drop disk image files to add them to this player.") }
+        var imported =
+            manager.fileExists(atPath: importedDisksURL.path)
+            ? try JSONDecoder().decode([String].self, from: Data(contentsOf: importedDisksURL)) : []
+        guard imported.count + urls.count <= 256 else {
+            throw PlayerManifest.failure("This player can import up to 256 additional disks.")
+        }
+        let staging = supportDirectory.appendingPathComponent(".importing-" + UUID().uuidString)
+        try manager.createDirectory(at: staging, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: staging) }
+        var copied: [URL] = []
+        var committed = false
+        defer { if !committed { for url in copied { try? manager.removeItem(at: url) } } }
+        var names: [String] = []
+        for source in urls {
+            var name = source.lastPathComponent
+            while !PlayerSnapshot.safeName(name)
+                || (name as NSString).pathExtension.lowercased() != source.pathExtension.lowercased()
+                || machine.diskFiles.contains(name)
+                || imported.contains(name)
+                || manager.fileExists(atPath: supportDirectory.appendingPathComponent(name).path)
+                || manager.fileExists(atPath: currentDiskDirectory.appendingPathComponent(name).path)
+            {
+                let replacement: String?
+                if let rename = rename {
+                    replacement = rename(name)
+                } else {
+                    replacement = requestDiskImportName(name)
+                }
+                guard let replacement = replacement else { return false }
+                name = replacement.trimmingCharacters(in: .whitespacesAndNewlines)
+                if (name as NSString).pathExtension.isEmpty {
+                    name += "." + source.pathExtension.lowercased()
+                }
+            }
+            let destination = supportDirectory.appendingPathComponent(name)
+            let staged = staging.appendingPathComponent(UUID().uuidString)
+            try manager.copyItem(at: source, to: staged)
+            try manager.moveItem(at: staged, to: destination)
+            copied.append(destination)
+            if currentDiskDirectory != supportDirectory {
+                let working = currentDiskDirectory.appendingPathComponent(name)
+                try manager.copyItem(at: destination, to: staged)
+                try manager.moveItem(at: staged, to: working)
+                copied.append(working)
+            }
+            imported.append(name)
+            names.append(name)
+        }
+        var updated = machine!
+        updated.diskFiles += names
+        if let labels = updated.diskNames { updated.diskNames = labels + names }
+        try updated.validate()
+        try JSONEncoder().encode(imported).write(to: importedDisksURL, options: .atomic)
+        machine = updated
+        committed = true
+        var mounted = mountedImages
+        if emulatorStarted {
+            mounted = [:]
+            for address in machine.drives {
+                if let path = EmulatorCore.mountedDiskPath(
+                    slot: Int32(address.slot), drive: Int32(address.drive)),
+                    let index = machine.diskFiles.firstIndex(of: URL(fileURLWithPath: path).lastPathComponent)
+                {
+                    mounted[address] = index
+                }
+            }
+        }
+        addDiskMenus()
+        mountedImages = mounted
+        updateDiskChecks()
+        return true
+    }
+
+    /// Renaming owns a temporary pause without releasing an existing manual or dialog pause.
+    private func requestDiskImportName(_ name: String) -> String? {
+        setDialogOpen(true, reason: "Rename Disk")
+        defer { setDialogOpen(false, reason: "Rename Disk") }
+        let alert = NSAlert()
+        alert.messageText = "Choose a Different Disk Name"
+        alert.informativeText =
+            "“\(name)” is already in use or is not a valid disk filename. Enter a new name with the original disk extension; existing files will be kept."
+        alert.addButton(withTitle: "Use This Name")
+        alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(string: name)
+        field.frame = NSRect(x: 0, y: 0, width: 360, height: 24)
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        return field.stringValue
     }
 
     var mountedImages: [DriveAddress: Int] = [:]

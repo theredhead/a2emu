@@ -87,6 +87,12 @@ import Cocoa
         precondition(builder.startupSnapshot == nil && builder.memory.isEnabled && builder.speed.isEnabled)
         precondition(!FileManager.default.fileExists(atPath: workingDisk.path))
         print("PASS disk drops, compressed snapshot setup, exact mounts, failure isolation and working-copy cleanup")
+        builder.window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1003, height: 760),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        builder.newPlayer(nil)
+        precondition(builder.speed.indexOfSelectedItem == EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz))
+        print("PASS New Player restores the 2.8 MHz IIGS default")
         print("PASS RAM choices and backward-compatible player manifests")
         print("Builder boot selection, speed defaults, initial mount and manual override passed.")
     }

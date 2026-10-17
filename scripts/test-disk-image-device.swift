@@ -41,6 +41,23 @@ import Foundation
         try check("disk.woz", size: woz.count, header: woz, slot: 5)
         woz[21] = 1
         try check("disk.woz", size: woz.count, header: woz, slot: 6)
+        for image in BlankDiskImage.allCases {
+            let url = directory.appendingPathComponent("Blank-\(image.rawValue)." + image.fileExtension)
+            try image.write(to: url)
+            let data = try Data(contentsOf: url)
+            let header = image == .floppy35 ? 64 : 0
+            precondition(data.count == image.byteCount + header)
+            precondition(data.dropFirst(header).allSatisfy { $0 == 0 })
+            let expectedSlot = image == .floppy525 ? 6 : (image == .floppy35 ? 5 : 7)
+            precondition(DiskImageDevice.detect(url).slot == expectedSlot)
+            if header != 0 {
+                precondition(data.prefix(4) == Data("2IMG".utf8))
+                precondition(data[8] == 64 && data[10] == 1 && data[12] == 1)
+                let blocks = (0..<4).reduce(0) { $0 | (Int(data[20 + $1]) << (8 * $1)) }
+                precondition(blocks * 512 == image.byteCount)
+            }
+        }
+        print("PASS blank floppy and SmartPort capacities, zero-filled sectors and 2IMG header")
         print("Disk image device detection passed.")
     }
 }

@@ -88,3 +88,56 @@ enum DiskImageDevice {
         }
     }
 }
+
+/// Empty writable media; filesystem initialization is left to the emulated computer.
+enum BlankDiskImage: Int, CaseIterable {
+    case floppy525, floppy35, hardDisk5, hardDisk10, hardDisk20, hardDisk32
+
+    var label: String {
+        switch self {
+        case .floppy525: return "5.25-inch floppy — 140 KB"
+        case .floppy35: return "3.5-inch floppy — 800 KB"
+        case .hardDisk5: return "SmartPort hard disk — 5 MB"
+        case .hardDisk10: return "SmartPort hard disk — 10 MB"
+        case .hardDisk20: return "SmartPort hard disk — 20 MB"
+        case .hardDisk32: return "SmartPort hard disk — 32 MB"
+        }
+    }
+
+    var fileExtension: String {
+        switch self {
+        case .floppy525: return "po"
+        case .floppy35: return "2mg"
+        default: return "hdv"
+        }
+    }
+
+    var byteCount: Int {
+        switch self {
+        case .floppy525: return 140 * 1024
+        case .floppy35: return 800 * 1024
+        case .hardDisk5: return 5 * 1024 * 1024
+        case .hardDisk10: return 10 * 1024 * 1024
+        case .hardDisk20: return 20 * 1024 * 1024
+        // A ProDOS volume can address at most 65,535 blocks.
+        case .hardDisk32: return 65535 * 512
+        }
+    }
+
+    /// Writes zero-filled sector data atomically; 3.5-inch images include an unlocked 2IMG header.
+    /// Throws without leaving a partial image if the destination cannot be written.
+    func write(to url: URL) throws {
+        let headerSize = self == .floppy35 ? 64 : 0
+        var data = Data(count: headerSize + byteCount)
+        if headerSize != 0 {
+            data.replaceSubrange(0..<8, with: Data("2IMGA2PB".utf8))
+            data[8] = 64
+            data[10] = 1
+            data[12] = 1  // ProDOS sector order.
+            for (offset, value) in [(20, byteCount / 512), (24, headerSize), (28, byteCount)] {
+                for byte in 0..<4 { data[offset + byte] = UInt8((value >> (byte * 8)) & 255) }
+            }
+        }
+        try data.write(to: url, options: .atomic)
+    }
+}
