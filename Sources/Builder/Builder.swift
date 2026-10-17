@@ -2,7 +2,7 @@ import Cocoa
 import UniformTypeIdentifiers
 
 final class PlayerDropView: NSView {
-    var openPlayer: ((URL) -> Void)?
+    var openFiles: (([URL]) -> Void)?
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         .copy
@@ -11,11 +11,11 @@ final class PlayerDropView: NSView {
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         guard
             let urls = sender.draggingPasteboard().readObjects(
-                forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], urls.count == 1
+                forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty
         else {
             return false
         }
-        openPlayer?(urls[0])
+        openFiles?(urls)
         return true
     }
 }
@@ -44,6 +44,7 @@ final class BuilderArtworkView: NSView {
 
     var window: NSWindow!
     var disks: [URL] = []
+    private var snapshotDisksDirectory: URL?
     var startupSnapshot: URL? {
         didSet { snapshotClearButton.isHidden = startupSnapshot == nil }
     }
@@ -139,7 +140,7 @@ final class BuilderArtworkView: NSView {
         window.title = "Apple IIGS Player Builder"
         let content = PlayerDropView(frame: window.contentView!.bounds)
         content.registerForDraggedTypes([.fileURL])
-        content.openPlayer = { [weak self] in self?.loadPlayer($0) }
+        content.openFiles = { [weak self] in self?.acceptDroppedFiles($0) }
         window.contentView = content
         // The form occupies the larger part of a golden-ratio split.
         let artwork = BuilderArtworkView(frame: NSRect(x: 0, y: 0, width: 383, height: 760))
@@ -290,23 +291,88 @@ final class BuilderArtworkView: NSView {
         panel.treatsFilePackagesAsDirectories = false
         panel.allowedContentTypes = [UTType(exportedAs: "nl.theredhead.a2emu.snapshot")]
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { try selectSnapshot(url) } catch { showError(error.localizedDescription) }
+    }
+
+    /// Validates the entire drop before changing selection; snapshots supply their own disks.
+    func acceptDroppedFiles(_ urls: [URL]) {
         do {
-            let snapshot = try PlayerSnapshot.read(at: url)
-            guard snapshot.diskFiles == disks.map({ $0.lastPathComponent }) else {
-                throw PlayerManifest.failure(
-                    "Choose this player's disk images first, in the same order as the snapshot.")
+            if urls.count == 1, let url = urls.first {
+                if url.pathExtension.lowercased() == "app" {
+                    loadPlayer(url)
+                    return
+                }
+                if url.pathExtension.lowercased() == PlayerSnapshot.fileExtension {
+                    try selectSnapshot(url)
+                    return
+                }
             }
-            let capturedMemory = try snapshot.capturedExpansionMemoryKB(at: url)
-            if let index = PlayerManifest.expansionMemoryChoices.firstIndex(of: capturedMemory) {
-                memory.selectItem(at: index)
+            let extensions = ["woz", "dsk", "do", "po", "2mg", "2img", "hdv", "nib"]
+            guard !urls.isEmpty,
+                urls.allSatisfy({
+                    extensions.contains($0.pathExtension.lowercased())
+                        && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+                })
+            else {
+                throw PlayerManifest.failure("Drop disk images, one snapshot, or one existing player.")
             }
-            memory.isEnabled = false
-            startupSnapshot = url
-            speed.isEnabled = false
-            speed.toolTip = "The startup snapshot restores its captured speed."
-            snapshotLabel.stringValue = snapshot.title
-            snapshotLabel.toolTip = url.path
+            selectDisks(urls)
         } catch { showError(error.localizedDescription) }
+    }
+
+    /// Expands private working copies before applying the snapshot's name, RAM and mounted drives.
+    /// Failed imports leave the current form and media intact.
+    func selectSnapshot(_ url: URL) throws {
+        let snapshot = try PlayerSnapshot.read(at: url)
+        let capturedMemory = try snapshot.capturedExpansionMemoryKB(at: url)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            for name in snapshot.diskFiles {
+                try snapshot.extract(name, from: url, to: directory.appendingPathComponent(name))
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
+        selectDisks(snapshot.diskFiles.map { directory.appendingPathComponent($0) })
+        snapshotDisksDirectory = directory
+        appName.stringValue = snapshot.gameName
+        if let index = PlayerManifest.expansionMemoryChoices.firstIndex(of: capturedMemory) {
+            memory.selectItem(at: index)
+        }
+        for (index, count) in driveCounts.enumerated() {
+            let slot = [6, 5, 7][index]
+            let required =
+                snapshot.mounts.filter { $0.address.slot == slot }.map { $0.address.drive + 1 }.max() ?? 0
+            count.selectItem(at: required)
+        }
+        if let boot = snapshot.mounts.first(where: { $0.diskIndex == 0 }) ?? snapshot.mounts.first,
+            let index = [6, 5, 7].firstIndex(of: boot.address.slot)
+        {
+            slot.selectItem(at: index)
+        }
+        rebuildMounts()
+        for index in disks.indices {
+            let address = snapshot.mounts.first { $0.diskIndex == index }?.address
+            mountChoices[index].selectItem(
+                at: address.flatMap { configuredDrives.firstIndex(of: $0) }.map { $0 + 1 } ?? 0)
+        }
+        memory.isEnabled = false
+        startupSnapshot = url
+        speed.isEnabled = false
+        speed.toolTip = "The startup snapshot restores its captured speed."
+        snapshotLabel.stringValue = snapshot.title
+        snapshotLabel.toolTip = url.path
+    }
+
+    private func removeSnapshotWorkingDisks() {
+        if let directory = snapshotDisksDirectory { try? FileManager.default.removeItem(at: directory) }
+        snapshotDisksDirectory = nil
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        removeSnapshotWorkingDisks()
     }
 
     @objc func clearSnapshot(_ sender: Any?) {
@@ -335,6 +401,8 @@ final class BuilderArtworkView: NSView {
     /// Selects the initial boot drive from the first image; drive controls remain editable.
     func selectDisks(_ urls: [URL]) {
         guard let bootImage = urls.first else { return }
+        clearSnapshot(nil)
+        removeSnapshotWorkingDisks()
         let previousDefault = disks.first?.deletingPathExtension().lastPathComponent
         diskNameFields = []
         mountChoices = []
@@ -541,6 +609,7 @@ final class BuilderArtworkView: NSView {
 
     @objc func newPlayer(_ sender: Any?) {
         editingPlayer = nil
+        removeSnapshotWorkingDisks()
         clearSnapshot(nil)
         disks = []
         diskNameFields = []
@@ -571,6 +640,7 @@ final class BuilderArtworkView: NSView {
                 try PropertyListSerialization.propertyList(
                     from: Data(contentsOf: url.appendingPathComponent("Contents/Info.plist")), format: nil)
                 as? [String: Any]
+            removeSnapshotWorkingDisks()
             disks = manifest.diskFiles.map { resources.appendingPathComponent($0) }
             diskNameFields = []
             mountChoices = []

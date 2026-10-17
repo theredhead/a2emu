@@ -5,11 +5,14 @@ Runs on macOS 13 or later, on Intel and Apple Silicon.
 
 ## Create a player
 
-1. Choose your disk images and enter an app name.
+1. Choose or drop your disk images and enter an app name.
 2. Review the detected boot device and initial disk assignments. Leave extra disks
    unmounted to swap them in while playing.
 3. Choose the initial speed, expansion RAM, fullscreen preference and optional icon.
 4. Click **Create Player…** and choose where to save the app.
+
+You can also choose or drop a startup snapshot. Its bundled disks, game name, RAM
+and disk mounts fill in the setup automatically; the saved state restores the speed.
 
 The builder detects the first disk’s likely drive type. Until you choose a speed,
 5.25-inch boots default to 1.0 MHz; 3.5-inch and SmartPort boots default to 2.8 MHz.
