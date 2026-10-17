@@ -1,0 +1,82 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* Player: User-visible label, instruction, or error message. */
+"chooseADifferentDiskName" = "Kies een andere schijfnaam";
+
+/* Player: User-visible label, instruction, or error message. */
+"couldNotRestoreStartupSnapshot" = "Startmomentopname herstellen mislukt";
+
+/* Player: User-visible label, instruction, or error message. */
+"couldNotStartEmulator" = "Emulator starten mislukt";
+
+/* Player: Formatted message. mode: numeric value */
+"customSpeedMode" = "Aangepaste snelheid (modus %1$ld)";
+
+/* Player: User-visible label, instruction, or error message. */
+"debugger" = "Debugger";
+
+/* Player: User-visible label, instruction, or error message. */
+"invalidDiskDrop" = "Sleep schijfkopieën hiernaartoe om ze aan deze speler toe te voegen.";
+
+/* Player: Formatted message. name: runtime text; keep its placeholder */
+"diskNameCollision" = "‘%1$@’ is al in gebruik of is geen geldige schijfnaam. Voer een nieuwe naam in met de oorspronkelijke bestandsextensie; bestaande bestanden blijven behouden.";
+
+/* Player: Formatted message. megahertz: numeric value */
+"mhz" = "%1$ld MHz";
+
+/* Player: Formatted message. megahertz: numeric value */
+"mhzInvalidSetting" = "%1$ld MHz (ongeldige instelling)";
+
+/* Player: User-visible label, instruction, or error message. */
+"paused" = " — Gepauzeerd";
+
+/* Player: User-visible label, instruction, or error message. */
+"invalidDiskLibrary" = "De bibliotheek met geïmporteerde schijven is ongeldig.";
+
+/* Player: User-visible label, instruction, or error message. */
+"importLimitError" = "Je kunt maximaal 256 extra schijven aan deze speler toevoegen.";
+
+/* Player: User-visible label, instruction, or error message. */
+"useThisName" = "Gebruik deze naam";
+
+/* Player: Formatted message. errorDescription: runtime text; keep its placeholder */
+"startupRecoveryHint" = "%1$@ Je kunt hervatten om normaal op te starten.";
+
+/* Human-readable pause reason. */
+"pauseReasonAbout" = "Over";
+
+/* Human-readable pause reason. */
+"pauseReasonCredits" = "Dankwoord";
+
+/* Human-readable pause reason. */
+"pauseReasonControllerdisconnected" = "Controller niet verbonden";
+
+/* Human-readable pause reason. */
+"pauseReasonStartupsnapshotcouldnotberestored" = "Startmomentopname herstellen mislukt";
+
+/* Human-readable pause reason. */
+"pauseReasonRenameDisk" = "Schijf hernoemen";
+
+/* Human-readable pause reason. */
+"pauseReasonControllerSettings" = "Controllerinstellingen";
+
+/* Human-readable pause reason. */
+"pauseReasonSnapshots" = "Momentopnamen";
+
+/* Human-readable pause reason. */
+"pauseReasonROMSetup" = "ROM instellen";
+
+/* Human-readable pause reason. */
+"pauseReasonImportDisks" = "Schijven importeren";
+
+/* Human-readable pause reason. */
+"pauseReasonScreenshotError" = "Schermafbeeldingsfout";
+
+/* Human-readable pause reason. */
+"pauseReasonSnapshotrecoveryfailed" = "Herstel van momentopname mislukt";
+
+/* Window title while paused, without a reason. Preserve the game name placeholder. */
+"pausedGameTitle" = "%1$@ — Gepauzeerd";
+
+/* Window title while paused, including a translated reason. */
+"pausedGameTitleWithReason" = "%1$@ — Gepauzeerd (%2$@)";

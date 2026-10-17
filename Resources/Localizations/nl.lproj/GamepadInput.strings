@@ -1,0 +1,16 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* GamepadInput: Formatted message. name: runtime text; keep its placeholder */
+"directInput" = "%1$@ (directe invoer)";
+
+/* GamepadInput: Formatted message. name: runtime text; keep its placeholder; number: numeric value */
+"formattedLabel" = "%1$@ (%2$ld)";
+
+/* GamepadInput: User-visible label, instruction, or error message. */
+"gameController" = "Gamecontroller";
+
+/* GamepadInput: User-visible label, instruction, or error message. */
+"noGameControllerConnected" = "Geen gamecontroller verbonden";
+
+/* GamepadInput: User-visible label, instruction, or error message. */
+"selectedControllerDisconnected" = "Geselecteerde controller niet verbonden";

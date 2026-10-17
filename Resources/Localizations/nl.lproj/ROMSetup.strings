@@ -1,0 +1,40 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"chooseAComplete128KbRom" = "Kies een volledige ROM 01-kopie van 128 KB of ROM 03-kopie van 256 KB. Afzonderlijke ROM-chips en ZIP-bestanden zijn geen volledige ROM-kopieën.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"chooseAnAppleIigsRom" = "Kies een Apple IIgs-ROM";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"couldNotInstallRom" = "ROM installeren mislukt";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"downloadingRom" = "ROM downloaden…";
+
+/* ROMSetup: Formatted message. model: runtime text; keep its placeholder; identifier: runtime text; keep its placeholder */
+"installedRom" = "Geïnstalleerd ROM %1$@ — %2$@";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"noAppleIigsRomIsBundled" = "Deze app bevat geen Apple IIgs-ROM. Kies een ROM om te downloaden of blader naar je eigen bestand. Geïnstalleerde ROMs worden gedeeld met je andere a2emu-spelers, zodat je ze maar één keer hoeft te installeren. Elke speler onthoudt zijn eigen ROM-keuze. Als je het ROM van deze speler wijzigt, wordt de emulator opnieuw gestart.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"recommendedROM" = "ROM 03 (aanbevolen)";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"rom01" = "ROM 01";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"setUpYourAppleIigsRom" = "Stel je Apple IIgs-ROM in";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"theDownloadCouldNotBeVerified" = "De download kon niet worden gecontroleerd. Probeer het opnieuw of kies je eigen ROM.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"thisImageDoesNotContainA" = "Deze kopie bevat geen herkenbare Apple IIgs-resetvector. Kies een ander ROM.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"useSelectedRom" = "Gebruik geselecteerd ROM";
+
+/* Progress text. Keep the download server hostname unchanged. */
+"downloadVerificationHint" = "Downloaden van mirrors.apple2.org.za en controleren van de kopie.";

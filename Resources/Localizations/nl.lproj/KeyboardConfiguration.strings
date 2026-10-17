@@ -1,0 +1,24 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"bindAdbMouseButton" = "Koppel ADB-muisknop";
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"bindAdbMouseMovement" = "Koppel ADB-muisbeweging";
+
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"clickThenMoveEitherStickOr" = "Klik en beweeg daarna een stick of de D-pad om alle vier de muisrichtingen te koppelen";
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"clickToBindAControllerInput" = "Klik om een controllerbediening te koppelen";
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"clickToBindThisMouseDirection" = "Klik om deze muisrichting te koppelen";
+
+
+/* Accessibility label for one mouse direction control; direction is a translated direction name. */
+"bindMouseDirection" = "Koppel muis %1$@";
+
+/* Mouse button tooltip; bindings is a list of controller input symbols or Unassigned. */
+"mouseClickBindings" = "Muisklik: %1$@";

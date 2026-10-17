@@ -1,0 +1,154 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* Builder: User-visible label, instruction, or error message. */
+"aboutAppleIigsPlayerBuilder" = "Over Apple IIGS Player Builder";
+
+/* Builder: User-visible label, instruction, or error message. */
+"addToPlayerDisks" = "Voeg toe aan de schijven van deze speler";
+
+/* Builder: User-visible label, instruction, or error message. */
+"appName" = "Appnaam:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"appNamePlaceholder" = "Naam van de geëxporteerde app";
+
+/* Builder: User-visible label, instruction, or error message. */
+"appleIigsPlayerBuilder" = "Apple IIGS Player Builder";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bundledStartupSnapshot" = "Meegeleverde startmomentopname";
+
+/* Builder: User-visible label, instruction, or error message. */
+"chooseADiskFirst" = "Kies eerst een schijf.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"selectedDiskOverwriteError" = "Kies een nieuw bestand in plaats van een schijf te vervangen die in deze speler is geselecteerd.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"chooseDisks" = "Kies schijven…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"chooseDisksHint" = "Kies schijfkopieën om mee te nemen.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"emptyPlayerHint" = "Kies schijven of sleep hier een bestaande speler naartoe om die te bewerken.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"choosePlayerIcon" = "Kies spelericoon…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"snapshotDiskSetHint" = "Verwijder de startmomentopname voordat je de schijvenset wijzigt.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"couldNotUpdatePlayer" = "Speler bijwerken mislukt";
+
+/* Builder: User-visible label, instruction, or error message. */
+"blankDiskExplanation" = "Maak een lege, beschrijfbare schijf. Initialiseer deze in de geëmuleerde computer voordat je er bestanden op bewaart. Lege schijven bevatten geen opstartbaar systeem.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"createPlayer" = "Maak speler…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"createPlayerHeading" = "Maak een zelfstandige Apple IIGS-speler";
+
+/* Builder: Formatted message. count: numeric value */
+"diskImagesSelected" = "%1$ld schijfkopieën geselecteerd";
+
+/* Builder: User-visible label, instruction, or error message. */
+"diskNamesAndInitialDrives" = "Schijfnamen en beginstations";
+
+/* Builder: Formatted message. title: runtime text; keep its placeholder */
+"drives" = "%1$@ stations:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"invalidDropError" = "Sleep schijfkopieën, één momentopname of één bestaande speler hiernaartoe.";
+
+/* Builder: Formatted message. filename: runtime text; keep its placeholder */
+"edit" = "Bewerk %1$@";
+
+/* Builder: User-visible label, instruction, or error message. */
+"editThisAppleIigsPlayer" = "Bewerk deze Apple IIGS-speler";
+
+/* Builder: Formatted message. filename: runtime text; keep its placeholder */
+"editing" = "%1$@ bewerken";
+
+/* Builder: User-visible label, instruction, or error message. */
+"expansionRAMHint" = "Extra RAM bovenop het ingebouwde geheugen van het ROM-model. ROM 01 begint met 256 KB; ROM 03 heeft ongeveer 1 MB.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"expansionRam" = "Extra RAM:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"initialSpeed" = "Beginsnelheid:";
+
+/* Builder: Formatted message. kilobytes: numeric value */
+"kilobytes" = "%1$ld KB";
+
+/* Builder: User-visible label, instruction, or error message. */
+"unmountedDisksHint" = "Laat extra schijfkopieën ongeplaatst; plaats ze later in een station via het menu Schijven.";
+
+/* Builder: Formatted message. megabytes: numeric value */
+"megabytes" = "%1$ld MB";
+
+/* Builder: User-visible label, instruction, or error message. */
+"newBlankDiskImage" = "Nieuwe lege schijfkopie…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"blankDiskTitle" = "Nieuwe lege schijfkopie";
+
+/* Builder: User-visible label, instruction, or error message. */
+"newPlayer" = "Nieuwe speler";
+
+/* Builder: User-visible label, instruction, or error message. */
+"noneBuiltInOnly" = "Geen (alleen ingebouwd)";
+
+/* Builder: User-visible label, instruction, or error message. */
+"normalStartup" = "Geen momentopname — normaal opstarten";
+
+/* Builder: User-visible label, instruction, or error message. */
+"notInitiallyMounted" = "Niet geplaatst bij opstarten";
+
+/* Builder: User-visible label, instruction, or error message. */
+"openPlayer" = "Open speler…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startupSnapshotHint" = "Optioneel: herstel bij elke start de vastgelegde snelheid en schijfstatus.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"quitPlayerBeforeSavingError" = "Stop deze speler voordat je wijzigingen bewaart.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"removeSnapshotHint" = "Verwijder de startmomentopname en start normaal op";
+
+/* Builder: User-visible label, instruction, or error message. */
+"saveBlankDiskImage" = "Bewaar lege schijfkopie";
+
+/* Builder: Formatted message. filename: runtime text; keep its placeholder */
+"savedChangesTo" = "Wijzigingen bewaard in %1$@";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bootFloppy35" = "Slot 5 — 3,5-inch diskette";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bootFloppy525" = "Slot 6 — 5,25-inch diskette";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bootSmartPort" = "Slot 7 — harde schijf / SmartPort";
+
+/* Builder: User-visible label, instruction, or error message. */
+"snapshotSpeedHint" = "De startmomentopname herstelt de vastgelegde snelheid.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startInFullScreen" = "Start schermvullend";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startUpFrom" = "Start op vanaf:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startupSnapshot" = "Startmomentopname…";
+
+/* Accessibility label for the clear snapshot button. */
+"removeStartupSnapshot" = "Verwijder startmomentopname";
+
+/* Suggested new disk filename. The extension is a technical identifier and must be preserved. */
+"untitledDisk" = "Naamloos.%1$@";

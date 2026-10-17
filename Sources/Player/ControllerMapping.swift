@@ -507,12 +507,13 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         root.addSubview(deadZone)
         footerHint.font = .systemFont(ofSize: 11)
         footerHint.textColor = .secondaryLabelColor
-        footerHint.frame = NSRect(x: 28, y: 78, width: 440, height: 20)
+        footerHint.frame = NSRect(x: 28, y: 78, width: 884, height: 20)
         root.addSubview(footerHint)
         let reset = NSButton(
             title: controllerConfigurationIntl.restoreDefaults, target: self, action: #selector(reset(_:)))
         reset.bezelStyle = .rounded
-        reset.frame = NSRect(x: 28, y: 18, width: 154, height: 32)
+        reset.frame = NSRect(
+            x: 28, y: 18, width: max(154, ceil(reset.intrinsicContentSize.width)), height: 32)
         root.addSubview(reset)
         let cancel = NSButton(title: commonIntl.cancel, target: self, action: #selector(cancel(_:)))
         cancel.bezelStyle = .rounded

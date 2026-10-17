@@ -9,6 +9,11 @@ spec = importlib.util.spec_from_file_location('localization', pathlib.Path(__fil
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 original_root = module.ROOT
+for table in (module.RESOURCES / 'en.lproj').glob('*.strings'):
+    english_keys = module.read_strings(table).keys()
+    dutch_keys = module.read_strings(module.RESOURCES / 'nl.lproj' / table.name).keys()
+    assert english_keys == dutch_keys, f'Dutch table is incomplete: {table.name}'
+print('PASS complete Dutch coverage for every English string table')
 with tempfile.TemporaryDirectory() as directory:
     root = pathlib.Path(directory)
     shutil.copytree(original_root / 'Sources', root / 'Sources')

@@ -1,0 +1,40 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* About: User-visible label, instruction, or error message. */
+"a2emuSourceOnGithub" = "a2emu-broncode op GitHub";
+
+/* About: User-visible label, instruction, or error message. */
+"appleIigsEmulationByKentDickey" = "Apple IIgs-emulatie door Kent Dickey.";
+
+/* About: User-visible label, instruction, or error message. */
+"appleIigsPlayerBuilderAndApple" = "Apple IIGS Player Builder en Apple II Player";
+
+/* About: User-visible label, instruction, or error message. */
+"crossPlatformWorkByDagenBrock" = "Ondersteuning voor meerdere platforms door Dagen Brock en de GSplus-bijdragers, voortbouwend op KEGS.";
+
+/* About: User-visible label, instruction, or error message. */
+"gsplusSourceOnGithub" = "GSplus-broncode op GitHub";
+
+/* About: User-visible label, instruction, or error message. */
+"kegsProjectAndSource" = "KEGS-project en broncode";
+
+/* About: User-visible label, instruction, or error message. */
+"license" = "Licentie";
+
+/* About: User-visible label, instruction, or error message. */
+"more" = "Meer…";
+
+/* About: User-visible label, instruction, or error message. */
+"integrationCredit" = "Swift-builder en spelerintegratie door theredhead. Het builder- en spelerproject staat op GitHub.";
+
+/* About: User-visible label, instruction, or error message. */
+"thanksTo" = "Met dank aan…";
+
+/* About: User-visible label, instruction, or error message. */
+"licenseExplanation" = "De builder, speler en emulatoronderdelen worden verspreid onder GNU GPL versie 3. De oorspronkelijke auteursrechtvermeldingen en onderdeellicenties blijven behouden in de projectbroncode. ROM-firmware en de software die je draait, staan los van de speler.";
+
+/* About: Formatted message. version: runtime text; keep its placeholder */
+"versionInfo" = "Versie %1$@\n\nGemaakt met KEGS en GSplus.";
+
+/* About: User-visible label, instruction, or error message. */
+"viewOnGithub" = "Bekijk op GitHub…";

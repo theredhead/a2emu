@@ -1,0 +1,37 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"invalidMetadata" = "De momentopnamemetadata is ongeldig of gebruikt een niet-ondersteunde indeling.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"snapshotsMustContainTheirOwnDisk" = "Momentopnamen moeten hun eigen schijfmap bevatten, zonder symbolische koppelingen.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"theCompressedSnapshotMetadataIsInvalid" = "De metadata van de gecomprimeerde momentopname is ongeldig.";
+
+/* PlayerSnapshot: Formatted message. name: runtime text; keep its placeholder */
+"theCompressedSnapshotPayloadIsDamaged" = "De gecomprimeerde momentopnamegegevens zijn beschadigd: %1$@.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"theCompressedSnapshotPayloadIsInvalid" = "De gecomprimeerde momentopnamegegevens zijn ongeldig.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"theExpandedSnapshotPayloadIsToo" = "De uitgepakte momentopnamegegevens zijn te groot.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"theSnapshotHeaderIsIncomplete" = "De momentopnameheader is onvolledig.";
+
+/* PlayerSnapshot: Formatted message. name: runtime text; keep its placeholder */
+"theSnapshotIsIncompleteOrDamaged" = "De momentopname is onvolledig of beschadigd: %1$@.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"theSnapshotMetadataIsTooLarge" = "De momentopnamemetadata is te groot.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"theSnapshotMetadataMustBeAn" = "De momentopnamemetadata moet een gewoon bestand zijn.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"thisSnapshotUsesAnUnsupportedRam" = "Deze momentopname gebruikt een niet-ondersteunde RAM-configuratie.";
+
+/* PlayerSnapshot: User-visible label, instruction, or error message. */
+"thisSnapshotWasSavedByA" = "Deze momentopname is bewaard met een andere emulatorversie. Maak een nieuwe met deze spelerversie.";

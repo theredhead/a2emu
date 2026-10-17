@@ -1,0 +1,16 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"chooseADriveInTheDisks" = "Kies een station in het menu Schijven om een toegevoegde schijfkopie te plaatsen. De huidige schijven blijven geplaatst.";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"couldNotAddDisks" = "Schijven toevoegen mislukt";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"couldNotSaveScreenshot" = "Schermafbeelding bewaren mislukt";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"disksAdded" = "Schijven toegevoegd";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"noGameFrameIsAvailableTo" = "Er is nog geen spelbeeld beschikbaar om vast te leggen.";

@@ -1,0 +1,31 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* JoystickConfiguration: User-visible label, instruction, or error message. */
+"button0" = "Knop 0";
+
+/* JoystickConfiguration: User-visible label, instruction, or error message. */
+"button1" = "Knop 1";
+
+/* JoystickConfiguration: User-visible label, instruction, or error message. */
+"down" = "Omlaag";
+
+/* JoystickConfiguration: Formatted message. control: runtime text; keep its placeholder; source: runtime text; keep its placeholder */
+"assignmentTooltip" = "%1$@: %2$@";
+
+/* JoystickConfiguration: Formatted message. control: runtime text; keep its placeholder; source: runtime text; keep its placeholder */
+"assignmentAccessibilityLabel" = "%1$@, %2$@";
+
+/* JoystickConfiguration: User-visible label, instruction, or error message. */
+"left" = "Links";
+
+/* JoystickConfiguration: User-visible label, instruction, or error message. */
+"right" = "Rechts";
+
+/* JoystickConfiguration: User-visible label, instruction, or error message. */
+"up" = "Omhoog";
+
+/* Short key name drawn on the joystick illustration for a legacy keyboard assignment. */
+"commandKeyCaption" = "Command";
+
+/* Short key name drawn on the joystick illustration for a legacy keyboard assignment. */
+"optionKeyCaption" = "Option";

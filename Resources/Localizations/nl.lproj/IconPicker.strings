@@ -1,0 +1,51 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* IconPicker: Formatted message. searchName: runtime text; keep its placeholder */
+"apple2GsGame" = "Apple 2gs game %1$@";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"chooseAnImageFirst" = "Kies eerst een afbeelding.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"chooseLocalImage" = "Kies lokale afbeelding…";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"choosePlayerIcon" = "Kies spelericoon";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"clickAnImageResultOrChoose" = "Klik op een zoekresultaat of kies een lokale afbeelding.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"couldNotLoadThatImageTry" = "Afbeelding laden mislukt. Probeer een ander resultaat of een lokaal bestand.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"dragAndZoomThenUseThis" = "Sleep en zoom en gebruik daarna deze uitsnede.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"dragToPositionTheSquareCrop" = "Sleep om de vierkante uitsnede te plaatsen.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"ifNoImagesAppearTryAnother" = "Geen afbeeldingen? Probeer een andere zoekopdracht of kies een lokale afbeelding.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"loadingSelectedImage" = "Geselecteerde afbeelding laden…";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"search" = "Zoek";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"searchUnavailableTryAgainOrChoose" = "Zoeken niet beschikbaar. Probeer het opnieuw of kies een lokale afbeelding.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"searchingDuckduckgoImages" = "Zoeken naar DuckDuckGo-afbeeldingen…";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"selectAnImageToCrop" = "Kies een afbeelding om bij te snijden";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"useThisCrop" = "Gebruik deze uitsnede";
+
+/* Empty image-search grid while loading. */
+"searchingForImages" = "Zoeken naar afbeeldingen…";
+/* Accessibility label; number is the result position, starting at one. */
+"selectImage" = "Kies afbeelding %1$ld";

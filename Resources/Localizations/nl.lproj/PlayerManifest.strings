@@ -1,0 +1,43 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"oneMHz" = "1,0 MHz";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"twoPointEightMHz" = "2,8 MHz";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"eightMHz" = "8 MHz";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"appleIiPlayer" = "Apple II Player";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"chooseASupportedExpansionRamSize" = "Kies een ondersteunde hoeveelheid extra RAM.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"chooseSlot56Or7" = "Kies slot 5, 6 of 7 en minstens één schijf.";
+
+/* PlayerManifest: Formatted message. kind: runtime text; keep its placeholder; number: numeric value */
+"drive" = "%1$@ station %2$ld";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"enterAnAppNameWithoutSlashes" = "Voer een appnaam in zonder schuine strepen, dubbele punten of besturingstekens.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"giveEachDiskANameWithout" = "Geef elke schijf een naam zonder besturingstekens.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"initialDisksMustUseAnAvailable" = "Beginschijven moeten een beschikbaar station gebruiken.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"mountABootDiskInDrive" = "Plaats een opstartschijf in station 1 van het opstartslot en wijs elke schijfkopie aan een afzonderlijk station toe.";
+
+/* PlayerManifest: Formatted message. number: numeric value */
+"smartportDrive" = "SmartPort-station %1$ld";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"thePlayerMachineConfigurationIsInvalid" = "De machineconfiguratie van de speler is ongeldig.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"unlimited" = "Onbeperkt";

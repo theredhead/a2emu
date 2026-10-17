@@ -1,0 +1,49 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* Common: User-visible label, instruction, or error message. */
+"browse" = "Blader…";
+
+/* Common: User-visible label, instruction, or error message. */
+"cancel" = "Annuleer";
+
+/* Common: User-visible label, instruction, or error message. */
+"close" = "Sluit";
+
+/* Common: User-visible label, instruction, or error message. */
+"continueAction" = "Ga door…";
+
+/* Common: User-visible label, instruction, or error message. */
+"deleteAction" = "Verwijder…";
+
+/* Common: User-visible label, instruction, or error message. */
+"file" = "Archief";
+
+/* Common: User-visible label, instruction, or error message. */
+"importAction" = "Importeer…";
+
+/* Common: User-visible label, instruction, or error message. */
+"pause" = "Pauzeer";
+
+/* Common: User-visible label, instruction, or error message. */
+"quit" = "Stop";
+
+/* Common: User-visible label, instruction, or error message. */
+"reset" = "Herstart";
+
+/* Common: User-visible label, instruction, or error message. */
+"resume" = "Hervat";
+
+/* Common: User-visible label, instruction, or error message. */
+"save" = "Bewaar";
+
+/* Common: User-visible label, instruction, or error message. */
+"snapshots" = "Momentopnamen…";
+
+/* Common: User-visible label, instruction, or error message. */
+"unassigned" = "Niet toegewezen";
+
+/* Floppy drive size used in a UI label. Preserve the numeric size. */
+"floppy525Type" = "5,25-inch";
+
+/* Floppy drive size used in a UI label. Preserve the numeric size. */
+"floppy35Type" = "3,5-inch";

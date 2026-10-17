@@ -1,0 +1,7 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* IconEncoder: User-visible label, instruction, or error message. */
+"couldNotEncodeIcon" = "Icoon coderen mislukt.";
+
+/* IconEncoder: User-visible label, instruction, or error message. */
+"theIconImageIsInvalid" = "De icoonafbeelding is ongeldig.";

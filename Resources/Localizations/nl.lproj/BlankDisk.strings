@@ -1,0 +1,19 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* BlankDisk: User-visible label, instruction, or error message. */
+"floppy35" = "3,5-inch diskette — 800 KB";
+
+/* BlankDisk: User-visible label, instruction, or error message. */
+"floppy525" = "5,25-inch diskette — 140 KB";
+
+/* BlankDisk: User-visible label, instruction, or error message. */
+"smartportHardDisk10Mb" = "SmartPort-harde schijf — 10 MB";
+
+/* BlankDisk: User-visible label, instruction, or error message. */
+"smartportHardDisk20Mb" = "SmartPort-harde schijf — 20 MB";
+
+/* BlankDisk: User-visible label, instruction, or error message. */
+"smartportHardDisk32Mb" = "SmartPort-harde schijf — 32 MB";
+
+/* BlankDisk: User-visible label, instruction, or error message. */
+"smartportHardDisk5Mb" = "SmartPort-harde schijf — 5 MB";

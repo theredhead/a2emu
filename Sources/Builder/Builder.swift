@@ -216,9 +216,11 @@ final class BuilderArtworkView: NSView {
         for (index, title) in [commonIntl.floppy525Type, commonIntl.floppy35Type, "SmartPort"].enumerated() {
             let x = CGFloat(28 + index * 190)
             let label = NSTextField(labelWithString: builderIntl.drives(title: title))
-            label.frame = NSRect(x: x, y: 410, width: 110, height: 24)
+            let labelWidth = max(102, ceil(label.intrinsicContentSize.width) + 4)
+            label.frame = NSRect(x: x, y: 410, width: labelWidth, height: 24)
             root.addSubview(label)
-            let count = NSPopUpButton(frame: NSRect(x: x + 108, y: 407, width: 70, height: 28))
+            let count = NSPopUpButton(
+                frame: NSRect(x: x + labelWidth + 6, y: 407, width: 172 - labelWidth, height: 28))
             count.addItems(withTitles: (0...(index == 2 ? 16 : 2)).map { String($0) })
             count.selectItem(at: index == 0 ? 1 : 0)
             count.target = self
@@ -253,7 +255,8 @@ final class BuilderArtworkView: NSView {
         let snapshotButton = NSButton(
             title: builderIntl.startupSnapshot, target: self, action: #selector(chooseSnapshot(_:)))
         snapshotButton.bezelStyle = .rounded
-        snapshotButton.frame = NSRect(x: 28, y: 610, width: 160, height: 32)
+        snapshotButton.frame = NSRect(
+            x: 28, y: 610, width: max(160, ceil(snapshotButton.intrinsicContentSize.width)), height: 32)
         root.addSubview(snapshotButton)
         snapshotLabel.frame = NSRect(x: 212, y: 614, width: 334, height: 24)
         snapshotLabel.lineBreakMode = .byTruncatingMiddle

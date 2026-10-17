@@ -1,0 +1,76 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* PlayerMenu: Formatted message. appName: runtime text; keep its placeholder */
+"about" = "Over %1$@";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"automaticControllerOrKeyboard" = "Automatisch (controller of toetsenbord)";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"changeRom" = "Wijzig ROM…";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"configuration" = "Configuratie";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"configurationF4" = "Configuratie  F4";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"configureControls" = "Stel besturing in…";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"controls" = "Besturing";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"copyTextScreen" = "Kopieer tekstscherm";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"disks" = "Schijven";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"edit" = "Wijzig";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"eject" = "Verwijder schijf";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"emulation" = "Emulatie";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"gameController" = "Gamecontroller";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"keyboardJoystickNumericKeypad" = "Toetsenbordjoystick (numeriek toetsenblok)";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"mouseJoystick" = "Muisjoystick";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"paste" = "Plak";
+
+/* PlayerMenu: Formatted message. appName: runtime text; keep its placeholder */
+"quit" = "Stop %1$@";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"resizeInIntegerMultiples" = "Schaal in gehele veelvouden";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"restartFromDiskWithClearedRam" = "Start opnieuw vanaf schijf met leeg RAM; behoud schijfgegevens en de gekozen snelheid.";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"saveScreenshot" = "Bewaar schermafbeelding";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"showDebugger" = "Toon debugger";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"showSavedDisk" = "Toon bewaarde schijf";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"speed" = "Snelheid";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"toggleFullScreen" = "Schakel schermvullende weergave in of uit";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"view" = "Weergave";

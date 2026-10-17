@@ -1,0 +1,28 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"chooseAnA2EmuPlayerApp" = "Kies een a2emu-spelerapp.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"couldNotPrepareTheStartupSnapshot" = "Startmomentopname voorbereiden voor ondertekening mislukt.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"couldNotSignTheExportedPlayer" = "De geëxporteerde speler ondertekenen is mislukt.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"eachDiskMustHaveADifferent" = "Elke schijf moet een andere bestandsnaam hebben.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"thatAppAlreadyExistsChooseA" = "Die app bestaat al. Kies een andere naam of locatie.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"theBundledStartupSnapshotUsesDifferent" = "De meegeleverde startmomentopname gebruikt andere schijven.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"theStartupSnapshotMustUseThis" = "De startmomentopname moet de schijven en beschikbare stations van deze speler gebruiken.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"thisPlayerHasNoApplicationIdentifier" = "Deze speler heeft geen app-identificatie.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"thisPlayerIsMissingABundled" = "Bij deze speler ontbreekt een meegeleverde schijfkopie.";

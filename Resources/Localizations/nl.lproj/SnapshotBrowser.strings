@@ -1,0 +1,58 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"browserInstructions" = "Kies een momentopname om naar dat moment terug te keren. Elke momentopname bevat de eigen schijfstatus.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"saveInstructions" = "Geef dit moment een naam. De schijven en een voorbeeld worden erbij bewaard.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"moveThisSnapshotToTheTrash" = "Verplaats deze momentopname naar de prullenmand?";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"moveToTrash" = "Verplaats naar prullenmand";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"noSnapshotsYetSaveYourFirst" = "Nog geen momentopnamen. Bewaar je eerste moment.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"restoreSnapshot" = "Herstel momentopname";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"restoringSnapshot" = "Momentopname herstellen…";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"saveSnapshot" = "Bewaar momentopname…";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"saveSnapshotTitle" = "Bewaar momentopname";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"savedGame" = "Bewaard spel";
+
+/* SnapshotBrowser: Formatted message. gameName: runtime text; keep its placeholder */
+"windowTitle" = "Bewaarde momentopnamen — %1$@";
+
+/* SnapshotBrowser: Formatted message. count: numeric value */
+"savedSnapshotCount" = "%1$ld bewaarde momentopnamen";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"savingSnapshot" = "Momentopname bewaren…";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"showInFinder" = "Toon in Finder";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"snapshotCouldNotBeCompleted" = "Momentopname voltooien mislukt";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"thisSnapshotIsAlreadyInYour" = "Deze momentopname staat al in je bibliotheek.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"thisSnapshotUsesADifferentSet" = "Deze momentopname gebruikt een andere schijvenset.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"deleteExplanation" = "Je huidige spel en de bijbehorende werkschijven blijven behouden.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"yourSavedMoments" = "Je bewaarde momenten";

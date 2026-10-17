@@ -1,0 +1,292 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"activeGameController" = "Actieve gamecontroller";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"appleIiAnalogJoystick" = "Apple II analoge joystick";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"automatic" = "Automatisch";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"backslash" = "Backslash";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"backtick" = "Accent grave";
+
+/* ControllerConfiguration: Formatted message. bindings: runtime text; keep its placeholder */
+"boundTo" = "Gekoppeld aan: %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"buttonInstructions" = "Kies de controllerknop die deze oranje joystickknop moet indrukken.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"capsLock" = "Caps Lock";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"clearKeyBindings" = "Wis toetskoppelingen";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"clearMouseBinding" = "Wis muiskoppeling";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"idleBindingHint" = "Klik op een toets en bedien daarna de controller.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"commandOpenApple" = "Command / Open Apple";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"configureControls" = "Stel besturing in";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"control" = "Control";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controller" = "Controller";
+
+/* ControllerConfiguration: Formatted message. control: runtime text; keep its placeholder */
+"controllerAssignment" = "Controllertoewijzing voor %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerButton" = "Controllerknop";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerDeadZone" = "Dode zone van controller";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerMovement" = "Controllerbeweging";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"dPad" = "D-pad";
+
+/* ControllerConfiguration: Formatted message. direction: runtime text; keep its placeholder */
+"dPadDirection" = "D-pad %1$@";
+
+/* ControllerConfiguration: Formatted message. percent: numeric value */
+"deadZone" = "Dode zone: %1$ld%%";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"initialDeadZone" = "Dode zone: 8%";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"delete" = "Delete";
+
+/* ControllerConfiguration: Formatted message. control: runtime text; keep its placeholder */
+"direction" = "Richting %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"directionInstructions" = "Alle vier de richtingen volgen de bewegingsbron hieronder. Beweeg je controller om de stick en de oranje knoppen te testen.";
+
+/* ControllerConfiguration: Formatted message. name: runtime text; keep its placeholder */
+"disconnected" = "%1$@ (niet verbonden)";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"disconnectedControllerHint" = "Geselecteerde controller niet verbonden · Kies een verbonden controller.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"down" = "Omlaag";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"downArrow" = "Pijl omlaag";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"escape" = "Escape";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"invertHorizontal" = "Keer horizontaal om";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"invertVertical" = "Keer verticaal om";
+
+/* ControllerConfiguration: Formatted message. control: runtime text; keep its placeholder */
+"joystick" = "Joystick %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"joystickInstructions" = "Kies links een bedieningselement en wijs rechts je controller toe.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"joystickSettings" = "🕹️ Joystickinstellingen";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"key" = "Toets";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keyboardInstructions" = "Kies een toets of muisbediening en bedien daarna de controller om die te koppelen.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keyboardMouse" = "Toetsenbord en muis";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keyboardMouseSettings" = "⌨️ Toetsenbord- en muisinstellingen";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad0" = "Numeriek 0";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad1" = "Numeriek 1";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad2" = "Numeriek 2";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad3" = "Numeriek 3";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad4" = "Numeriek 4";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad5" = "Numeriek 5";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad6" = "Numeriek 6";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad7" = "Numeriek 7";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad8" = "Numeriek 8";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad9" = "Numeriek 9";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadClear" = "Numeriek Clear";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadDecimal" = "Numerieke punt";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadDivide" = "Numeriek /";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadEnter" = "Numeriek Enter";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadEquals" = "Numeriek =";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadMinus" = "Numeriek -";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadMultiply" = "Numeriek *";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadPlus" = "Numeriek +";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"left" = "Links";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftAnalogStickDPad" = "Linker analoge stick + D-pad";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftArrow" = "Pijl links";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftShoulder" = "Linker schouderknop";
+
+/* ControllerConfiguration: Formatted message. direction: runtime text; keep its placeholder */
+"leftStick" = "Linkerstick %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftTrigger" = "Linker trigger";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"liveInputPreview" = "Live invoerweergave";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"lowerLeft" = "Linksonder";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"lowerRight" = "Rechtsonder";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"menuStart" = "Menu / Start";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseButton" = "Muisknop";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseDown" = "Muis omlaag";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseLeft" = "Muis links";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseMovement" = "Muisbeweging";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseRight" = "Muis rechts";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseUp" = "Muis omhoog";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"previewHint" = "Beweeg je controller voor een voorbeeld. Klik op een bedieningselement om het toe te wijzen.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"noControllerHint" = "Geen controller verbonden · Toewijzingen kunnen wel worden bewerkt.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"optionClosedApple" = "Option / Gesloten Apple";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"optionsSelect" = "Options / Select";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseMovementBindingHint" = "Laat de controller los en beweeg daarna een stick of de D-pad. Dit vervangt de bijbehorende toetskoppelingen.";
+
+/* ControllerConfiguration: Formatted message. name: runtime text; keep its placeholder */
+"keyBindingHint" = "Laat de controller los en druk daarna op een knop of beweeg in een richting om %1$@ te koppelen.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseButtonBindingHint" = "Laat de controller los en druk daarna op de knop waarmee je wilt klikken.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"restoreDefaults" = "Herstel standaardinstellingen";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"returnLabel" = "Return";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"right" = "Rechts";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightAnalogStick" = "Rechter analoge stick";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightArrow" = "Pijl rechts";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightShoulder" = "Rechter schouderknop";
+
+/* ControllerConfiguration: Formatted message. direction: runtime text; keep its placeholder */
+"rightStick" = "Rechterstick %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightTrigger" = "Rechter trigger";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerSelectionHint" = "Kies een controller voor deze speler. Bij de volgende start wordt Automatisch hersteld.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"shift" = "Shift";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"space" = "Spatie";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"tab" = "Tab";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"up" = "Omhoog";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"upArrow" = "Pijl omhoog";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"upperLeft" = "Linksboven";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"upperRight" = "Rechtsboven";

@@ -1,0 +1,13 @@
+/* Dutch translations. Preserve numbered format placeholders when translating. */
+
+/* Snapshots: Formatted message. recoveryPath: runtime text; keep its placeholder; errorDescription: runtime text; keep its placeholder */
+"recoveryFailure" = "De momentopname en de vorige machinestatus konden niet worden hersteld. De emulator is gepauzeerd. Herstelgegevens: %1$@. %2$@";
+
+/* Snapshots: User-visible label, instruction, or error message. */
+"startTheEmulatorBeforeSavingA" = "Start de emulator voordat je een momentopname bewaart.";
+
+/* Snapshots: User-visible label, instruction, or error message. */
+"thisSnapshotBelongsToAPlayer" = "Deze momentopname hoort bij een speler met een andere schijvenset.";
+
+/* Snapshots: User-visible label, instruction, or error message. */
+"thisSnapshotHasAMountedDisk" = "Deze momentopname bevat een geplaatste schijf die niet bij deze speler hoort.";
