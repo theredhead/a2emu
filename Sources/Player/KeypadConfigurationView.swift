@@ -1,11 +1,39 @@
 import Cocoa
 
-/// A sculpted keycap whose native button retains keyboard and accessibility support.
-private final class KeypadKey: NSButton {
+/// A controller symbol and its category color, kept separate from the keyboard legend.
+struct KeyAssignmentBadge {
+    let input: String
+
+    var color: NSColor {
+        switch input {
+        case "A": return .systemGreen
+        case "B": return .systemRed
+        case "X": return .systemBlue
+        case "Y": return .systemYellow
+        default:
+            if input.hasPrefix("D") { return .systemOrange }
+            if input.hasPrefix("R") { return .systemPurple }
+            if input.hasPrefix("L") { return .systemBlue }
+            return .systemGray
+        }
+    }
+
+    var symbol: String {
+        if input == "Start" { return "▶" }
+        if input == "Select" { return "⧉" }
+        return input
+    }
+}
+
+/// A flat keycap with controller badges overlapping its top-right corner.
+final class KeypadKey: NSButton {
+    var compact = false
+    var returnNotch: CGFloat?
+    override var isFlipped: Bool { return returnNotch == nil ? super.isFlipped : false }
     let code: Int
     var selected = false { didSet { needsDisplay = true } }
     var active = false { didSet { needsDisplay = true } }
-    var assignmentHint = "" { didSet { needsDisplay = true } }
+    var assignmentBadges: [KeyAssignmentBadge] = [] { didSet { needsDisplay = true } }
 
     init(title: String, code: Int, frame: NSRect) {
         self.code = code
@@ -19,135 +47,92 @@ private final class KeypadKey: NSButton {
 
     required init?(coder: NSCoder) { return nil }
 
+    private func keyShape(in rect: NSRect, radius: CGFloat = 5) -> NSBezierPath {
+        guard let notch = returnNotch else {
+            return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+        }
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: rect.minX, y: rect.minY))
+        path.line(to: NSPoint(x: rect.maxX, y: rect.minY))
+        path.line(to: NSPoint(x: rect.maxX, y: rect.maxY))
+        path.line(to: NSPoint(x: rect.minX + notch, y: rect.maxY))
+        path.line(to: NSPoint(x: rect.minX + notch, y: rect.minY + rect.height / 2))
+        path.line(to: NSPoint(x: rect.minX, y: rect.minY + rect.height / 2))
+        path.close()
+        return path
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let local = convert(point, from: superview)
+        if returnNotch != nil && !keyShape(in: bounds).contains(local) { return nil }
+        return super.hitTest(point)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         let rect = bounds.insetBy(dx: 4, dy: 4)
-        let body = NSBezierPath(roundedRect: rect, xRadius: 7, yRadius: 7)
-        NSColor(calibratedRed: 0.36, green: 0.36, blue: 0.31, alpha: 1).setFill()
-        body.fill()
-        let top = NSBezierPath(
-            roundedRect: NSRect(
-                x: rect.minX + 8, y: rect.minY + 10,
-                width: rect.width - 14, height: rect.height - 15),
-            xRadius: 5, yRadius: 5)
-        let light =
+        let top = keyShape(in: rect)
+        let faceColor =
             selected
-            ? NSColor.controlAccentColor
-            : NSColor(calibratedRed: 0.88, green: 0.88, blue: 0.80, alpha: 1)
-        let dark =
-            selected
-            ? NSColor.controlAccentColor.blended(withFraction: 0.18, of: .black)!
-            : NSColor(calibratedRed: 0.65, green: 0.66, blue: 0.58, alpha: 1)
-        NSGradient(starting: light, ending: dark)?.draw(in: top, angle: 70)
+            ? NSColor.controlAccentColor : NSColor(calibratedRed: 0.88, green: 0.88, blue: 0.80, alpha: 1)
+        faceColor.setFill()
+        top.fill()
+        NSColor(calibratedWhite: 0.35, alpha: 0.35).setStroke()
+        top.lineWidth = 1
+        top.stroke()
         if active {
             NSColor.systemGreen.withAlphaComponent(0.6).setFill()
             top.fill()
         }
         if selected || isHighlighted {
             NSColor.controlAccentColor.setStroke()
-            let ring = NSBezierPath(roundedRect: rect.insetBy(dx: -1, dy: -1), xRadius: 8, yRadius: 8)
+            let ring = keyShape(in: rect.insetBy(dx: -1, dy: -1), radius: 8)
             ring.lineWidth = 2
             ring.stroke()
         }
         let color: NSColor = selected ? .white : NSColor(calibratedWhite: 0.20, alpha: 1)
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: title.count > 2 ? 12 : 22, weight: .medium),
+            .font: NSFont.systemFont(
+                ofSize: compact
+                    ? (title.count > 2 ? (bounds.width < 50 ? 9 : 11) : 16) : (title.count > 2 ? 14 : 26),
+                weight: .medium),
             .foregroundColor: color,
         ]
         let size = title.size(withAttributes: attributes)
         title.draw(
-            at: NSPoint(x: top.bounds.midX - size.width / 2, y: top.bounds.midY - size.height / 2 + 3),
+            at: NSPoint(
+                x: top.bounds.midX - size.width / 2,
+                y: (returnNotch == nil ? top.bounds.midY : top.bounds.minY + 16) - size.height / 2),
             withAttributes: attributes)
-        let hintAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
-            .foregroundColor: color.withAlphaComponent(0.8),
-        ]
-        assignmentHint.draw(
-            at: NSPoint(x: top.bounds.minX + 6, y: top.bounds.minY + 4),
-            withAttributes: hintAttributes)
+        drawAssignmentBadges()
+    }
+
+    private func drawAssignmentBadges() {
+        let visible = Array(assignmentBadges.prefix(2))
+        for (index, badge) in visible.enumerated().reversed() {
+            let diameter: CGFloat = 18
+            let rect = NSRect(
+                x: bounds.maxX - diameter - CGFloat(index) * 15,
+                y: isFlipped ? 0 : bounds.maxY - diameter, width: diameter, height: diameter)
+            let circle = NSBezierPath(ovalIn: rect)
+            badge.color.setFill()
+            circle.fill()
+            NSColor(calibratedWhite: 0.98, alpha: 1).setStroke()
+            circle.lineWidth = 1.5
+            circle.stroke()
+            let more = index == 1 && assignmentBadges.count > 2
+            let symbol = more ? "+\(assignmentBadges.count - 1)" : badge.symbol
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: symbol.count > 1 ? 8 : 11, weight: .bold),
+                .foregroundColor: badge.input == "Y" ? NSColor.black : NSColor.white,
+            ]
+            let size = symbol.size(withAttributes: attributes)
+            symbol.draw(
+                at: NSPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2),
+                withAttributes: attributes)
+        }
     }
 
     override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: bounds.insetBy(dx: 3, dy: 3), xRadius: 8, yRadius: 8).fill()
-    }
-}
-
-/// A clickable Apple IIgs-style keypad, including the center key and two Apple-key controls.
-final class KeypadConfigurationView: NSView {
-    var keySelected: ((Int) -> Void)?
-    var selectedKey = 87 {
-        didSet { for key in keys { key.selected = key.code == selectedKey } }
-    }
-    private var keys: [KeypadKey] = []
-
-    override init(frame: NSRect) {
-        super.init(frame: frame)
-        let rows: [[(String, Int)]] = [
-            [("clear", 71), ("=", 81), ("/", 75), ("*", 67)],
-            [("7", 89), ("8", 91), ("9", 92), ("−", 78)],
-            [("4", 86), ("5", 87), ("6", 88), ("+", 69)],
-            [("1", 83), ("2", 84), ("3", 85), ("enter", 76)],
-        ]
-        for (row, entries) in rows.enumerated() {
-            for (column, entry) in entries.enumerated() {
-                let y = CGFloat(371 - row * 75)
-                let rect = NSRect(
-                    x: 36 + column * 89, y: Int(y) - (entry.1 == 76 ? 75 : 0),
-                    width: 82, height: entry.1 == 76 ? 144 : 69)
-                addKey(title: entry.0, code: entry.1, frame: rect)
-            }
-        }
-        addKey(title: "0", code: 82, frame: NSRect(x: 36, y: 71, width: 171, height: 69))
-        addKey(title: ".", code: 65, frame: NSRect(x: 214, y: 71, width: 82, height: 69))
-        addKey(title: "Open Apple", code: 55, frame: NSRect(x: 36, y: 10, width: 171, height: 44))
-        addKey(title: "Closed Apple", code: 58, frame: NSRect(x: 214, y: 10, width: 171, height: 44))
-    }
-
-    required init?(coder: NSCoder) { return nil }
-
-    private func addKey(title: String, code: Int, frame: NSRect) {
-        let key = KeypadKey(title: title, code: code, frame: frame)
-        key.target = self
-        key.action = #selector(selectKey(_:))
-        key.selected = code == selectedKey
-        addSubview(key)
-        keys.append(key)
-    }
-
-    @objc private func selectKey(_ sender: KeypadKey) {
-        selectedKey = sender.code
-        keySelected?(sender.code)
-    }
-
-    func showAssignments(_ mapping: ControllerMapping) {
-        let glyphs = ["←", "→", "↑", "↓", "↖", "↗", "↙", "↘"]
-        let directions = mapping.directionKeys
-        let buttons = mapping.buttonKeys
-        for key in keys {
-            var labels = directions.indices.filter { directions[$0] == key.code }.map { glyphs[$0] }
-            labels += buttons.indices.filter { buttons[$0] == key.code }.map {
-                ControllerMapping.buttonNames[$0]
-            }
-            key.assignmentHint = labels.joined(separator: " ")
-            key.toolTip =
-                labels.isEmpty ? "Click to assign controller inputs" : labels.joined(separator: ", ")
-            key.setAccessibilityValue(labels.isEmpty ? "Unassigned" : labels.joined(separator: ", "))
-        }
-    }
-
-    func showPressedKeys(_ pressed: Set<Int32>) {
-        for key in keys { key.active = pressed.contains(Int32(key.code)) }
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        let housing = NSBezierPath(
-            roundedRect: NSRect(x: 22, y: 58, width: 378, height: 394),
-            xRadius: 14, yRadius: 14)
-        NSColor(calibratedRed: 0.77, green: 0.78, blue: 0.70, alpha: 1).setFill()
-        housing.fill()
-        let recess = NSBezierPath(
-            roundedRect: NSRect(x: 30, y: 65, width: 362, height: 382),
-            xRadius: 9, yRadius: 9)
-        NSColor(calibratedWhite: 0.16, alpha: 1).setFill()
-        recess.fill()
+        keyShape(in: bounds.insetBy(dx: 3, dy: 3), radius: 8).fill()
     }
 }

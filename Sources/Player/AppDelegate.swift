@@ -169,6 +169,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     let aboutPanel = AppAbout()
 
     @objc func showAbout(_: AnyObject) {
+        setDialogOpen(true, reason: "About")
+        defer { setDialogOpen(false, reason: "About") }
+        aboutPanel.creditsVisibilityChanged = { [weak self] open in
+            self?.setDialogOpen(open, reason: "Credits")
+        }
         aboutPanel.show()
     }
 
@@ -372,6 +377,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         let entries = PlayerMenuLayout.main(
             appName: PlayerManifest.displayName,
             isRunning: { [weak self] in self?.emulatorStarted == true },
+            canTogglePause: { [weak self] in
+                self?.emulatorStarted == true && self?.dialogPauseReasons.isEmpty == true
+            },
             showAdvanced: { [weak self] in self?.advancedMenus == true })
         let layout = PlayerMenu(entries: entries, target: self, menuDelegate: self)
         playerMenu = layout
@@ -399,6 +407,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     var emulatorStarted = false
     var settingUpROM = false
     private(set) var emulationPaused = false
+    private var pauseRequested = false
+    private var pauseReason: String?
+    private var dialogPauseReasons = Set<String>()
     private var pauseMenuItem: NSMenuItem?
     var machine: PlayerManifest!
 
@@ -489,12 +500,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     let controllerMappingPanel = ControllerMappingPanel()
 
     @objc func configureControls(_ sender: Any?) {
+        setDialogOpen(true, reason: "Controller Settings")
+        controllerMappingPanel.didClose = { [weak self] in
+            self?.setDialogOpen(false, reason: "Controller Settings")
+        }
         controllerMappingPanel.show(
             mapping: gamepadInput.mapping,
             controllers: { [weak self] in self?.gamepadInput.availableControllers() ?? [] },
             selectedControllerID: gamepadInput.selectedControllerID,
             preview: { [weak self] mapping, controllerID in
                 self?.gamepadInput.previewState(mapping: mapping, controllerID: controllerID)
+            },
+            supportedButtons: { [weak self] controllerID in
+                self?.gamepadInput.supportedButtonIndices(controllerID: controllerID)
             },
             completion: { [weak self] mapping, controllerID in
                 self?.gamepadInput.selectedControllerID = controllerID
@@ -618,21 +636,50 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     @objc func togglePause(_ sender: Any?) {
+        guard dialogPauseReasons.isEmpty else { return }
         setEmulationPaused(!emulationPaused)
     }
 
-    /// Freezes CPU execution while leaving menus, device discovery, and controller preview responsive.
+    /// Records a pause independently of temporary windows, including disconnects and recovery failures.
     func setEmulationPaused(_ paused: Bool, reason: String? = nil) {
-        guard emulatorStarted, paused != emulationPaused else { return }
-        emulationPaused = paused
-        if paused {
-            EmulatorCore.stopKeyRepeat()
-            EmulatorCore.setKeyboardFocus(false)
-        } else {
-            // Exclude paused wall-clock time from the core's frame pacing estimates.
-            EmulatorCore.resetFrameClock()
-            EmulatorCore.setKeyboardFocus(mainWindowInfo.window?.isKeyWindow == true)
+        guard emulatorStarted else { return }
+        if paused != pauseRequested || reason != nil {
+            pauseReason = paused ? reason : nil
         }
+        pauseRequested = paused
+        updateEmulationPause()
+    }
+
+    /// Releases only the browser's pause; manual and other dialog pauses remain in effect.
+    func setSnapshotBrowserOpen(_ open: Bool) {
+        setDialogOpen(open, reason: "Snapshots")
+    }
+
+    /// Each dialog owns its pause so overlapping windows cannot resume each other.
+    func setDialogOpen(_ open: Bool, reason: String) {
+        guard emulatorStarted else { return }
+        if open {
+            dialogPauseReasons.insert(reason)
+        } else {
+            dialogPauseReasons.remove(reason)
+        }
+        updateEmulationPause()
+    }
+
+    private func updateEmulationPause() {
+        let paused = pauseRequested || !dialogPauseReasons.isEmpty
+        if paused != emulationPaused {
+            emulationPaused = paused
+            if paused {
+                EmulatorCore.stopKeyRepeat()
+                EmulatorCore.setKeyboardFocus(false)
+            } else {
+                // Exclude paused wall-clock time from the core's frame pacing estimates.
+                EmulatorCore.resetFrameClock()
+                EmulatorCore.setKeyboardFocus(mainWindowInfo.window?.isKeyWindow == true)
+            }
+        }
+        let reason = pauseReason ?? dialogPauseReasons.sorted().first
         let suffix = paused ? " — Paused" + (reason.map { " (\($0))" } ?? "") : ""
         mainWindowInfo.window?.title = PlayerManifest.displayName + suffix
         updatePauseMenu()
@@ -640,7 +687,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     private func updatePauseMenu() {
         pauseMenuItem?.title = emulationPaused ? "Resume" : "Pause"
-        pauseMenuItem?.isEnabled = emulatorStarted
+        pauseMenuItem?.isEnabled = emulatorStarted && dialogPauseReasons.isEmpty
         if let layout = playerMenu { layout.refresh(layout.root) }
     }
 
@@ -723,6 +770,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         guard emulatorStarted else {
             return
         }
+        setDialogOpen(true, reason: "ROM Setup")
+        defer { setDialogOpen(false, reason: "ROM Setup") }
         settingUpROM = true
         defer { settingUpROM = false }
         if let rom = ROMSetup.choose(directory: supportDirectory) {
@@ -794,10 +843,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
         mainWindowInfo.createWindow()
         NSApp.activate(ignoringOtherApps: true)
+        gamepadInput.mouseEvent = { [weak self] dx, dy, pressed in
+            guard let self = self else { return }
+            _ = EmulatorCore.updateMouse(
+                self.mainWindowInfo.imagePointer, x: dx, y: dy,
+                buttons: pressed == true ? 1 : 0, validButtons: 0x1000 | (pressed == nil ? 0 : 1))
+        }
         runEmulationLoop()
     }
 
-    /// Schedules the next main-thread tick and pauses core execution during ROM setup.
+    /// Schedules main-thread input updates and runs the core only while emulation is unpaused.
     func runEmulationLoop() {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(emulationPaused ? 33 : 1)) {
             self.runEmulationLoop()

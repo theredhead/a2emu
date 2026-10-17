@@ -110,7 +110,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
     private var requestID = 0
     private var completion: ((Data) -> Void)?
 
-    func show(diskName: String, completion: @escaping (Data) -> Void) {
+    func show(searchName: String, completion: @escaping (Data) -> Void) {
         self.completion = completion
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1010, height: 640),
@@ -119,7 +119,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         window.isReleasedWhenClosed = false
         window.delegate = self
         let root = window.contentView!
-        query.stringValue = "apple ][ " + diskName
+        query.stringValue = "Apple 2gs game " + searchName
         query.frame = NSRect(x: 20, y: 592, width: 520, height: 28)
         query.cell?.sendsActionOnEndEditing = false
         query.target = self

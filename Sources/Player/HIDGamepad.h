@@ -5,6 +5,7 @@ void a2_hid_gamepad_init(void);
 int a2_hid_gamepad_connected(void);
 const char *a2_hid_gamepad_name(void);
 float a2_hid_gamepad_value(int index);
+int a2_hid_gamepad_has_button(int index);
 // Enumerate every matching device, including identical models, by connection ID.
 int a2_hid_gamepad_count(void);
 uint64_t a2_hid_gamepad_id(int index);

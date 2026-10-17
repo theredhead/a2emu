@@ -4,7 +4,8 @@ import WebKit
     static func main() {
         let app = NSApplication.shared
         let picker = IconPicker()
-        picker.show(diskName: "Test") { _ in }
+        picker.show(searchName: "Rastan") { _ in }
+        precondition(picker.query.stringValue == "Apple 2gs game Rastan")
         picker.searchBrowser.stopLoading()
         picker.searchBrowser.navigationDelegate = nil
         precondition(picker.query.cell?.sendsActionOnEndEditing == false)

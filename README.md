@@ -39,10 +39,18 @@ another Mac may need the same first-launch approval.
 
 - **Disks:** swap or eject images when the game asks for another disk.
 - **Configuration → Controls → Configure Controls:** assign controller directions and
-  buttons using the joystick or keypad layout. Diagonals and keypad 5 are mappable.
+  buttons using the joystick or keyboard/keypad layout. For keyboard-only games,
+  choose **Keyboard & Mouse**, click a key on the IIGS keyboard, then activate the
+  controller direction or button that should press it. Both sticks can have separate
+  bindings. The same view includes the numpad. Letters, numbers, arrows, and keypad keys (including diagonals
+  and keypad 5) are supported. Menu / Start and Options / Select can also be assigned
+  when the selected controller exposes them through macOS. The single-button ADB mouse
+  supports controller-button clicks. Select its body to bind all four directions to a stick
+  or D-pad, or select an arrow to bind a mouse direction individually.
 - **Configuration → Speed:** change the running speed; the checkmark follows the emulator.
 - **Emulation → Pause / Resume** (**Command-P**): pause or continue. Losing the active
-  controller also pauses the game.
+  controller also pauses the game. Player dialogs pause while open; closing them
+  preserves any manual or controller-disconnect pause.
 - **Emulation → Reset:** restart the machine with the current disks and speed.
 - **View → Save Screenshot** (**F3**): save a PNG to
   `~/Pictures/Apple II Player/<game-name>/`. Use Fn-F3 if macOS reserves F3.
@@ -55,7 +63,9 @@ its bundled originals. **Disks → Show Saved Disk** opens that player’s folde
 
 ## Snapshots
 
-Open **Emulation → Snapshots…** to save, browse, restore, import or delete snapshots.
+Open **Emulation → Snapshots…** (**F2**) to save, browse, restore, import or delete snapshots.
+Emulation pauses while this window is open. Closing it resumes play unless the
+player was already paused or another pause occurred while browsing.
 Each snapshot includes its machine state, preview and game disks. New saves use
 compression and have descriptive filenames and Finder preview icons.
 

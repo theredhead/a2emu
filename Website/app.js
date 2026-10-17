@@ -44,3 +44,53 @@ if(marquee){
   }
   reduced.addEventListener('change',motion);motion();
 }
+
+// Keep the window in view while the descriptions advance. Appearance is entirely CSS-driven.
+const windowStory = document.querySelector('.window-story');
+if (windowStory) {
+  const steps = [...windowStory.querySelectorAll('.story-step')];
+  const slides = [...windowStory.querySelectorAll('.window-slide')];
+  const compact = window.matchMedia('(max-width: 720px)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let updatePending = false;
+
+  function updateWindowStory() {
+    updatePending = false;
+    const readingLine = window.innerHeight * (compact.matches ? 0.78 : 0.5);
+    const centers = steps.map(step => {
+      const rect = step.getBoundingClientRect();
+      return rect.top + rect.height / 2;
+    });
+    let progress = 0;
+    for (let index = 0; index < centers.length - 1; index++) {
+      if (readingLine < centers[index]) break;
+      const distance = centers[index + 1] - centers[index];
+      const fraction = Math.max(0, Math.min(1, (readingLine - centers[index]) / distance));
+      // Hold each window long enough to read it, then blend through the middle of the scroll.
+      const blend = Math.max(0, Math.min(1, (fraction - 0.3) / 0.4));
+      progress = index + blend * blend * (3 - 2 * blend);
+    }
+    const active = Math.round(progress);
+    for (const [index, slide] of slides.entries()) {
+      const opacity = reducedMotion.matches
+        ? Number(index === active)
+        : Math.max(0, 1 - Math.abs(progress - index));
+      slide.style.opacity = String(opacity);
+      slide.style.pointerEvents = index === active ? 'auto' : 'none';
+      slide.setAttribute('aria-hidden', String(index !== active));
+      for (const link of slide.querySelectorAll('a')) link.tabIndex = index === active ? 0 : -1;
+    }
+  }
+
+  function queueWindowStoryUpdate() {
+    if (updatePending) return;
+    updatePending = true;
+    requestAnimationFrame(updateWindowStory);
+  }
+
+  windowStory.classList.add('is-scroll-story');
+  window.addEventListener('scroll', queueWindowStoryUpdate, {passive: true});
+  window.addEventListener('resize', queueWindowStoryUpdate);
+  reducedMotion.addEventListener('change', queueWindowStoryUpdate);
+  updateWindowStory();
+}

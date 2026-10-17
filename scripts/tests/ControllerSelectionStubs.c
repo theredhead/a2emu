@@ -18,3 +18,5 @@ float a2_hid_gamepad_value(int index) { return index == 0 ? (selected == 100 ? -
 void joystick_callback_init(int type) {}
 void joystick_callback_update(unsigned buttons, int x, int y) { lastX = x; }
 void joystick_update_buttons(void) {}
+
+int a2_hid_gamepad_has_button(int index) { return index >= 0 && index < 8; }

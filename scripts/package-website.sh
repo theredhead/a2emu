@@ -15,7 +15,7 @@ mkdir -p "$output/assets" "$output/downloads"
 size="$(du -k "$release_zip" | awk '{printf "%.1f", $1/1024}')"
 sed -e "s/__VERSION__/$version/g" -e "s/__SIZE__/$size/g" "$repo_root/Website/index.html" > "$output/index.html"
 cp "$repo_root/Website/style.css" "$repo_root/Website/app.js" "$output/"
-cp "$repo_root/Website/assets/"* "$output/assets/"
+ditto --norsrc --noextattr "$repo_root/Website/assets" "$output/assets"
 cp "$release_zip" "$output/downloads/"
 cp "$release_dir.sha256" "$output/downloads/"
 rm -f "$output/downloads/"A2Emu-Builder-and-Player-Source-*.zip

@@ -57,6 +57,7 @@ add_executable(a2emu-player MACOSX_BUNDLE
     Sources/Player/HIDGamepad.c
     Sources/Player/JoystickConfigurationView.swift
     Sources/Player/KeypadConfigurationView.swift
+    Sources/Player/KeyboardConfigurationView.swift
     Sources/Player/ControllerMapping.swift
     Sources/Player/ControllerHardware.swift
     Sources/Player/GamepadInput.swift
@@ -74,6 +75,10 @@ target_link_libraries(a2emu-player PRIVATE gsplus_core
     "-framework Cocoa" "-framework GameController" "-framework IOKit" "-framework AudioToolbox" "-framework CoreAudio" "-framework AudioUnit")
 set_target_properties(a2emu-player PROPERTIES OUTPUT_NAME "Apple II Player"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Sources/Player/Info.plist")
+set_property(TARGET a2emu-player APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_SOURCE_DIR}/Assets/Player.icns"
+    "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png"
+    "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns")
 add_custom_command(TARGET a2emu-player POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/Snapshot-Core-ID.txt" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Snapshot-Core-ID.txt"
@@ -92,6 +97,11 @@ set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE
 
 target_sources(a2emu-builder PRIVATE Assets/Builder.icns)
 set_source_files_properties(Assets/Builder.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+set_property(TARGET a2emu-builder APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_SOURCE_DIR}/Assets/Builder.icns"
+    "${CMAKE_SOURCE_DIR}/Assets/BuilderIcon.png"
+    "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png"
+    "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns")
 add_custom_command(TARGET a2emu-builder POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/PlayerIcon.png"

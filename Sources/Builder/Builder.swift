@@ -20,6 +20,21 @@ final class PlayerDropView: NSView {
     }
 }
 
+/// Decorative artwork cropped to its right side and anchored to the window's bottom edge.
+final class BuilderArtworkView: NSView {
+    private let artwork = Bundle.main.url(forResource: "BuilderIcon", withExtension: "png")
+        .flatMap { NSImage(contentsOf: $0) }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard let artwork = artwork else { return }
+        let side = max(bounds.height, bounds.width)
+        artwork.draw(
+            in: NSRect(x: bounds.maxX - side, y: bounds.minY, width: side, height: side),
+            from: .zero, operation: .sourceOver, fraction: 1)
+    }
+}
+
 @main final class Builder: NSObject, NSApplicationDelegate {
     let aboutPanel = AppAbout()
 
@@ -119,13 +134,18 @@ final class PlayerDropView: NSView {
         fileItem.submenu = fileMenu
         menu.addItem(fileItem)
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 760),
+            contentRect: NSRect(x: 0, y: 0, width: 1003, height: 760),
             styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = "Apple IIGS Player Builder"
-        let root = PlayerDropView(frame: window.contentView!.bounds)
-        root.registerForDraggedTypes([.fileURL])
-        root.openPlayer = { [weak self] in self?.loadPlayer($0) }
-        window.contentView = root
+        let content = PlayerDropView(frame: window.contentView!.bounds)
+        content.registerForDraggedTypes([.fileURL])
+        content.openPlayer = { [weak self] in self?.loadPlayer($0) }
+        window.contentView = content
+        // The form occupies the larger part of a golden-ratio split.
+        let artwork = BuilderArtworkView(frame: NSRect(x: 0, y: 0, width: 383, height: 760))
+        content.addSubview(artwork)
+        let root = NSView(frame: NSRect(x: 383, y: 0, width: 620, height: 760))
+        content.addSubview(root)
         let title = heading
         title.font = .boldSystemFont(ofSize: 20)
         title.frame = NSRect(x: 28, y: 700, width: 560, height: 32)
@@ -409,7 +429,9 @@ final class PlayerDropView: NSView {
 
         let picker = IconPicker()
         iconPicker = picker
-        picker.show(diskName: disk.deletingPathExtension().lastPathComponent) { [weak self] data in
+        let name = appName.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let searchName = name.isEmpty ? disk.deletingPathExtension().lastPathComponent : name
+        picker.show(searchName: searchName) { [weak self] data in
             self?.iconData = data
             self?.iconPreview.image = NSImage(data: data)
         }

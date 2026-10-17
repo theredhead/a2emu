@@ -7,7 +7,7 @@ test_stage="$(mktemp -d "${TMPDIR:-/tmp}/a2-controller-test.XXXXXX")"
 trap 'rm -rf "$test_stage"' EXIT
 xcrun swiftc -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
     -module-cache-path "$test_stage/module-cache" \
-    Sources/Player/ControllerMapping.swift Sources/Player/JoystickConfigurationView.swift \
+    Sources/Player/KeyboardConfigurationView.swift Sources/Player/ControllerMapping.swift Sources/Player/JoystickConfigurationView.swift \
     Sources/Player/KeypadConfigurationView.swift scripts/test-controller-mapping.swift \
     -o "$test_stage/controller-tests"
 "$test_stage/controller-tests"

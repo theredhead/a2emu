@@ -4,7 +4,8 @@ import Cocoa
 /// IDs bind live state to items independently of their displayed names or positions.
 enum PlayerMenuLayout {
     static func main(
-        appName: String, isRunning: @escaping () -> Bool, showAdvanced: @escaping () -> Bool
+        appName: String, isRunning: @escaping () -> Bool, canTogglePause: @escaping () -> Bool,
+        showAdvanced: @escaping () -> Bool
     ) -> [PlayerMenuEntry] {
         [
             .menu(
@@ -59,12 +60,14 @@ enum PlayerMenuLayout {
                 [
                     .command(
                         "Pause", action: #selector(AppDelegate.togglePause(_:)), key: "p", id: .pause,
-                        enabledWhen: isRunning),
+                        enabledWhen: canTogglePause),
                     .command(
                         "Reset", action: #selector(AppDelegate.resetGame(_:)),
                         toolTip: "Restart from disk with cleared RAM; keep disk data and the selected speed."),
                     .separator,
-                    .command("Snapshots…", action: #selector(AppDelegate.showSnapshots(_:))),
+                    .command(
+                        "Snapshots…", action: #selector(AppDelegate.showSnapshots(_:)),
+                        key: String(UnicodeScalar(NSF2FunctionKey)!), modifiers: [], id: .snapshots),
                 ]),
             .menu("Disks", id: .disks, enabledWhen: isRunning, savedDisks),
         ]

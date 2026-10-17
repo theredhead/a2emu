@@ -151,9 +151,10 @@ extension AppDelegate {
 
     @objc func showSnapshots(_ sender: Any?) {
         guard emulatorStarted else { return }
+        if let event = NSApp.currentEvent, event.type == .keyDown, event.isARepeat { return }
         if snapshotBrowser == nil { snapshotBrowser = SnapshotBrowser(player: self) }
-        snapshotBrowser?.reload()
         snapshotBrowser?.showWindow(nil)
+        snapshotBrowser?.reload()
         snapshotBrowser?.window?.makeKeyAndOrderFront(nil)
     }
 }

@@ -11,9 +11,9 @@ typedef struct Gamepad {
     IOHIDDeviceRef device;
     uint64_t identifier;
     char product[256];
-    unsigned buttonUsages[6];
+    unsigned buttonUsages[10];
     int rightUsesZRz;
-    float values[14]; // left XY, right XY, D-pad XY, A/B/X/Y/LB/RB/LT/RT
+    float values[16]; // left XY, right XY, D-pad XY, A/B/X/Y/LB/RB/LT/RT/Menu/Options
     struct Gamepad *next;
 } Gamepad;
 
@@ -47,7 +47,7 @@ static void input(void *context, IOReturn result, void *sender, IOHIDValueRef va
     uint32_t page = IOHIDElementGetUsagePage(element), usage = IOHIDElementGetUsage(element);
     CFIndex raw = IOHIDValueGetIntegerValue(value);
     if (page == kHIDPage_Button) {
-        for (int i = 0; i < 6; i++) if (pad->buttonUsages[i] == usage) pad->values[6 + i] = raw != 0;
+        for (int i = 0; i < 10; i++) if (pad->buttonUsages[i] == usage) pad->values[6 + i] = raw != 0;
     } else if (page == kHIDPage_GenericDesktop) {
         switch (usage) {
         case kHIDUsage_GD_X: pad->values[0] = normalize(element, raw, 0); break;
@@ -70,6 +70,22 @@ static void input(void *context, IOReturn result, void *sender, IOHIDValueRef va
         if (usage == kHIDUsage_Sim_Brake) pad->values[12] = normalize(element, raw, 1);
     }
 }
+// Xbox Bluetooth descriptors reserve unused button numbers; enumeration order is not a mapping.
+static void configureButtons(Gamepad *pad, const unsigned *usages, int count, int vendor) {
+    for (int i = 0; i < count && i < 6; i++) pad->buttonUsages[i] = usages[i];
+    if (vendor != 0x045e || count < 12) return;
+    unsigned highest = usages[count - 1];
+    const unsigned compact[] = {1, 2, 3, 4, 5, 6, 0, 0, 8, 7};
+    const unsigned extended[] = {1, 2, 4, 5, 7, 8, 0, 0, 12, 11};
+    const unsigned *layout = highest >= 15 ? extended : compact;
+    for (int i = 0; i < 10; i++) {
+        pad->buttonUsages[i] = 0;
+        for (int j = 0; j < count; j++) {
+            if (usages[j] == layout[i]) pad->buttonUsages[i] = layout[i];
+        }
+    }
+}
+
 static void added(void *context, IOReturn result, void *sender, IOHIDDeviceRef device) {
     (void)context; (void)sender;
     if (result != kIOReturnSuccess) return;
@@ -101,7 +117,10 @@ static void added(void *context, IOReturn result, void *sender, IOHIDDeviceRef d
     for (int i = 0; i < count; i++) for (int j = i + 1; j < count; j++) {
         if (foundButtons[j] < foundButtons[i]) { unsigned t = foundButtons[i]; foundButtons[i] = foundButtons[j]; foundButtons[j] = t; }
     }
-    for (int i = 0; i < count && i < 6; i++) pad->buttonUsages[i] = foundButtons[i];
+    int vendor = 0;
+    CFTypeRef vendorValue = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDVendorIDKey));
+    if (vendorValue && CFGetTypeID(vendorValue) == CFNumberGetTypeID()) CFNumberGetValue(vendorValue, kCFNumberIntType, &vendor);
+    configureButtons(pad, foundButtons, count, vendor);
     pad->rightUsesZRz = !hasRx && !hasRy;
     CFTypeRef name = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDProductKey));
     strcpy(pad->product, "HID game controller");
@@ -147,7 +166,7 @@ void a2_hid_gamepad_init(void) {
 int a2_hid_gamepad_connected(void) { return current != NULL; }
 const char *a2_hid_gamepad_name(void) { return current ? current->product : ""; }
 float a2_hid_gamepad_value(int index) {
-    return current && index >= 0 && index < 14 ? current->values[index] : 0;
+    return current && index >= 0 && index < 16 ? current->values[index] : 0;
 }
 int a2_hid_gamepad_count(void) {
     int count = 0;
@@ -171,4 +190,9 @@ int a2_hid_gamepad_select(uint64_t identifier) {
         }
     }
     return 0;
+}
+
+int a2_hid_gamepad_has_button(int index) {
+    if (!current || index < 0 || index >= 10) return 0;
+    return index < 8 || current->buttonUsages[index] != 0;
 }

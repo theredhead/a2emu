@@ -1,6 +1,7 @@
 import Cocoa
 
-final class AppAbout {
+final class AppAbout: NSObject, NSWindowDelegate {
+    var creditsVisibilityChanged: ((Bool) -> Void)?
     private var creditsWindow: NSWindow?
 
     func show() {
@@ -22,6 +23,7 @@ final class AppAbout {
     }
 
     func showCredits() {
+        creditsVisibilityChanged?(true)
         if let window = creditsWindow {
             window.makeKeyAndOrderFront(nil)
             return
@@ -30,6 +32,7 @@ final class AppAbout {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 490),
             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.delegate = self
         window.title = "Thanks to…"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 480, height: 360)
@@ -92,6 +95,10 @@ final class AppAbout {
         creditsWindow = window
         window.center()
         window.makeKeyAndOrderFront(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        creditsVisibilityChanged?(false)
     }
 
     @objc private func openSource(_ sender: Any?) {

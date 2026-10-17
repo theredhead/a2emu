@@ -62,13 +62,16 @@ private final class SnapshotCard: NSCollectionViewItem {
 }
 
 /// A dated preview grid; loading validates package integrity before touching the emulator.
-final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSCollectionViewDelegate {
+final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSCollectionViewDelegate,
+    NSWindowDelegate
+{
     private weak var player: AppDelegate?
     private let collection = NSCollectionView()
     private let status = NSTextField(labelWithString: "")
     private let restore = NSButton(title: "Restore Snapshot", target: nil, action: nil)
     private let remove = NSButton(title: "Delete…", target: nil, action: nil)
     private var snapshots: [(URL, PlayerSnapshot)] = []
+    private var isPresented = false
 
     init(player: AppDelegate) {
         self.player = player
@@ -79,6 +82,8 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         window.title = "Saved Snapshots — " + PlayerManifest.displayName
         window.minSize = NSSize(width: 590, height: 420)
         super.init(window: window)
+        window.delegate = self
+        window.isReleasedWhenClosed = false
         let save = NSButton(title: "Save Snapshot…", target: self, action: #selector(saveSnapshot(_:)))
         let importButton = NSButton(title: "Import…", target: self, action: #selector(importSnapshot(_:)))
         let reveal = NSButton(title: "Show in Finder", target: self, action: #selector(revealSnapshots(_:)))
@@ -135,6 +140,21 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
     }
 
     required init?(coder: NSCoder) { fatalError("Use init(player:)") }
+
+    /// Holds the emulator paused through browsing, sheets and repeated requests to show this window.
+    override func showWindow(_ sender: Any?) {
+        if !isPresented {
+            isPresented = true
+            player?.setSnapshotBrowserOpen(true)
+        }
+        super.showWindow(sender)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard isPresented else { return }
+        isPresented = false
+        player?.setSnapshotBrowserOpen(false)
+    }
 
     func reload() {
         guard let player = player else { return }
@@ -242,7 +262,6 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         window?.displayIfNeeded()
         do {
             try player.restoreSnapshot(at: url)
-            player.setEmulationPaused(false)
             window?.close()
             player.mainWindowInfo.window?.makeKeyAndOrderFront(nil)
         } catch { showError(error) }

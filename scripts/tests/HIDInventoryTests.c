@@ -15,6 +15,18 @@ static Gamepad *fixture(const char *name, float x) {
 }
 
 int main(void) {
+    unsigned extendedUsages[15];
+    for (unsigned i = 0; i < 15; i++) extendedUsages[i] = i + 1;
+    Gamepad mapping = {0};
+    configureButtons(&mapping, extendedUsages, 15, 0x045e);
+    assert(mapping.buttonUsages[2] == 4 && mapping.buttonUsages[3] == 5);
+    assert(mapping.buttonUsages[4] == 7 && mapping.buttonUsages[5] == 8);
+    assert(mapping.buttonUsages[8] == 12 && mapping.buttonUsages[9] == 11);
+    unsigned compactUsages[12];
+    for (unsigned i = 0; i < 12; i++) compactUsages[i] = i + 1;
+    configureButtons(&mapping, compactUsages, 12, 0x045e);
+    assert(mapping.buttonUsages[2] == 3 && mapping.buttonUsages[8] == 8 && mapping.buttonUsages[9] == 7);
+    puts("PASS Xbox compact/extended HID descriptors preserve reserved button positions and menu inputs");
     Gamepad *first = fixture("Same model", -1);
     Gamepad *second = fixture("Same model", 1);
     Gamepad *third = fixture("Third pad", 0.5);

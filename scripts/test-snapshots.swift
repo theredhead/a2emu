@@ -100,10 +100,13 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         let browser = SnapshotBrowser(player: delegate)
         browser.window?.appearance = NSAppearance(named: .darkAqua)
         browser.reload()
+        let browsingFrame = g_vbl_count
+        browser.showWindow(nil)
+        require(delegate.emulationPaused, "Showing snapshots must pause the running emulator")
         browser.showWindow(nil)
         browser.window?.setContentSize(NSSize(width: 850, height: 610))
-        delegate.setEmulationPaused(true)
         RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        require(g_vbl_count == browsingFrame, "The emulator must not advance while browsing snapshots")
         browser.window?.contentView?.layoutSubtreeIfNeeded()
         browser.window?.displayIfNeeded()
         if let content = browser.window?.contentView,
@@ -114,7 +117,24 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
                 to: URL(fileURLWithPath: "/private/tmp/a2-snapshot-grid.png"))
         }
         browser.window?.close()
+        require(!delegate.emulationPaused, "Closing a temporary browser pause must resume play")
+        print("PASS snapshot browser freezes live frame execution and releases its pause on close")
+        delegate.setEmulationPaused(true)
+        browser.showWindow(nil)
+        func descendants(_ view: NSView) -> [NSView] {
+            return [view] + view.subviews.flatMap { descendants($0) }
+        }
+        let browserViews = descendants(browser.window!.contentView!)
+        let collection = browserViews.compactMap { $0 as? NSCollectionView }.first!
+        collection.selectionIndexPaths = [IndexPath(item: 0, section: 0)]
+        browser.collectionView(collection, didSelectItemsAt: collection.selectionIndexPaths)
+        let restoreButton = browserViews.compactMap { $0 as? NSButton }.first { $0.title == "Restore Snapshot" }!
+        require(restoreButton.isEnabled)
+        restoreButton.performClick(nil)
+        require(!browser.window!.isVisible && delegate.emulationPaused,
+                "Restoring from the browser must preserve an existing manual pause")
         delegate.setEmulationPaused(false)
+        print("PASS restoring through the browser preserves a prior manual pause")
         let working = delegate.currentDiskDirectory.appendingPathComponent(diskName)
         require(working != disk)
         let immutable =

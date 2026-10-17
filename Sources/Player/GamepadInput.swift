@@ -11,6 +11,12 @@ final class GamepadInput {
     /// Runtime connection choice; nil follows the automatic selection. Names are never used as IDs.
     var selectedControllerID: String?
     var controllerDisconnected: (() -> Void)?
+    var mouseEvent: ((Int32, Int32, Bool?) -> Void)?
+    var mouseClock: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+    private var mouseTimestamp: TimeInterval?
+    private var mouseRemainderX: Double = 0
+    private var mouseRemainderY: Double = 0
+    private var mousePressed = false
     private var connected = false
     private let hidSnapshot = GCController.withExtendedGamepad()
     private var pressedKeys = Set<Int32>()
@@ -80,10 +86,12 @@ final class GamepadInput {
                 interrupted = true
                 controllerDisconnected?()
             }
+            releaseMouse()
             sendKeys([], event: keyEvent)
             lastInputID = input?.id
         }
         guard let pad = input?.pad else {
+            releaseMouse()
             sendKeys([], event: keyEvent)
             if connected {
                 ControllerHardware.updateJoystick(buttons: 0, x: 0, y: 0)
@@ -96,13 +104,15 @@ final class GamepadInput {
         ControllerHardware.setJoystickMode(1)
         connected = true
         guard active && !interrupted else {
+            releaseMouse()
             sendKeys([], event: keyEvent)
             ControllerHardware.updateJoystick(buttons: 0, x: 0, y: 0)
             ControllerHardware.refreshButtons()
             return
         }
 
-        let state = Self.state(for: pad, mapping: mapping)
+        let state = mappedState(for: pad, mapping: mapping)
+        updateMouse(for: pad)
         if mapping.keyboardMode == true {
             let keys = keyboardKeys(for: pad, mapping: mapping, state: state)
             sendKeys(keys, event: keyEvent)
@@ -115,11 +125,33 @@ final class GamepadInput {
 
     /// Reads the same controller sources as emulation without sending events to the C core.
     func previewState(mapping: ControllerMapping, controllerID: String?) -> (
-        buttons: UInt32, x: Int32, y: Int32, keys: Set<Int32>
+        buttons: UInt32, x: Int32, y: Int32, keys: Set<Int32>, inputs: Set<Int>
     )? {
         guard let pad = currentProfile(controllerID: controllerID)?.pad else { return nil }
-        let state = Self.state(for: pad, mapping: mapping)
-        return (state.buttons, state.x, state.y, keyboardKeys(for: pad, mapping: mapping, state: state))
+        let state = mappedState(for: pad, mapping: mapping)
+        var inputs = ControllerMapping.activeInputs(
+            x: state.x, y: state.y, physicalButtons: physicalButtons(for: pad))
+        if mapping.keyboardLayout == true {
+            let axes = keyboardAxes(for: pad, mapping: mapping)
+            inputs = ControllerMapping.activeInputs(
+                x: axes[0], y: axes[1], physicalButtons: physicalButtons(for: pad))
+            inputs.formUnion(
+                ControllerMapping.activeInputs(x: axes[2], y: axes[3], physicalButtons: 0).map { $0 + 18 })
+            inputs.formUnion(
+                ControllerMapping.activeInputs(x: axes[4], y: axes[5], physicalButtons: 0).map { $0 + 26 })
+        }
+        return (
+            state.buttons, state.x, state.y, keyboardKeys(for: pad, mapping: mapping, state: state), inputs
+        )
+    }
+
+    /// Direct HID fallback exposes only the controls it can identify reliably.
+    func supportedButtonIndices(controllerID: String?) -> Set<Int>? {
+        guard let input = currentProfile(controllerID: controllerID) else { return nil }
+        if input.id.hasPrefix("hid:") {
+            return Set(ControllerMapping.buttonNames.indices.filter { ControllerHardware.hasButton(at: $0) })
+        }
+        return Set(ControllerMapping.buttonNames.indices.filter { mapping.button($0, on: input.pad) != nil })
     }
 
     private func currentProfile(controllerID: String?) -> (id: String, pad: GCExtendedGamepad)? {
@@ -143,8 +175,8 @@ final class GamepadInput {
             ControllerHardware.value(at: 2), yAxis: ControllerHardware.value(at: 3))
         snapshot.dpad.setValueForXAxis(
             ControllerHardware.value(at: 4), yAxis: ControllerHardware.value(at: 5))
-        for index in 0..<8 {
-            mapping.button(index, on: snapshot).setValue(ControllerHardware.value(at: Int32(index + 6)))
+        for index in ControllerMapping.buttonNames.indices {
+            mapping.button(index, on: snapshot)?.setValue(ControllerHardware.value(at: Int32(index + 6)))
         }
         return (choice.id, snapshot)
     }
@@ -153,12 +185,81 @@ final class GamepadInput {
         for pad: GCExtendedGamepad, mapping: ControllerMapping,
         state: (buttons: UInt32, x: Int32, y: Int32)
     ) -> Set<Int32> {
-        var physicalButtons: UInt32 = 0
-        for index in 0..<8 where mapping.button(index, on: pad).isPressed {
-            physicalButtons |= 1 << index
+        if mapping.keyboardLayout == true {
+            let axes = keyboardAxes(for: pad, mapping: mapping)
+            return mapping.independentKeyboardKeys(
+                leftX: axes[0], leftY: axes[1], rightX: axes[2], rightY: axes[3],
+                dpadX: axes[4], dpadY: axes[5], physicalButtons: physicalButtons(for: pad))
         }
         return mapping.keyboardKeys(
-            x: state.x, y: state.y, buttons: state.buttons, physicalButtons: physicalButtons)
+            x: state.x, y: state.y, buttons: state.buttons,
+            physicalButtons: physicalButtons(for: pad))
+    }
+
+    private func keyboardAxes(for pad: GCExtendedGamepad, mapping: ControllerMapping) -> [Int32] {
+        var axes: [Int32] = []
+        for directionPad in [pad.leftThumbstick, pad.rightThumbstick, pad.dpad] {
+            let x = directionPad.xAxis.value
+            let y = directionPad.yAxis.value
+            let centered = hypot(x, y) < mapping.deadZone
+            axes.append(centered ? 0 : Self.axis(x * (mapping.invertX ? -1 : 1)))
+            axes.append(centered ? 0 : Self.axis(y * (mapping.invertY ? 1 : -1)))
+        }
+        return axes
+    }
+
+    private func physicalButtons(for pad: GCExtendedGamepad) -> UInt32 {
+        var buttons: UInt32 = 0
+        for index in ControllerMapping.buttonNames.indices {
+            let pressed =
+                pad === hidSnapshot.extendedGamepad
+                ? ControllerHardware.value(at: Int32(index + 6)) > 0.5
+                : mapping.button(index, on: pad)?.isPressed == true
+            if pressed { buttons |= 1 << index }
+        }
+        return buttons
+    }
+
+    private func mappedState(for pad: GCExtendedGamepad, mapping: ControllerMapping) -> (
+        buttons: UInt32, x: Int32, y: Int32
+    ) {
+        var state = Self.state(for: pad, mapping: mapping)
+        let buttons = physicalButtons(for: pad)
+        state.buttons = 0
+        if buttons & (1 << mapping.button0) != 0 { state.buttons |= 1 }
+        if buttons & (1 << mapping.button1) != 0 { state.buttons |= 2 }
+        return state
+    }
+
+    private func releaseMouse() {
+        if mousePressed { mouseEvent?(0, 0, false) }
+        mousePressed = false
+        mouseTimestamp = nil
+        mouseRemainderX = 0
+        mouseRemainderY = 0
+    }
+
+    private func updateMouse(for pad: GCExtendedGamepad) {
+        guard mapping.keyboardMode == true, mapping.keyboardLayout == true else {
+            releaseMouse()
+            return
+        }
+        let now = mouseClock()
+        let elapsed = min(0.05, max(0, now - (mouseTimestamp ?? now)))
+        mouseTimestamp = now
+        let buttons = physicalButtons(for: pad)
+        let pressed = (mapping.mouseButtonInputs ?? []).contains { buttons & (1 << $0) != 0 }
+        let buttonChange: Bool? = pressed == mousePressed ? nil : pressed
+        mousePressed = pressed
+        let vector = mapping.mouseVector(
+            axes: keyboardAxes(for: pad, mapping: mapping), physicalButtons: buttons)
+        mouseRemainderX += vector.x * elapsed * 320
+        mouseRemainderY += vector.y * elapsed * 320
+        let dx = Int32(mouseRemainderX)
+        let dy = Int32(mouseRemainderY)
+        mouseRemainderX -= Double(dx)
+        mouseRemainderY -= Double(dy)
+        if dx != 0 || dy != 0 || buttonChange != nil { mouseEvent?(dx, dy, buttonChange) }
     }
 
     private func sendKeys(_ keys: Set<Int32>, event: ((Int32, Bool) -> Void)?) {
@@ -184,10 +285,10 @@ final class GamepadInput {
         // GameController’s positive Y points up; Apple II paddle Y points down.
         let y = centered ? 0 : axis(stick.yAxis.value * (mapping.invertY ? 1 : -1))
         var buttons: UInt32 = 0
-        if mapping.button(mapping.button0, on: pad).isPressed {
+        if mapping.button(mapping.button0, on: pad)?.isPressed == true {
             buttons |= 1
         }
-        if mapping.button(mapping.button1, on: pad).isPressed {
+        if mapping.button(mapping.button1, on: pad)?.isPressed == true {
             buttons |= 2
         }
         return (buttons, x, y)

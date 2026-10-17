@@ -27,6 +27,10 @@ enum ControllerHardware {
         return a2_hid_gamepad_value(index)
     }
 
+    static func hasButton(at index: Int) -> Bool {
+        return a2_hid_gamepad_has_button(Int32(index)) != 0
+    }
+
     static func setJoystickMode(_ mode: Int32) {
         joystick_callback_init(mode)
     }

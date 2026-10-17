@@ -49,7 +49,8 @@ class MainView: NSView {
     }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.keyCode == 99 { return false }  // Leave F3 to the screenshot menu command or keyDown.
+        // Host shortcuts go through the menu, with keyDown as a fallback.
+        if event.keyCode == 120 || event.keyCode == 99 { return false }
         guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return false }
         let keycode = event.keyCode
         let isRepeat = event.isARepeat
@@ -84,6 +85,10 @@ class MainView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
+        if event.keyCode == 120 {
+            if !event.isARepeat { (NSApp.delegate as? AppDelegate)?.showSnapshots(nil) }
+            return
+        }
         if event.keyCode == 99 {
             if !event.isARepeat { saveScreenshot(nil) }
             return
@@ -102,7 +107,8 @@ class MainView: NSView {
     }
 
     override func keyUp(with event: NSEvent) {
-        if event.keyCode == 99 { return }  // F3 belongs to the host, never the emulated keyboard.
+        // F2 and F3 belong to the host, never the emulated keyboard.
+        if event.keyCode == 120 || event.keyCode == 99 { return }
         let keycode = event.keyCode
         let keyValue = unicodeKey(for: event)
         EmulatorCore.updateKey(
@@ -392,6 +398,9 @@ class MainView: NSView {
             screenshotSound?.play()
         } catch {
             let alert = NSAlert()
+            let player = NSApp.delegate as? AppDelegate
+            player?.setDialogOpen(true, reason: "Screenshot Error")
+            defer { player?.setDialogOpen(false, reason: "Screenshot Error") }
             alert.messageText = "Could not save screenshot"
             alert.informativeText = error.localizedDescription
             alert.runModal()
