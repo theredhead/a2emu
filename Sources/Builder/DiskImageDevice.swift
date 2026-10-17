@@ -1,5 +1,7 @@
 import Foundation
 
+private let blankDiskIntl = BlankDiskIntl()
+
 /// The most likely drive for a disk image. Users can override this initial selection in the builder.
 enum DiskImageDevice {
     case floppy525
@@ -95,12 +97,12 @@ enum BlankDiskImage: Int, CaseIterable {
 
     var label: String {
         switch self {
-        case .floppy525: return "5.25-inch floppy — 140 KB"
-        case .floppy35: return "3.5-inch floppy — 800 KB"
-        case .hardDisk5: return "SmartPort hard disk — 5 MB"
-        case .hardDisk10: return "SmartPort hard disk — 10 MB"
-        case .hardDisk20: return "SmartPort hard disk — 20 MB"
-        case .hardDisk32: return "SmartPort hard disk — 32 MB"
+        case .floppy525: return blankDiskIntl.floppy525
+        case .floppy35: return blankDiskIntl.floppy35
+        case .hardDisk5: return blankDiskIntl.smartportHardDisk5Mb
+        case .hardDisk10: return blankDiskIntl.smartportHardDisk10Mb
+        case .hardDisk20: return blankDiskIntl.smartportHardDisk20Mb
+        case .hardDisk32: return blankDiskIntl.smartportHardDisk32Mb
         }
     }
 

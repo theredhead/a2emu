@@ -1,6 +1,8 @@
 import Cocoa
 import GameController
 
+private let gamepadInputIntl = GamepadInputIntl()
+
 /// Bridges GameController or HID input to the emulator; create and poll on the main thread.
 final class GamepadInput {
     private var nativeControllers: [GCController] = []
@@ -31,7 +33,8 @@ final class GamepadInput {
         let choices = availableControllers()
         return selectedChoice(in: choices, requestedID: selectedControllerID)?.name
             ?? (selectedControllerID == nil
-                ? "No game controller connected" : "Selected controller disconnected")
+                ? gamepadInputIntl.noGameControllerConnected
+                : gamepadInputIntl.selectedControllerDisconnected)
     }
 
     /// Lists every supported native and direct-input connection with stable session IDs.
@@ -47,14 +50,16 @@ final class GamepadInput {
             let identifier = ObjectIdentifier(controller)
             if nativeIDs[identifier] == nil { nativeIDs[identifier] = "gc:" + UUID().uuidString }
             choices.append(
-                ControllerChoice(id: nativeIDs[identifier]!, name: controller.vendorName ?? "Game controller")
+                ControllerChoice(
+                    id: nativeIDs[identifier]!, name: controller.vendorName ?? gamepadInputIntl.gameController
+                )
             )
         }
         let nativeNames = Set(choices.map { $0.name })
         for index in 0..<ControllerHardware.count {
             let name = ControllerHardware.name(at: index)
             // Some devices expose both connections. Keep direct input available as a fallback.
-            let label = nativeNames.contains(name) ? "\(name) (direct input)" : name
+            let label = nativeNames.contains(name) ? gamepadInputIntl.directInput(name: name) : name
             choices.append(
                 ControllerChoice(id: "hid:\(ControllerHardware.identifier(at: index))", name: label))
         }
@@ -64,7 +69,8 @@ final class GamepadInput {
             occurrences[choice.name, default: 0] += 1
             let name =
                 counts[choice.name, default: 0] > 1
-                ? "\(choice.name) (\(occurrences[choice.name]!))" : choice.name
+                ? gamepadInputIntl.formattedLabel(name: choice.name, number: occurrences[choice.name]!)
+                : choice.name
             return ControllerChoice(id: choice.id, name: name)
         }
     }

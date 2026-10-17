@@ -1,0 +1,40 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* About: User-visible label, instruction, or error message. */
+"a2emuSourceOnGithub" = "a2emu source on GitHub";
+
+/* About: User-visible label, instruction, or error message. */
+"appleIigsEmulationByKentDickey" = "Apple IIgs emulation by Kent Dickey.";
+
+/* About: User-visible label, instruction, or error message. */
+"appleIigsPlayerBuilderAndApple" = "Apple IIGS Player Builder and Apple II Player";
+
+/* About: User-visible label, instruction, or error message. */
+"crossPlatformWorkByDagenBrock" = "Cross-platform work by Dagen Brock and GSplus contributors, building on KEGS.";
+
+/* About: User-visible label, instruction, or error message. */
+"gsplusSourceOnGithub" = "GSplus source on GitHub";
+
+/* About: User-visible label, instruction, or error message. */
+"kegsProjectAndSource" = "KEGS project and source";
+
+/* About: User-visible label, instruction, or error message. */
+"license" = "License";
+
+/* About: User-visible label, instruction, or error message. */
+"more" = "More…";
+
+/* About: User-visible label, instruction, or error message. */
+"integrationCredit" = "Swift builder and player integration by theredhead. The builder and player project is available on GitHub.";
+
+/* About: User-visible label, instruction, or error message. */
+"thanksTo" = "Thanks to…";
+
+/* About: User-visible label, instruction, or error message. */
+"licenseExplanation" = "The builder, player and emulator components are distributed under GNU GPL version 3. Original copyright notices and component licenses are preserved in the project sources. ROM firmware and software you run are separate from the player.";
+
+/* About: Formatted message. version: runtime text; keep its placeholder */
+"versionInfo" = "Version %1$@\n\nBuilt with KEGS and GSplus.";
+
+/* About: User-visible label, instruction, or error message. */
+"viewOnGithub" = "View on GitHub…";

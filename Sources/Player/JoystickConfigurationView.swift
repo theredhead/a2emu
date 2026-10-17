@@ -1,17 +1,19 @@
 import Cocoa
 
+private let joystickConfigurationIntl = JoystickConfigurationIntl()
+
 /// The six assignable controls on the illustrated Apple II joystick.
 enum JoystickControl: Int, CaseIterable {
     case left, right, up, down, button0, button1
 
     var label: String {
         switch self {
-        case .left: return "Left"
-        case .right: return "Right"
-        case .up: return "Up"
-        case .down: return "Down"
-        case .button0: return "Button 0"
-        case .button1: return "Button 1"
+        case .left: return joystickConfigurationIntl.left
+        case .right: return joystickConfigurationIntl.right
+        case .up: return joystickConfigurationIntl.up
+        case .down: return joystickConfigurationIntl.down
+        case .button0: return joystickConfigurationIntl.button0
+        case .button1: return joystickConfigurationIntl.button1
         }
     }
 
@@ -93,6 +95,7 @@ final class JoystickConfigurationView: NSView {
     private var hotspots: [JoystickHotspot] = []
     private var stickPosition = NSPoint.zero
     private var captions: [String] = JoystickControl.allCases.map { $0.label }
+    private var keyCodes: [Int]?
 
     override var isFlipped: Bool { true }
 
@@ -119,6 +122,8 @@ final class JoystickConfigurationView: NSView {
     required init?(coder: NSCoder) { return nil }
 
     func showAssignments(_ mapping: ControllerMapping) {
+        keyCodes =
+            mapping.keyboardMode == true ? (mapping.keyCodes ?? ControllerMapping.defaultKeyCodes) : nil
         captions = JoystickControl.allCases.map { control in
             if mapping.keyboardMode == true {
                 let code = (mapping.keyCodes ?? ControllerMapping.defaultKeyCodes)[control.rawValue]
@@ -132,8 +137,11 @@ final class JoystickConfigurationView: NSView {
                 control.isDirection
                 ? ControllerMapping.movementNames[mapping.movement]
                 : ControllerMapping.buttonNames[control == .button0 ? mapping.button0 : mapping.button1]
-            button.toolTip = "\(control.label): \(source)"
-            button.setAccessibilityLabel("\(control.label), \(source)")
+            button.toolTip = joystickConfigurationIntl.assignmentTooltip(
+                control: control.label, source: source)
+            button.setAccessibilityLabel(
+                joystickConfigurationIntl.assignmentAccessibilityLabel(control: control.label, source: source)
+            )
             button.setAccessibilityValue(mapping.keyboardMode == true ? captions[control.rawValue] : source)
         }
         needsDisplay = true
@@ -245,9 +253,12 @@ final class JoystickConfigurationView: NSView {
         drawCaption("JOYSTICK", at: NSPoint(x: 55, y: 379), size: 8, color: ink)
         for control in JoystickControl.allCases where control.isDirection {
             let frame = hotspots[control.rawValue].frame
-            let caption = captions[control.rawValue]
-                .replacingOccurrences(of: " / Open Apple", with: "")
-                .replacingOccurrences(of: " / Closed Apple", with: "")
+            let caption: String
+            switch keyCodes?[control.rawValue] {
+            case 55: caption = joystickConfigurationIntl.commandKeyCaption
+            case 58: caption = joystickConfigurationIntl.optionKeyCaption
+            default: caption = captions[control.rawValue]
+            }
             drawCaption(
                 caption, at: NSPoint(x: frame.midX, y: frame.maxY - 1), size: 9,
                 color: ink, centered: true)

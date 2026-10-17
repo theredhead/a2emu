@@ -9,6 +9,8 @@ import AudioToolbox
 import Cocoa
 import CoreGraphics
 
+private let playerViewIntl = PlayerViewIntl()
+
 /// Displays an emulator-owned image and forwards AppKit keyboard and mouse input.
 class MainView: NSView {
     var bitmapContext: CGContext!
@@ -61,14 +63,14 @@ class MainView: NSView {
         do {
             guard try player.importDiskImages(urls) else { return false }
             let alert = NSAlert()
-            alert.messageText = "Disks Added"
+            alert.messageText = playerViewIntl.disksAdded
             alert.informativeText =
-                "Choose a drive in the Disks menu to insert an added image. Your current disks remain mounted."
+                playerViewIntl.chooseADriveInTheDisks
             alert.runModal()
             return true
         } catch {
             let alert = NSAlert()
-            alert.messageText = "Could Not Add Disks"
+            alert.messageText = playerViewIntl.couldNotAddDisks
             alert.informativeText = error.localizedDescription
             alert.runModal()
             return false
@@ -402,7 +404,7 @@ class MainView: NSView {
         guard let image = bitmapContext?.makeImage(),
             let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
         else {
-            throw PlayerManifest.failure("No game frame is available to capture yet.")
+            throw PlayerManifest.failure(playerViewIntl.noGameFrameIsAvailableTo)
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let formatter = DateFormatter()
@@ -432,7 +434,7 @@ class MainView: NSView {
             let player = NSApp.delegate as? AppDelegate
             player?.setDialogOpen(true, reason: "Screenshot Error")
             defer { player?.setDialogOpen(false, reason: "Screenshot Error") }
-            alert.messageText = "Could not save screenshot"
+            alert.messageText = playerViewIntl.couldNotSaveScreenshot
             alert.informativeText = error.localizedDescription
             alert.runModal()
         }

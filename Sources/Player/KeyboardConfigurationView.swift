@@ -1,5 +1,8 @@
 import Cocoa
 
+private let commonIntl = CommonIntl()
+private let keyboardConfigurationIntl = KeyboardConfigurationIntl()
+
 /// A complete IIGS keyboard; selecting a key arms controller-input binding in the panel.
 final class KeyboardConfigurationView: NSView {
     static let bodyDepth: CGFloat = 230
@@ -116,8 +119,10 @@ final class KeyboardConfigurationView: NSView {
             let inputs = assigned[key.code] ?? []
             key.assignmentBadges = inputs.map { KeyAssignmentBadge(input: $0) }
             key.active = pressedKeys.contains(Int32(key.code))
-            key.toolTip = inputs.isEmpty ? "Click to bind a controller input" : inputs.joined(separator: ", ")
-            key.setAccessibilityValue(inputs.isEmpty ? "Unassigned" : inputs.joined(separator: ", "))
+            key.toolTip =
+                inputs.isEmpty
+                ? keyboardConfigurationIntl.clickToBindAControllerInput : inputs.joined(separator: ", ")
+            key.setAccessibilityValue(inputs.isEmpty ? commonIntl.unassigned : inputs.joined(separator: ", "))
         }
     }
 
@@ -195,15 +200,15 @@ final class ADBMouseConfigurationView: NSView {
         mouseButton.target = self
         mouseButton.action = #selector(selectControl(_:))
         mouseButton.tag = -2
-        mouseButton.setAccessibilityLabel("Bind ADB mouse button")
+        mouseButton.setAccessibilityLabel(keyboardConfigurationIntl.bindAdbMouseButton)
         addSubview(mouseButton)
         motion.frame = NSRect(x: 64, y: 70, width: 112, height: 140)
         motion.isBordered = false
         motion.target = self
         motion.action = #selector(selectControl(_:))
         motion.tag = -3
-        motion.setAccessibilityLabel("Bind ADB mouse movement")
-        motion.toolTip = "Click, then move either stick or the D-pad to bind all four mouse directions"
+        motion.setAccessibilityLabel(keyboardConfigurationIntl.bindAdbMouseMovement)
+        motion.toolTip = keyboardConfigurationIntl.clickThenMoveEitherStickOr
         addSubview(motion)
         let positions: [(CGFloat, CGFloat)] = [(0, 149), (200, 149), (100, 294), (100, 8)]
         for (index, symbol) in ["←", "→", "↑", "↓"].enumerated() {
@@ -214,7 +219,9 @@ final class ADBMouseConfigurationView: NSView {
             arrow.tag = -4 - index
             arrow.target = self
             arrow.action = #selector(selectControl(_:))
-            arrow.setAccessibilityLabel("Bind mouse " + ["left", "right", "up", "down"][index])
+            arrow.setAccessibilityLabel(
+                keyboardConfigurationIntl.bindMouseDirection(
+                    direction: JoystickControl.allCases[index].label.lowercased()))
             addSubview(arrow)
             directions.append(arrow)
         }
@@ -237,15 +244,17 @@ final class ADBMouseConfigurationView: NSView {
             arrow.assignmentBadges = inputs.map { KeyAssignmentBadge(input: $0) }
             arrow.selected = selectedControl == -4 - index
             arrow.toolTip =
-                inputs.isEmpty ? "Click to bind this mouse direction" : inputs.joined(separator: ", ")
-            arrow.setAccessibilityValue(inputs.isEmpty ? "Unassigned" : inputs.joined(separator: ", "))
+                inputs.isEmpty
+                ? keyboardConfigurationIntl.clickToBindThisMouseDirection : inputs.joined(separator: ", ")
+            arrow.setAccessibilityValue(
+                inputs.isEmpty ? commonIntl.unassigned : inputs.joined(separator: ", "))
         }
         mouseButton.toolTip =
-            "Mouse click: "
-            + ((mapping.mouseButtonInputs ?? []).isEmpty
-                ? "Unassigned"
-                : (mapping.mouseButtonInputs ?? []).map { ControllerMapping.buttonNames[$0] }.joined(
-                    separator: ", "))
+            keyboardConfigurationIntl.mouseClickBindings(
+                bindings: ((mapping.mouseButtonInputs ?? []).isEmpty
+                    ? commonIntl.unassigned
+                    : (mapping.mouseButtonInputs ?? []).map { ControllerMapping.buttonNames[$0] }.joined(
+                        separator: ", ")))
     }
 
     override func draw(_ dirtyRect: NSRect) {

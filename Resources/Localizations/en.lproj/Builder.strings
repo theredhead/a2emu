@@ -1,0 +1,154 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* Builder: User-visible label, instruction, or error message. */
+"aboutAppleIigsPlayerBuilder" = "About Apple IIGS Player Builder";
+
+/* Builder: User-visible label, instruction, or error message. */
+"addToPlayerDisks" = "Add to this player's disks";
+
+/* Builder: User-visible label, instruction, or error message. */
+"appName" = "App name:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"appNamePlaceholder" = "Name of the exported app";
+
+/* Builder: User-visible label, instruction, or error message. */
+"appleIigsPlayerBuilder" = "Apple IIGS Player Builder";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bundledStartupSnapshot" = "Bundled startup snapshot";
+
+/* Builder: User-visible label, instruction, or error message. */
+"chooseADiskFirst" = "Choose a disk first.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"selectedDiskOverwriteError" = "Choose a new file instead of replacing a disk selected in this player.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"chooseDisks" = "Choose Disks…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"chooseDisksHint" = "Choose disk images to package.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"emptyPlayerHint" = "Choose disks, or drop an existing player here to edit it.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"choosePlayerIcon" = "Choose Player Icon…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"snapshotDiskSetHint" = "Clear the startup snapshot before changing its disk set.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"couldNotUpdatePlayer" = "Could not update player";
+
+/* Builder: User-visible label, instruction, or error message. */
+"blankDiskExplanation" = "Create an empty writable disk. Initialize it inside the emulated computer before saving files to it. Blank disks do not contain a bootable system.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"createPlayer" = "Create Player…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"createPlayerHeading" = "Create a standalone Apple IIGS player";
+
+/* Builder: Formatted message. count: numeric value */
+"diskImagesSelected" = "%1$ld disk images selected";
+
+/* Builder: User-visible label, instruction, or error message. */
+"diskNamesAndInitialDrives" = "Disk names and initial drives";
+
+/* Builder: Formatted message. title: runtime text; keep its placeholder */
+"drives" = "%1$@ drives:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"invalidDropError" = "Drop disk images, one snapshot, or one existing player.";
+
+/* Builder: Formatted message. filename: runtime text; keep its placeholder */
+"edit" = "Edit %1$@";
+
+/* Builder: User-visible label, instruction, or error message. */
+"editThisAppleIigsPlayer" = "Edit this Apple IIGS player";
+
+/* Builder: Formatted message. filename: runtime text; keep its placeholder */
+"editing" = "Editing %1$@";
+
+/* Builder: User-visible label, instruction, or error message. */
+"expansionRAMHint" = "Additional RAM beyond the ROM model's built-in memory. ROM 01 starts with 256 KB; ROM 03 has about 1 MB.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"expansionRam" = "Expansion RAM:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"initialSpeed" = "Initial speed:";
+
+/* Builder: Formatted message. kilobytes: numeric value */
+"kilobytes" = "%1$ld KB";
+
+/* Builder: User-visible label, instruction, or error message. */
+"unmountedDisksHint" = "Leave extra images unmounted; swap them into a drive later through the Disks menu.";
+
+/* Builder: Formatted message. megabytes: numeric value */
+"megabytes" = "%1$ld MB";
+
+/* Builder: User-visible label, instruction, or error message. */
+"newBlankDiskImage" = "New Blank Disk Image…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"blankDiskTitle" = "New Blank Disk Image";
+
+/* Builder: User-visible label, instruction, or error message. */
+"newPlayer" = "New Player";
+
+/* Builder: User-visible label, instruction, or error message. */
+"noneBuiltInOnly" = "None (built-in only)";
+
+/* Builder: User-visible label, instruction, or error message. */
+"normalStartup" = "No snapshot — normal startup";
+
+/* Builder: User-visible label, instruction, or error message. */
+"notInitiallyMounted" = "Not initially mounted";
+
+/* Builder: User-visible label, instruction, or error message. */
+"openPlayer" = "Open Player…";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startupSnapshotHint" = "Optional: restore the captured speed and disk state on every launch.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"quitPlayerBeforeSavingError" = "Quit this player before saving changes.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"removeSnapshotHint" = "Remove startup snapshot and use normal startup";
+
+/* Builder: User-visible label, instruction, or error message. */
+"saveBlankDiskImage" = "Save Blank Disk Image";
+
+/* Builder: Formatted message. filename: runtime text; keep its placeholder */
+"savedChangesTo" = "Saved changes to %1$@";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bootFloppy35" = "Slot 5 — 3.5-inch floppy";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bootFloppy525" = "Slot 6 — 5.25-inch floppy";
+
+/* Builder: User-visible label, instruction, or error message. */
+"bootSmartPort" = "Slot 7 — hard disk / SmartPort";
+
+/* Builder: User-visible label, instruction, or error message. */
+"snapshotSpeedHint" = "The startup snapshot restores its captured speed.";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startInFullScreen" = "Start in full screen";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startUpFrom" = "Start up from:";
+
+/* Builder: User-visible label, instruction, or error message. */
+"startupSnapshot" = "Startup Snapshot…";
+
+/* Accessibility label for the clear snapshot button. */
+"removeStartupSnapshot" = "Remove startup snapshot";
+
+/* Suggested new disk filename. The extension is a technical identifier and must be preserved. */
+"untitledDisk" = "Untitled.%1$@";

@@ -1,0 +1,43 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"oneMHz" = "1.0 MHz";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"twoPointEightMHz" = "2.8 MHz";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"eightMHz" = "8 MHz";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"appleIiPlayer" = "Apple II Player";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"chooseASupportedExpansionRamSize" = "Choose a supported expansion RAM size.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"chooseSlot56Or7" = "Choose slot 5, 6 or 7 and at least one disk.";
+
+/* PlayerManifest: Formatted message. kind: runtime text; keep its placeholder; number: numeric value */
+"drive" = "%1$@ Drive %2$ld";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"enterAnAppNameWithoutSlashes" = "Enter an app name without slashes, colons or control characters.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"giveEachDiskANameWithout" = "Give each disk a name without control characters.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"initialDisksMustUseAnAvailable" = "Initial disks must use an available drive.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"mountABootDiskInDrive" = "Mount a boot disk in drive 1 of the startup slot, and assign each image to a separate drive.";
+
+/* PlayerManifest: Formatted message. number: numeric value */
+"smartportDrive" = "SmartPort Drive %1$ld";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"thePlayerMachineConfigurationIsInvalid" = "The player machine configuration is invalid.";
+
+/* PlayerManifest: User-visible label, instruction, or error message. */
+"unlimited" = "Unlimited";

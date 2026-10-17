@@ -1,10 +1,12 @@
 import Cocoa
 
+private let iconEncoderIntl = IconEncoderIntl()
+
 struct IconEncoder {
     /// Writes PNG-backed ICNS sizes atomically; throws if image decoding or encoding fails.
     static func writeICNS(png: Data, destination: URL) throws {
         guard let image = NSImage(data: png) else {
-            throw PlayerManifest.failure("The icon image is invalid.")
+            throw PlayerManifest.failure(iconEncoderIntl.theIconImageIsInvalid)
         }
         // ICNS supports PNG representations directly, so export needs no external icon compiler.
         var archive = Data("icns".utf8)
@@ -24,7 +26,7 @@ struct IconEncoder {
                     samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
                     bytesPerRow: 0, bitsPerPixel: 0), let context = NSGraphicsContext(bitmapImageRep: bitmap)
             else {
-                throw PlayerManifest.failure("Could not encode icon.")
+                throw PlayerManifest.failure(iconEncoderIntl.couldNotEncodeIcon)
             }
             NSGraphicsContext.saveGraphicsState()
             NSGraphicsContext.current = context
@@ -32,7 +34,7 @@ struct IconEncoder {
                 in: NSRect(x: 0, y: 0, width: size, height: size), from: .zero, operation: .copy, fraction: 1)
             NSGraphicsContext.restoreGraphicsState()
             guard let bytes = bitmap.representation(using: .png, properties: [:]) else {
-                throw PlayerManifest.failure("Could not encode icon.")
+                throw PlayerManifest.failure(iconEncoderIntl.couldNotEncodeIcon)
             }
             chunks.append(Data(type.utf8))
             chunks.append(integer(UInt32(bytes.count + 8)))

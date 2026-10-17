@@ -1,0 +1,49 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* Common: User-visible label, instruction, or error message. */
+"browse" = "Browse…";
+
+/* Common: User-visible label, instruction, or error message. */
+"cancel" = "Cancel";
+
+/* Common: User-visible label, instruction, or error message. */
+"close" = "Close";
+
+/* Common: User-visible label, instruction, or error message. */
+"continueAction" = "Continue…";
+
+/* Common: User-visible label, instruction, or error message. */
+"deleteAction" = "Delete…";
+
+/* Common: User-visible label, instruction, or error message. */
+"file" = "File";
+
+/* Common: User-visible label, instruction, or error message. */
+"importAction" = "Import…";
+
+/* Common: User-visible label, instruction, or error message. */
+"pause" = "Pause";
+
+/* Common: User-visible label, instruction, or error message. */
+"quit" = "Quit";
+
+/* Common: User-visible label, instruction, or error message. */
+"reset" = "Reset";
+
+/* Common: User-visible label, instruction, or error message. */
+"resume" = "Resume";
+
+/* Common: User-visible label, instruction, or error message. */
+"save" = "Save";
+
+/* Common: User-visible label, instruction, or error message. */
+"snapshots" = "Snapshots…";
+
+/* Common: User-visible label, instruction, or error message. */
+"unassigned" = "Unassigned";
+
+/* Floppy drive size used in a UI label. Preserve the numeric size. */
+"floppy525Type" = "5.25-inch";
+
+/* Floppy drive size used in a UI label. Preserve the numeric size. */
+"floppy35Type" = "3.5-inch";

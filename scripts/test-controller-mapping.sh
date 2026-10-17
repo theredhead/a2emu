@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$repo_root"
 test_stage="$(mktemp -d "${TMPDIR:-/tmp}/a2-controller-test.XXXXXX")"
 trap 'rm -rf "$test_stage"' EXIT
-xcrun swiftc -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
+xcrun swiftc Sources/Shared/Intl/*.swift -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
     -module-cache-path "$test_stage/module-cache" \
     Sources/Player/KeyboardConfigurationView.swift Sources/Player/ControllerMapping.swift Sources/Player/JoystickConfigurationView.swift \
     Sources/Player/KeypadConfigurationView.swift scripts/test-controller-mapping.swift \

@@ -1,5 +1,8 @@
 import Cocoa
 
+private let aboutIntl = AboutIntl()
+private let commonIntl = CommonIntl()
+
 final class AppAbout: NSObject, NSWindowDelegate {
     var creditsVisibilityChanged: ((Bool) -> Void)?
     private var creditsWindow: NSWindow?
@@ -7,16 +10,17 @@ final class AppAbout: NSObject, NSWindowDelegate {
     func show() {
         let panel = NSAlert()
         panel.messageText = PlayerManifest.displayName
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         panel.informativeText =
-            "Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")\n\nBuilt with KEGS and GSplus."
+            aboutIntl.versionInfo(version: version)
         // Supply the original image, avoiding the system's legacy icon container.
         if let url = Bundle.main.url(forResource: "PlayerIcon", withExtension: "png")
             ?? Bundle.main.url(forResource: "BuilderIcon", withExtension: "png")
         {
             panel.icon = NSImage(contentsOf: url)
         }
-        panel.addButton(withTitle: "Close")
-        panel.addButton(withTitle: "More…")
+        panel.addButton(withTitle: commonIntl.close)
+        panel.addButton(withTitle: aboutIntl.more)
         if panel.runModal() == .alertSecondButtonReturn {
             showCredits()
         }
@@ -33,7 +37,7 @@ final class AppAbout: NSObject, NSWindowDelegate {
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 490),
             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.delegate = self
-        window.title = "Thanks to…"
+        window.title = aboutIntl.thanksTo
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 480, height: 360)
         let root = NSView(frame: window.contentView!.bounds)
@@ -62,21 +66,21 @@ final class AppAbout: NSObject, NSWindowDelegate {
             }
             body.append(NSAttributedString(string: string + "\n\n", attributes: attributes))
         }
-        paragraph("Thanks to…", bold: true)
+        paragraph(aboutIntl.thanksTo, bold: true)
         paragraph("KEGS", bold: true)
-        paragraph("Apple IIgs emulation by Kent Dickey.")
-        paragraph("KEGS project and source", link: URL(string: "https://kegs.sourceforge.net/"))
+        paragraph(aboutIntl.appleIigsEmulationByKentDickey)
+        paragraph(aboutIntl.kegsProjectAndSource, link: URL(string: "https://kegs.sourceforge.net/"))
         paragraph("GSplus", bold: true)
-        paragraph("Cross-platform work by Dagen Brock and GSplus contributors, building on KEGS.")
-        paragraph("GSplus source on GitHub", link: URL(string: "https://github.com/digarok/gsplus"))
-        paragraph("Apple IIGS Player Builder and Apple II Player", bold: true)
+        paragraph(aboutIntl.crossPlatformWorkByDagenBrock)
+        paragraph(aboutIntl.gsplusSourceOnGithub, link: URL(string: "https://github.com/digarok/gsplus"))
+        paragraph(aboutIntl.appleIigsPlayerBuilderAndApple, bold: true)
         paragraph(
-            "Swift builder and player integration by theredhead. The builder and player project is available on GitHub."
+            aboutIntl.integrationCredit
         )
-        paragraph("a2emu source on GitHub", link: URL(string: "https://github.com/theredhead/a2emu"))
-        paragraph("License", bold: true)
+        paragraph(aboutIntl.a2emuSourceOnGithub, link: URL(string: "https://github.com/theredhead/a2emu"))
+        paragraph(aboutIntl.license, bold: true)
         paragraph(
-            "The builder, player and emulator components are distributed under GNU GPL version 3. Original copyright notices and component licenses are preserved in the project sources. ROM firmware and software you run are separate from the player."
+            aboutIntl.licenseExplanation
         )
         if let license = Bundle.main.url(forResource: "GSplus-LICENSE", withExtension: "txt")
             ?? Bundle.main.url(forResource: "LICENSE", withExtension: "txt"),
@@ -87,7 +91,7 @@ final class AppAbout: NSObject, NSWindowDelegate {
         text.textStorage?.setAttributedString(body)
         scroll.documentView = text
         root.addSubview(scroll)
-        let save = NSButton(title: "View on GitHub…", target: self, action: #selector(openSource(_:)))
+        let save = NSButton(title: aboutIntl.viewOnGithub, target: self, action: #selector(openSource(_:)))
         save.bezelStyle = .rounded
         save.frame = NSRect(x: 24, y: 24, width: 180, height: 32)
         root.addSubview(save)

@@ -1,6 +1,9 @@
 import Cocoa
 import CryptoKit
 
+private let commonIntl = CommonIntl()
+private let romSetupIntl = ROMSetupIntl()
+
 /// Installs validated firmware in a shared library and records each player’s selection.
 struct ROMSetup {
     static let mirror =
@@ -15,7 +18,7 @@ struct ROMSetup {
     static func normalized(_ data: Data) throws -> Data {
         guard data.count == 131072 || data.count == 262144 else {
             throw error(
-                "Choose a complete 128 KB ROM 01 or 256 KB ROM 03 image. Individual ROM chips and ZIP files are not complete ROM images."
+                romSetupIntl.chooseAComplete128KbRom
             )
         }
 
@@ -33,7 +36,7 @@ struct ROMSetup {
             return banks.reversed().reduce(Data(), +)
         }
         throw error(
-            "This image does not contain a recognized Apple IIgs reset vector. Please choose a different ROM."
+            romSetupIntl.thisImageDoesNotContainA
         )
     }
 
@@ -117,24 +120,26 @@ struct ROMSetup {
     static func choose(directory: URL) -> URL? {
         while true {
             let alert = NSAlert()
-            alert.messageText = "Set up your Apple IIgs ROM"
+            alert.messageText = romSetupIntl.setUpYourAppleIigsRom
             alert.informativeText =
-                "No Apple IIgs ROM is bundled with this app. Choose a ROM to download, or browse for your own file. Installed ROMs are shared with your other a2emu players, so you only need to install them once. Each player keeps its own ROM choice. Changing this player’s ROM restarts the emulator."
-            alert.addButton(withTitle: "Use Selected ROM")
-            alert.addButton(withTitle: "Browse…")
-            alert.addButton(withTitle: "Cancel")
+                romSetupIntl.noAppleIigsRomIsBundled
+            alert.addButton(withTitle: romSetupIntl.useSelectedRom)
+            alert.addButton(withTitle: commonIntl.browse)
+            alert.addButton(withTitle: commonIntl.cancel)
             let choices = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 330, height: 28))
             let cached =
                 ((try? FileManager.default.contentsOfDirectory(
                     at: sharedDirectory(), includingPropertiesForKeys: nil)) ?? []).filter {
                     $0.pathExtension == "rom" && (try? normalized(Data(contentsOf: $0))) != nil
                 }.sorted { $0.lastPathComponent < $1.lastPathComponent }
-            choices.addItems(withTitles: ["ROM 03 (recommended)", "ROM 01"])
+            choices.addItems(withTitles: [romSetupIntl.recommendedROM, romSetupIntl.rom01])
             for url in cached {
                 let size = (try? Data(contentsOf: url).count) ?? 0
                 choices.addItem(
                     withTitle:
-                        "Installed ROM \(size == 262144 ? "03" : "01") — \(url.deletingPathExtension().lastPathComponent.prefix(8))"
+                        romSetupIntl.installedRom(
+                            model: size == 262144 ? "03" : "01",
+                            identifier: String(url.deletingPathExtension().lastPathComponent.prefix(8)))
                 )
             }
             choices.target = nil
@@ -146,7 +151,7 @@ struct ROMSetup {
             do {
                 if response == .alertSecondButtonReturn {
                     let panel = NSOpenPanel()
-                    panel.title = "Choose an Apple IIgs ROM"
+                    panel.title = romSetupIntl.chooseAnAppleIigsRom
                     panel.canChooseDirectories = false
                     panel.allowsMultipleSelection = false
                     guard panel.runModal() == .OK, let url = panel.url else {
@@ -182,7 +187,7 @@ struct ROMSetup {
                 return try install(bytes, directory: directory)
             } catch {
                 let failure = NSAlert()
-                failure.messageText = "Could not install ROM"
+                failure.messageText = romSetupIntl.couldNotInstallRom
                 failure.informativeText = error.localizedDescription
                 failure.runModal()
             }
@@ -193,9 +198,9 @@ struct ROMSetup {
     /// Returns nil on cancellation and throws on network or checksum failure.
     static func download(_ parts: [(String, String)]) throws -> Data? {
         let progress = NSAlert()
-        progress.messageText = "Downloading ROM…"
-        progress.informativeText = "Downloading from mirrors.apple2.org.za and verifying the image."
-        progress.addButton(withTitle: "Cancel")
+        progress.messageText = romSetupIntl.downloadingRom
+        progress.informativeText = romSetupIntl.downloadVerificationHint
+        progress.addButton(withTitle: commonIntl.cancel)
         let indicator = NSProgressIndicator(frame: NSRect(x: 0, y: 0, width: 330, height: 16))
         indicator.style = .bar
         indicator.isIndeterminate = true
@@ -234,7 +239,7 @@ struct ROMSetup {
                         return
                     } else {
                         outcome = .failure(
-                            error("The download could not be verified. Try again or browse for your own ROM.")
+                            error(romSetupIntl.theDownloadCouldNotBeVerified)
                         )
                     }
                     NSApp.abortModal()

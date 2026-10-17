@@ -1,5 +1,7 @@
 import Cocoa
 
+private let snapshotsIntl = SnapshotsIntl()
+
 extension AppDelegate {
     var snapshotsDirectory: URL { supportDirectory.appendingPathComponent("Snapshots", isDirectory: true) }
     var currentDiskDirectory: URL { snapshotDiskDirectory ?? supportDirectory }
@@ -28,7 +30,7 @@ extension AppDelegate {
     /// Captures between emulation ticks. A package is visible only once every file has been written.
     func saveSnapshot(title: String) throws -> URL {
         guard emulatorStarted, let view = mainWindowInfo.view else {
-            throw PlayerManifest.failure("Start the emulator before saving a snapshot.")
+            throw PlayerManifest.failure(snapshotsIntl.startTheEmulatorBeforeSavingA)
         }
         let manager = FileManager.default
         try manager.createDirectory(at: snapshotsDirectory, withIntermediateDirectories: true)
@@ -45,7 +47,7 @@ extension AppDelegate {
                 let source = URL(fileURLWithPath: path)
                 guard let index = machine.diskFiles.firstIndex(of: source.lastPathComponent) else {
                     throw PlayerManifest.failure(
-                        "This snapshot has a mounted disk that is not part of this player.")
+                        snapshotsIntl.thisSnapshotHasAMountedDisk)
                 }
                 sources[index] = source
                 mounts.append(DiskMount(diskIndex: index, address: address))
@@ -87,7 +89,7 @@ extension AppDelegate {
     func restoreSnapshot(at url: URL) throws {
         let snapshot = try PlayerSnapshot.read(at: url)
         guard machine.diskFiles.starts(with: snapshot.diskFiles) else {
-            throw PlayerManifest.failure("This snapshot belongs to a player with a different set of disks.")
+            throw PlayerManifest.failure(snapshotsIntl.thisSnapshotBelongsToAPlayer)
         }
         let manager = FileManager.default
         let working = supportDirectory.appendingPathComponent("Snapshot Disks", isDirectory: true)
@@ -137,8 +139,8 @@ extension AppDelegate {
                 committed = true
                 setEmulationPaused(true, reason: "Snapshot recovery failed")
                 throw PlayerManifest.failure(
-                    "Could not restore the snapshot or recover the previous machine. The emulator is paused. "
-                        + "Recovery data: \(working.path). \(error.localizedDescription)")
+                    snapshotsIntl.recoveryFailure(
+                        recoveryPath: working.path, errorDescription: error.localizedDescription))
             }
             throw restoreError
         }

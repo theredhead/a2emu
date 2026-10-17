@@ -1,0 +1,58 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"browserInstructions" = "Choose a snapshot to return to that moment. Each snapshot includes its own disk state.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"saveInstructions" = "Give this moment a name. Its disks and a preview will be saved with it.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"moveThisSnapshotToTheTrash" = "Move this snapshot to the Trash?";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"moveToTrash" = "Move to Trash";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"noSnapshotsYetSaveYourFirst" = "No snapshots yet. Save your first moment.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"restoreSnapshot" = "Restore Snapshot";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"restoringSnapshot" = "Restoring snapshot…";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"saveSnapshot" = "Save Snapshot…";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"saveSnapshotTitle" = "Save Snapshot";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"savedGame" = "Saved game";
+
+/* SnapshotBrowser: Formatted message. gameName: runtime text; keep its placeholder */
+"windowTitle" = "Saved Snapshots — %1$@";
+
+/* SnapshotBrowser: Formatted message. count: numeric value */
+"savedSnapshotCount" = "%1$ld saved snapshots";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"savingSnapshot" = "Saving snapshot…";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"showInFinder" = "Show in Finder";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"snapshotCouldNotBeCompleted" = "Snapshot could not be completed";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"thisSnapshotIsAlreadyInYour" = "This snapshot is already in your library.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"thisSnapshotUsesADifferentSet" = "This snapshot uses a different set of disks.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"deleteExplanation" = "Your running game and its working disks will be kept.";
+
+/* SnapshotBrowser: User-visible label, instruction, or error message. */
+"yourSavedMoments" = "Your saved moments";

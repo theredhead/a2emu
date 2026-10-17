@@ -1,5 +1,9 @@
 import Foundation
 
+private let commonIntl = CommonIntl()
+
+private let playerManifestIntl = PlayerManifestIntl()
+
 /// Stored speed identifiers shared with the emulator configuration.
 enum EmulationSpeed: Int, Codable, CaseIterable {
     case oneMHz = 1
@@ -8,10 +12,10 @@ enum EmulationSpeed: Int, Codable, CaseIterable {
     case unlimited = 0
     var label: String {
         switch self {
-        case .oneMHz: return "1.0 MHz"
-        case .twoPointEightMHz: return "2.8 MHz"
-        case .eightMHz: return "8 MHz"
-        case .unlimited: return "Unlimited"
+        case .oneMHz: return playerManifestIntl.oneMHz
+        case .twoPointEightMHz: return playerManifestIntl.twoPointEightMHz
+        case .eightMHz: return playerManifestIntl.eightMHz
+        case .unlimited: return playerManifestIntl.unlimited
         }
     }
 }
@@ -26,7 +30,9 @@ struct DriveAddress: Codable, Hashable {
 
     var label: String {
         slot == 7
-            ? "SmartPort Drive \(drive + 1)" : "\(slot == 6 ? "5.25-inch" : "3.5-inch") Drive \(drive + 1)"
+            ? playerManifestIntl.smartportDrive(number: drive + 1)
+            : playerManifestIntl.drive(
+                kind: slot == 6 ? commonIntl.floppy525Type : commonIntl.floppy35Type, number: drive + 1)
     }
 }
 
@@ -64,7 +70,7 @@ struct PlayerManifest: Codable {
     ) throws -> PlayerManifest {
         let slot = availableDrives?.count == 1 ? availableDrives![0].slot : slot
         guard [5, 6, 7].contains(slot), !disks.isEmpty else {
-            throw failure("Choose slot 5, 6 or 7 and at least one disk.")
+            throw failure(playerManifestIntl.chooseSlot56Or7)
         }
         return PlayerManifest(
             expansionMemoryKB: expansionMemoryKB, startInFullScreen: startInFullScreen,
@@ -79,7 +85,8 @@ struct PlayerManifest: Codable {
 
     static var displayName: String {
         (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
-            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? "Apple II Player"
+            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
+            ?? playerManifestIntl.appleIiPlayer
     }
 
     /// Trims the display name and throws if it is empty or contains unsafe filename characters.
@@ -88,7 +95,7 @@ struct PlayerManifest: Codable {
         guard !value.isEmpty, value.rangeOfCharacter(from: .controlCharacters) == nil, !value.contains("/"),
             !value.contains(":")
         else {
-            throw failure("Enter an app name without slashes, colons or control characters.")
+            throw failure(playerManifestIntl.enterAnAppNameWithoutSlashes)
         }
         return value
     }
@@ -130,7 +137,7 @@ struct PlayerManifest: Codable {
     /// Throws if the manifest has unsupported settings, unsafe disk names, or inconsistent mounts.
     func validate() throws {
         if let memory = expansionMemoryKB, !Self.expansionMemoryChoices.contains(memory) {
-            throw Self.failure("Choose a supported expansion RAM size.")
+            throw Self.failure(playerManifestIntl.chooseASupportedExpansionRamSize)
         }
         guard version == 1, [5, 6, 7].contains(bootSlot), !diskFiles.isEmpty, bram1.count == 256,
             bram3.count == 256,
@@ -140,7 +147,7 @@ struct PlayerManifest: Codable {
             }),
             bram1[0x28] == bootSlot, bram3[0x28] == bootSlot
         else {
-            throw Self.failure("The player machine configuration is invalid.")
+            throw Self.failure(playerManifestIntl.thePlayerMachineConfigurationIsInvalid)
         }
         if let names = diskNames {
             guard names.count == diskFiles.count,
@@ -149,14 +156,14 @@ struct PlayerManifest: Codable {
                         && $0.rangeOfCharacter(from: .controlCharacters) == nil
                 })
             else {
-                throw Self.failure("Give each disk a name without control characters.")
+                throw Self.failure(playerManifestIntl.giveEachDiskANameWithout)
             }
         }
         guard !drives.isEmpty, Set(drives).count == drives.count,
             drives.allSatisfy({ DriveAddress.all.contains($0) }),
             mounts.allSatisfy({ drives.contains($0.address) })
         else {
-            throw Self.failure("Initial disks must use an available drive.")
+            throw Self.failure(playerManifestIntl.initialDisksMustUseAnAvailable)
         }
         guard
             mounts.allSatisfy({
@@ -167,7 +174,7 @@ struct PlayerManifest: Codable {
             mounts.contains(where: { $0.address == DriveAddress(slot: bootSlot, drive: 0) })
         else {
             throw Self.failure(
-                "Mount a boot disk in drive 1 of the startup slot, and assign each image to a separate drive."
+                playerManifestIntl.mountABootDiskInDrive
             )
         }
     }

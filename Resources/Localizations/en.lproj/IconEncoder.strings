@@ -1,0 +1,7 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* IconEncoder: User-visible label, instruction, or error message. */
+"couldNotEncodeIcon" = "Could not encode icon.";
+
+/* IconEncoder: User-visible label, instruction, or error message. */
+"theIconImageIsInvalid" = "The icon image is invalid.";

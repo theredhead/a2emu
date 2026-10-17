@@ -1,5 +1,7 @@
 import Foundation
 
+private let playerExporterIntl = PlayerExporterIntl()
+
 /// Creates and replaces signed player bundles using a sibling staging directory.
 struct PlayerExporter {
     /// Validates defaults, copies media into the template, and signs before moving to the destination.
@@ -14,14 +16,14 @@ struct PlayerExporter {
     ) throws {
         let manager = FileManager.default
         guard !manager.fileExists(atPath: destination.path) else {
-            throw PlayerManifest.failure("That app already exists. Choose a new name or location.")
+            throw PlayerManifest.failure(playerExporterIntl.thatAppAlreadyExistsChooseA)
         }
 
         let appName = try PlayerManifest.checkedName(
             displayName ?? destination.deletingPathExtension().lastPathComponent)
         let names = disks.map { $0.lastPathComponent }
         guard Set(names).count == names.count else {
-            throw PlayerManifest.failure("Each disk must have a different filename.")
+            throw PlayerManifest.failure(playerExporterIntl.eachDiskMustHaveADifferent)
         }
 
         var manifest = try PlayerManifest.make(
@@ -39,7 +41,7 @@ struct PlayerExporter {
                 snapshot.mounts.allSatisfy({ manifest.drives.contains($0.address) })
             else {
                 throw PlayerManifest.failure(
-                    "The startup snapshot must use this player's disks and available drives.")
+                    playerExporterIntl.theStartupSnapshotMustUseThis)
             }
             manifest.expansionMemoryKB = try snapshot.capturedExpansionMemoryKB(at: snapshotURL)
             try manifest.validate()
@@ -69,7 +71,7 @@ struct PlayerExporter {
             try clean.run()
             clean.waitUntilExit()
             guard clean.terminationStatus == 0 else {
-                throw PlayerManifest.failure("Could not prepare the startup snapshot for signing.")
+                throw PlayerManifest.failure(playerExporterIntl.couldNotPrepareTheStartupSnapshot)
             }
         }
         for disk in disks {
@@ -98,7 +100,7 @@ struct PlayerExporter {
         try signing.run()
         signing.waitUntilExit()
         guard signing.terminationStatus == 0 else {
-            throw PlayerManifest.failure("Could not sign the exported player.")
+            throw PlayerManifest.failure(playerExporterIntl.couldNotSignTheExportedPlayer)
         }
         try manager.moveItem(at: staging, to: destination)
     }
@@ -106,7 +108,7 @@ struct PlayerExporter {
     /// Reads and validates a player manifest and checks that its bundled disk images exist.
     static func read(app: URL) throws -> PlayerManifest {
         guard app.pathExtension.lowercased() == "app" else {
-            throw PlayerManifest.failure("Choose an a2emu player app.")
+            throw PlayerManifest.failure(playerExporterIntl.chooseAnA2EmuPlayerApp)
         }
 
         let manifest = try JSONDecoder().decode(
@@ -119,14 +121,14 @@ struct PlayerExporter {
                     atPath: app.appendingPathComponent("Contents/Resources").appendingPathComponent(name).path
                 )
             else {
-                throw PlayerManifest.failure("This player is missing a bundled disk image.")
+                throw PlayerManifest.failure(playerExporterIntl.thisPlayerIsMissingABundled)
             }
         }
         if manifest.startupSnapshot == true {
             let snapshotURL = app.appendingPathComponent("Contents/Resources/Startup.a2snapshot")
             let snapshot = try PlayerSnapshot.read(at: snapshotURL)
             guard snapshot.diskFiles == manifest.diskFiles else {
-                throw PlayerManifest.failure("The bundled startup snapshot uses different disks.")
+                throw PlayerManifest.failure(playerExporterIntl.theBundledStartupSnapshotUsesDifferent)
             }
             try PlayerSnapshot.checkCore(at: snapshotURL, template: app)
         }
@@ -147,7 +149,7 @@ struct PlayerExporter {
                 from: Data(contentsOf: app.appendingPathComponent("Contents/Info.plist")), format: nil)
             as? [String: Any]
         guard let identifier = info?["CFBundleIdentifier"] as? String else {
-            throw PlayerManifest.failure("This player has no application identifier.")
+            throw PlayerManifest.failure(playerExporterIntl.thisPlayerHasNoApplicationIdentifier)
         }
 
         let temporary = app.deletingLastPathComponent().appendingPathComponent(

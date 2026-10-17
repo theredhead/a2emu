@@ -1,6 +1,9 @@
 import Cocoa
 import UniformTypeIdentifiers
 
+private let commonIntl = CommonIntl()
+private let snapshotBrowserIntl = SnapshotBrowserIntl()
+
 private final class SnapshotBackground: NSView {
     override func draw(_ dirtyRect: NSRect) {
         NSColor.windowBackgroundColor.setFill()
@@ -68,8 +71,8 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
     private weak var player: AppDelegate?
     private let collection = NSCollectionView()
     private let status = NSTextField(labelWithString: "")
-    private let restore = NSButton(title: "Restore Snapshot", target: nil, action: nil)
-    private let remove = NSButton(title: "Delete…", target: nil, action: nil)
+    private let restore = NSButton(title: snapshotBrowserIntl.restoreSnapshot, target: nil, action: nil)
+    private let remove = NSButton(title: commonIntl.deleteAction, target: nil, action: nil)
     private var snapshots: [(URL, PlayerSnapshot)] = []
     private var isPresented = false
 
@@ -79,24 +82,27 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
             contentRect: NSRect(x: 0, y: 0, width: 850, height: 610),
             styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
         window.contentView = SnapshotBackground(frame: NSRect(x: 0, y: 0, width: 850, height: 610))
-        window.title = "Saved Snapshots — " + PlayerManifest.displayName
+        window.title = snapshotBrowserIntl.windowTitle(gameName: PlayerManifest.displayName)
         window.minSize = NSSize(width: 590, height: 420)
         super.init(window: window)
         window.delegate = self
         window.isReleasedWhenClosed = false
-        let save = NSButton(title: "Save Snapshot…", target: self, action: #selector(saveSnapshot(_:)))
-        let importButton = NSButton(title: "Import…", target: self, action: #selector(importSnapshot(_:)))
-        let reveal = NSButton(title: "Show in Finder", target: self, action: #selector(revealSnapshots(_:)))
+        let save = NSButton(
+            title: snapshotBrowserIntl.saveSnapshot, target: self, action: #selector(saveSnapshot(_:)))
+        let importButton = NSButton(
+            title: commonIntl.importAction, target: self, action: #selector(importSnapshot(_:)))
+        let reveal = NSButton(
+            title: snapshotBrowserIntl.showInFinder, target: self, action: #selector(revealSnapshots(_:)))
         restore.target = self
         restore.action = #selector(restoreSnapshot(_:))
         remove.target = self
         remove.action = #selector(deleteSnapshot(_:))
         for button in [save, importButton, reveal, restore, remove] { button.bezelStyle = .rounded }
-        let heading = NSTextField(labelWithString: "Your saved moments")
+        let heading = NSTextField(labelWithString: snapshotBrowserIntl.yourSavedMoments)
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         let help = NSTextField(
             wrappingLabelWithString:
-                "Choose a snapshot to return to that moment. Each snapshot includes its own disk state.")
+                snapshotBrowserIntl.browserInstructions)
         help.textColor = .secondaryLabelColor
         let actions = NSStackView(views: [save, importButton, reveal])
         actions.spacing = 10
@@ -191,7 +197,8 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
             collection.reloadData()
             status.stringValue =
                 snapshots.isEmpty
-                ? "No snapshots yet. Save your first moment." : "\(snapshots.count) saved snapshots"
+                ? snapshotBrowserIntl.noSnapshotsYetSaveYourFirst
+                : snapshotBrowserIntl.savedSnapshotCount(count: snapshots.count)
             updateButtons()
         } catch { showError(error) }
     }
@@ -233,18 +240,18 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
     @objc private func saveSnapshot(_ sender: Any?) {
         guard let player = player else { return }
         let alert = NSAlert()
-        alert.messageText = "Save Snapshot"
-        alert.informativeText = "Give this moment a name. Its disks and a preview will be saved with it."
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
-        let name = NSTextField(string: "Saved game")
+        alert.messageText = snapshotBrowserIntl.saveSnapshotTitle
+        alert.informativeText = snapshotBrowserIntl.saveInstructions
+        alert.addButton(withTitle: commonIntl.save)
+        alert.addButton(withTitle: commonIntl.cancel)
+        let name = NSTextField(string: snapshotBrowserIntl.savedGame)
         name.frame = NSRect(x: 0, y: 0, width: 320, height: 24)
         alert.accessoryView = name
         alert.window.initialFirstResponder = name
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let title = name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
-        status.stringValue = "Saving snapshot…"
+        status.stringValue = snapshotBrowserIntl.savingSnapshot
         window?.displayIfNeeded()
         do {
             let url = try player.saveSnapshot(title: title)
@@ -258,7 +265,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
 
     @objc private func restoreSnapshot(_ sender: Any?) {
         guard let url = selectedURL, let player = player else { return }
-        status.stringValue = "Restoring snapshot…"
+        status.stringValue = snapshotBrowserIntl.restoringSnapshot
         window?.displayIfNeeded()
         do {
             try player.restoreSnapshot(at: url)
@@ -277,12 +284,12 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         do {
             let snapshot = try PlayerSnapshot.read(at: url)
             guard player.machine.diskFiles.starts(with: snapshot.diskFiles) else {
-                throw PlayerManifest.failure("This snapshot uses a different set of disks.")
+                throw PlayerManifest.failure(snapshotBrowserIntl.thisSnapshotUsesADifferentSet)
             }
             let destination = player.snapshotsDirectory.appendingPathComponent(
                 snapshot.fileName)
             guard !FileManager.default.fileExists(atPath: destination.path) else {
-                throw PlayerManifest.failure("This snapshot is already in your library.")
+                throw PlayerManifest.failure(snapshotBrowserIntl.thisSnapshotIsAlreadyInYour)
             }
             try FileManager.default.copyItem(at: url, to: destination)
             player.setSnapshotFinderIcon(at: destination)
@@ -300,10 +307,10 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
             return
         }
         let alert = NSAlert()
-        alert.messageText = "Move this snapshot to the Trash?"
-        alert.informativeText = "Your running game and its working disks will be kept."
-        alert.addButton(withTitle: "Move to Trash")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = snapshotBrowserIntl.moveThisSnapshotToTheTrash
+        alert.informativeText = snapshotBrowserIntl.deleteExplanation
+        alert.addButton(withTitle: snapshotBrowserIntl.moveToTrash)
+        alert.addButton(withTitle: commonIntl.cancel)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         do {
             try FileManager.default.trashItem(at: url, resultingItemURL: nil)
@@ -313,7 +320,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
 
     private func showError(_ error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Snapshot could not be completed"
+        alert.messageText = snapshotBrowserIntl.snapshotCouldNotBeCompleted
         alert.informativeText = error.localizedDescription
         alert.runModal()
     }

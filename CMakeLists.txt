@@ -39,6 +39,9 @@ endforeach()
 string(SHA256 snapshot_build_id "${snapshot_schema}")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Snapshot-Core-ID.txt" "${snapshot_build_id}\n")
 target_compile_definitions(gsplus_core PRIVATE A2_SNAPSHOT_BUILD_ID="${snapshot_build_id}")
+# Standard .lproj resources are shared by the builder and exported player template.
+file(GLOB intl_sources CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Sources/Shared/Intl/*.swift")
+file(GLOB_RECURSE localization_resources CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Resources/Localizations/*")
 # Give zero-initialized C globals explicit storage instead of tentative common
 # symbols, whose size-based linker alignment can exceed Mach-O segment alignment.
 target_compile_options(gsplus_core PRIVATE -fno-common)
@@ -48,6 +51,7 @@ set_source_files_properties(Vendor/gsplus/gsplus/src/joystick_driver.c
     DIRECTORY "${CMAKE_SOURCE_DIR}/Vendor/gsplus/gsplus/src"
     PROPERTIES COMPILE_OPTIONS "-UMAC")
 add_executable(a2emu-player MACOSX_BUNDLE
+    ${intl_sources}
     Sources/Shared/PlayerManifest.swift
     Sources/Shared/PlayerSnapshot.swift
     Sources/Player/EmulatorCore.swift
@@ -76,10 +80,12 @@ target_link_libraries(a2emu-player PRIVATE gsplus_core
 set_target_properties(a2emu-player PROPERTIES OUTPUT_NAME "Apple II Player"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Sources/Player/Info.plist")
 set_property(TARGET a2emu-player APPEND PROPERTY LINK_DEPENDS
+    ${localization_resources}
     "${CMAKE_SOURCE_DIR}/Assets/Player.icns"
     "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png"
     "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns")
 add_custom_command(TARGET a2emu-player POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Resources/Localizations" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/Snapshot-Core-ID.txt" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Snapshot-Core-ID.txt"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Player.icns" "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Player.icns"
@@ -90,7 +96,7 @@ add_custom_command(TARGET a2emu-player POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Player-Source.zip"
     COMMAND codesign --force --sign - "$<TARGET_BUNDLE_DIR:a2emu-player>")
 
-add_executable(a2emu-builder MACOSX_BUNDLE Sources/Shared/PlayerSnapshot.swift Sources/Shared/About.swift Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift Sources/Builder/Builder.swift Sources/Builder/DiskImageDevice.swift Sources/Builder/PlayerExporter.swift Sources/Shared/PlayerManifest.swift)
+add_executable(a2emu-builder MACOSX_BUNDLE ${intl_sources} Sources/Shared/PlayerSnapshot.swift Sources/Shared/About.swift Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift Sources/Builder/Builder.swift Sources/Builder/DiskImageDevice.swift Sources/Builder/PlayerExporter.swift Sources/Shared/PlayerManifest.swift)
 target_compile_options(a2emu-builder PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:-target;${CMAKE_OSX_ARCHITECTURES}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET};-swift-version;4>")
 target_link_libraries(a2emu-builder PRIVATE "-framework Cocoa" "-framework WebKit")
 set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Sources/Builder/Info.plist.in" OUTPUT_NAME "Apple IIGS Player Builder" MACOSX_BUNDLE_GUI_IDENTIFIER "nl.theredhead.a2emu-wrapper-builder" MACOSX_BUNDLE_BUNDLE_NAME "Apple IIGS Player Builder" MACOSX_BUNDLE_SHORT_VERSION_STRING "${A2EMU_VERSION}" MACOSX_BUNDLE_BUNDLE_VERSION "3" MACOSX_BUNDLE_ICON_FILE "Builder.icns")
@@ -98,11 +104,13 @@ set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE
 target_sources(a2emu-builder PRIVATE Assets/Builder.icns)
 set_source_files_properties(Assets/Builder.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 set_property(TARGET a2emu-builder APPEND PROPERTY LINK_DEPENDS
+    ${localization_resources}
     "${CMAKE_SOURCE_DIR}/Assets/Builder.icns"
     "${CMAKE_SOURCE_DIR}/Assets/BuilderIcon.png"
     "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png"
     "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns")
 add_custom_command(TARGET a2emu-builder POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Resources/Localizations" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/PlayerIcon.png"
     COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/Player-Source.zip"

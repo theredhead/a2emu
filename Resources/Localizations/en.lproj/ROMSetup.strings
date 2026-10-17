@@ -1,0 +1,40 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"chooseAComplete128KbRom" = "Choose a complete 128 KB ROM 01 or 256 KB ROM 03 image. Individual ROM chips and ZIP files are not complete ROM images.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"chooseAnAppleIigsRom" = "Choose an Apple IIgs ROM";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"couldNotInstallRom" = "Could not install ROM";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"downloadingRom" = "Downloading ROM…";
+
+/* ROMSetup: Formatted message. model: runtime text; keep its placeholder; identifier: runtime text; keep its placeholder */
+"installedRom" = "Installed ROM %1$@ — %2$@";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"noAppleIigsRomIsBundled" = "No Apple IIgs ROM is bundled with this app. Choose a ROM to download, or browse for your own file. Installed ROMs are shared with your other a2emu players, so you only need to install them once. Each player keeps its own ROM choice. Changing this player’s ROM restarts the emulator.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"recommendedROM" = "ROM 03 (recommended)";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"rom01" = "ROM 01";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"setUpYourAppleIigsRom" = "Set up your Apple IIgs ROM";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"theDownloadCouldNotBeVerified" = "The download could not be verified. Try again or browse for your own ROM.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"thisImageDoesNotContainA" = "This image does not contain a recognized Apple IIgs reset vector. Please choose a different ROM.";
+
+/* ROMSetup: User-visible label, instruction, or error message. */
+"useSelectedRom" = "Use Selected ROM";
+
+/* Progress text. Keep the download server hostname unchanged. */
+"downloadVerificationHint" = "Downloading from mirrors.apple2.org.za and verifying the image.";

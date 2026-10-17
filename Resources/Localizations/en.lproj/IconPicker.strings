@@ -1,0 +1,51 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* IconPicker: Formatted message. searchName: runtime text; keep its placeholder */
+"apple2GsGame" = "Apple 2gs game %1$@";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"chooseAnImageFirst" = "Choose an image first.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"chooseLocalImage" = "Choose Local Image…";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"choosePlayerIcon" = "Choose Player Icon";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"clickAnImageResultOrChoose" = "Click an image result, or choose a local image.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"couldNotLoadThatImageTry" = "Could not load that image. Try another result or a local file.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"dragAndZoomThenUseThis" = "Drag and zoom, then use this crop.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"dragToPositionTheSquareCrop" = "Drag to position the square crop.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"ifNoImagesAppearTryAnother" = "If no images appear, try another search or choose a local image.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"loadingSelectedImage" = "Loading selected image…";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"search" = "Search";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"searchUnavailableTryAgainOrChoose" = "Search unavailable. Try again or choose a local image.";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"searchingDuckduckgoImages" = "Searching DuckDuckGo images…";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"selectAnImageToCrop" = "Select an image to crop";
+
+/* IconPicker: User-visible label, instruction, or error message. */
+"useThisCrop" = "Use This Crop";
+
+/* Empty image-search grid while loading. */
+"searchingForImages" = "Searching for images…";
+/* Accessibility label; number is the result position, starting at one. */
+"selectImage" = "Select image %1$ld";

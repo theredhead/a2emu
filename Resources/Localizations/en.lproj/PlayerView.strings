@@ -1,0 +1,16 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"chooseADriveInTheDisks" = "Choose a drive in the Disks menu to insert an added image. Your current disks remain mounted.";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"couldNotAddDisks" = "Could Not Add Disks";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"couldNotSaveScreenshot" = "Could not save screenshot";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"disksAdded" = "Disks Added";
+
+/* PlayerView: User-visible label, instruction, or error message. */
+"noGameFrameIsAvailableTo" = "No game frame is available to capture yet.";

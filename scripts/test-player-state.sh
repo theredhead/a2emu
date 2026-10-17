@@ -16,7 +16,7 @@ void a2_audio_test_enable(void);
 void a2_audio_test_report(void);
 unsigned long long a2_audio_test_render(int frames);
 BRIDGE
-xcrun swiftc -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
+xcrun swiftc Sources/Shared/Intl/*.swift -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
     -module-cache-path "$stage/module-cache" -Xcc "-I$repo_root/Sources/Player" \
     -Xcc "-I$repo_root/Vendor/gsplus/gsplus/src" -import-objc-header "$stage/Bridge.h" \
     Sources/Player/EmulatorCore.swift Sources/Player/PlayerMenu.swift Sources/Player/PlayerMenuLayout.swift \

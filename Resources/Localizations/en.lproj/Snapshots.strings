@@ -1,0 +1,13 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* Snapshots: Formatted message. recoveryPath: runtime text; keep its placeholder; errorDescription: runtime text; keep its placeholder */
+"recoveryFailure" = "Could not restore the snapshot or recover the previous machine. The emulator is paused. Recovery data: %1$@. %2$@";
+
+/* Snapshots: User-visible label, instruction, or error message. */
+"startTheEmulatorBeforeSavingA" = "Start the emulator before saving a snapshot.";
+
+/* Snapshots: User-visible label, instruction, or error message. */
+"thisSnapshotBelongsToAPlayer" = "This snapshot belongs to a player with a different set of disks.";
+
+/* Snapshots: User-visible label, instruction, or error message. */
+"thisSnapshotHasAMountedDisk" = "This snapshot has a mounted disk that is not part of this player.";

@@ -1,6 +1,9 @@
 import Cocoa
 import UniformTypeIdentifiers
 
+private let builderIntl = BuilderIntl()
+private let commonIntl = CommonIntl()
+
 final class PlayerDropView: NSView {
     var openFiles: (([URL]) -> Void)?
 
@@ -49,11 +52,11 @@ final class BuilderArtworkView: NSView {
         didSet { snapshotClearButton.isHidden = startupSnapshot == nil }
     }
     let snapshotClearButton = NSButton(title: "", target: nil, action: nil)
-    let snapshotLabel = NSTextField(labelWithString: "No snapshot — normal startup")
+    let snapshotLabel = NSTextField(labelWithString: builderIntl.normalStartup)
     var iconData: Data?
     var iconPicker: IconPicker?
     let iconPreview = NSImageView(frame: NSRect(x: 28, y: 76, width: 64, height: 64))
-    let heading = NSTextField(labelWithString: "Create a standalone Apple IIGS player")
+    let heading = NSTextField(labelWithString: builderIntl.createPlayerHeading)
     let appName = NSTextField(string: "")
     let mountList = NSScrollView(frame: NSRect(x: 28, y: 198, width: 564, height: 180))
     var listedDrives: [DriveAddress] = []
@@ -66,15 +69,15 @@ final class BuilderArtworkView: NSView {
 
     var diskNameFields: [NSTextField] = []
     var mountChoices: [NSPopUpButton] = []
-    let summary = NSTextField(labelWithString: "Choose disk images to package.")
-    let fullScreen = NSButton(checkboxWithTitle: "Start in full screen", target: nil, action: nil)
+    let summary = NSTextField(labelWithString: builderIntl.chooseDisksHint)
+    let fullScreen = NSButton(checkboxWithTitle: builderIntl.startInFullScreen, target: nil, action: nil)
     let speed = NSPopUpButton(frame: .zero)
     private var hasChosenSpeed = false
     let slot = NSPopUpButton(frame: .zero)
     let memory = NSPopUpButton(frame: .zero)
     var editingPlayer: URL?
     var pendingPlayer: URL?
-    let exportButton = NSButton(title: "Create Player…", target: nil, action: nil)
+    let exportButton = NSButton(title: builderIntl.createPlayer, target: nil, action: nil)
     var delegateLifetime: Builder?
 
     static func main() {
@@ -114,21 +117,23 @@ final class BuilderArtworkView: NSView {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let menu = NSMenu()
         let appItem = NSMenuItem()
-        let app = NSMenu(title: "Apple IIGS Player Builder")
+        let app = NSMenu(title: builderIntl.appleIigsPlayerBuilder)
         let about = app.addItem(
-            withTitle: "About Apple IIGS Player Builder", action: #selector(showAbout(_:)), keyEquivalent: "")
+            withTitle: builderIntl.aboutAppleIigsPlayerBuilder, action: #selector(showAbout(_:)),
+            keyEquivalent: "")
         about.target = self
         app.addItem(NSMenuItem.separator())
-        app.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        app.addItem(
+            withTitle: commonIntl.quit, action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = app
         menu.addItem(appItem)
         NSApp.mainMenu = menu
         let fileItem = NSMenuItem()
-        let fileMenu = NSMenu(title: "File")
+        let fileMenu = NSMenu(title: commonIntl.file)
         for (title, action, key) in [
-            ("New Player", #selector(newPlayer(_:)), "n"),
-            ("Open Player…", #selector(openPlayerPanel(_:)), "o"),
-            ("New Blank Disk Image…", #selector(createBlankDisk(_:)), ""),
+            (builderIntl.newPlayer, #selector(newPlayer(_:)), "n"),
+            (builderIntl.openPlayer, #selector(openPlayerPanel(_:)), "o"),
+            (builderIntl.newBlankDiskImage, #selector(createBlankDisk(_:)), ""),
         ] {
             let item = fileMenu.addItem(withTitle: title, action: action, keyEquivalent: key)
             item.target = self
@@ -138,7 +143,7 @@ final class BuilderArtworkView: NSView {
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1003, height: 760),
             styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        window.title = "Apple IIGS Player Builder"
+        window.title = builderIntl.appleIigsPlayerBuilder
         let content = PlayerDropView(frame: window.contentView!.bounds)
         content.registerForDraggedTypes([.fileURL])
         content.openFiles = { [weak self] in self?.acceptDroppedFiles($0) }
@@ -155,20 +160,21 @@ final class BuilderArtworkView: NSView {
         summary.frame = NSRect(x: 212, y: 658, width: 380, height: 32)
         summary.lineBreakMode = .byWordWrapping
         root.addSubview(summary)
-        let choose = NSButton(title: "Choose Disks…", target: self, action: #selector(chooseDisks(_:)))
+        let choose = NSButton(
+            title: builderIntl.chooseDisks, target: self, action: #selector(chooseDisks(_:)))
         choose.frame = NSRect(x: 28, y: 658, width: 160, height: 32)
         choose.bezelStyle = .rounded
         root.addSubview(choose)
         align(summary, with: choose)
-        let label = NSTextField(labelWithString: "Start up from:")
+        let label = NSTextField(labelWithString: builderIntl.startUpFrom)
         label.frame = NSRect(x: 28, y: 511, width: 110, height: 24)
         root.addSubview(label)
         slot.frame = NSRect(x: 140, y: 508, width: 452, height: 28)
         slot.addItems(withTitles: [
-            "Slot 6 — 5.25-inch floppy", "Slot 5 — 3.5-inch floppy", "Slot 7 — hard disk / SmartPort",
+            builderIntl.bootFloppy525, builderIntl.bootFloppy35, builderIntl.bootSmartPort,
         ])
         root.addSubview(slot)
-        let speedLabel = NSTextField(labelWithString: "Initial speed:")
+        let speedLabel = NSTextField(labelWithString: builderIntl.initialSpeed)
         speedLabel.frame = NSRect(x: 28, y: 465, width: 110, height: 24)
         root.addSubview(speedLabel)
         speed.frame = NSRect(x: 140, y: 462, width: 128, height: 28)
@@ -177,36 +183,39 @@ final class BuilderArtworkView: NSView {
         speed.target = self
         speed.action = #selector(speedChanged(_:))
         root.addSubview(speed)
-        let memoryLabel = NSTextField(labelWithString: "Expansion RAM:")
+        let memoryLabel = NSTextField(labelWithString: builderIntl.expansionRam)
         memoryLabel.frame = NSRect(x: 284, y: 465, width: 112, height: 24)
         root.addSubview(memoryLabel)
         memory.frame = NSRect(x: 398, y: 462, width: 194, height: 28)
         memory.addItems(
             withTitles: PlayerManifest.expansionMemoryChoices.map {
-                $0 == 0 ? "None (built-in only)" : ($0 < 1024 ? "\($0) KB" : "\($0 / 1024) MB")
+                $0 == 0
+                    ? builderIntl.noneBuiltInOnly
+                    : ($0 < 1024
+                        ? builderIntl.kilobytes(kilobytes: $0) : builderIntl.megabytes(megabytes: $0 / 1024))
             })
         memory.selectItem(at: PlayerManifest.expansionMemoryChoices.firstIndex(of: 8192)!)
         memory.toolTip =
-            "Additional RAM beyond the ROM model's built-in memory. ROM 01 starts with 256 KB; ROM 03 has about 1 MB."
+            builderIntl.expansionRAMHint
         root.addSubview(memory)
         align(memoryLabel, with: memory)
         align(label, with: slot)
         align(speedLabel, with: speed)
         slot.target = self
         slot.action = #selector(startupChanged(_:))
-        let nameLabel = NSTextField(labelWithString: "App name:")
+        let nameLabel = NSTextField(labelWithString: builderIntl.appName)
         nameLabel.frame = NSRect(x: 28, y: 558, width: 110, height: 24)
         root.addSubview(nameLabel)
         appName.frame = NSRect(x: 140, y: 555, width: 452, height: 28)
-        appName.placeholderString = "Name of the exported app"
+        appName.placeholderString = builderIntl.appNamePlaceholder
         root.addSubview(appName)
         align(nameLabel, with: appName)
-        let mounted = NSTextField(labelWithString: "Disk names and initial drives")
+        let mounted = NSTextField(labelWithString: builderIntl.diskNamesAndInitialDrives)
         mounted.frame = NSRect(x: 28, y: 379, width: 564, height: 24)
         root.addSubview(mounted)
-        for (index, title) in ["5.25-inch", "3.5-inch", "SmartPort"].enumerated() {
+        for (index, title) in [commonIntl.floppy525Type, commonIntl.floppy35Type, "SmartPort"].enumerated() {
             let x = CGFloat(28 + index * 190)
-            let label = NSTextField(labelWithString: title + " drives:")
+            let label = NSTextField(labelWithString: builderIntl.drives(title: title))
             label.frame = NSRect(x: x, y: 410, width: 110, height: 24)
             root.addSubview(label)
             let count = NSPopUpButton(frame: NSRect(x: x + 108, y: 407, width: 70, height: 28))
@@ -223,12 +232,13 @@ final class BuilderArtworkView: NSView {
         root.addSubview(mountList)
         let help = NSTextField(
             wrappingLabelWithString:
-                "Leave extra images unmounted; swap them into a drive later through the Disks menu.")
+                builderIntl.unmountedDisksHint)
         help.frame = NSRect(x: 28, y: 146, width: 450, height: 40)
         root.addSubview(help)
         iconPreview.image = NSImage(named: NSImage.Name("PlayerIcon"))
         root.addSubview(iconPreview)
-        let icon = NSButton(title: "Choose Player Icon…", target: self, action: #selector(chooseIcon(_:)))
+        let icon = NSButton(
+            title: builderIntl.choosePlayerIcon, target: self, action: #selector(chooseIcon(_:)))
         icon.frame = NSRect(x: 108, y: 92, width: 210, height: 32)
         icon.bezelStyle = .rounded
         root.addSubview(icon)
@@ -241,7 +251,7 @@ final class BuilderArtworkView: NSView {
         export.bezelStyle = .rounded
         root.addSubview(export)
         let snapshotButton = NSButton(
-            title: "Startup Snapshot…", target: self, action: #selector(chooseSnapshot(_:)))
+            title: builderIntl.startupSnapshot, target: self, action: #selector(chooseSnapshot(_:)))
         snapshotButton.bezelStyle = .rounded
         snapshotButton.frame = NSRect(x: 28, y: 610, width: 160, height: 32)
         root.addSubview(snapshotButton)
@@ -252,15 +262,16 @@ final class BuilderArtworkView: NSView {
         clearSnapshot.target = self
         clearSnapshot.action = #selector(clearSnapshot(_:))
         clearSnapshot.image = NSImage(
-            systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Remove startup snapshot")
+            systemSymbolName: "xmark.circle.fill", accessibilityDescription: builderIntl.removeStartupSnapshot
+        )
         clearSnapshot.imagePosition = .imageOnly
         clearSnapshot.isBordered = false
         clearSnapshot.isHidden = startupSnapshot == nil
-        clearSnapshot.toolTip = "Remove startup snapshot and use normal startup"
+        clearSnapshot.toolTip = builderIntl.removeSnapshotHint
         clearSnapshot.bezelStyle = .rounded
         clearSnapshot.frame = NSRect(x: 558, y: 614, width: 28, height: 24)
         root.addSubview(clearSnapshot)
-        snapshotButton.toolTip = "Optional: restore the captured speed and disk state on every launch."
+        snapshotButton.toolTip = builderIntl.startupSnapshotHint
         for y: CGFloat in [598, 66] {
             let separator = NSBox(frame: NSRect(x: 28, y: y, width: 564, height: 1))
             separator.boxType = .separator
@@ -316,7 +327,7 @@ final class BuilderArtworkView: NSView {
                         && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
                 })
             else {
-                throw PlayerManifest.failure("Drop disk images, one snapshot, or one existing player.")
+                throw PlayerManifest.failure(builderIntl.invalidDropError)
             }
             selectDisks(urls)
         } catch { showError(error.localizedDescription) }
@@ -363,7 +374,7 @@ final class BuilderArtworkView: NSView {
         memory.isEnabled = false
         startupSnapshot = url
         speed.isEnabled = false
-        speed.toolTip = "The startup snapshot restores its captured speed."
+        speed.toolTip = builderIntl.snapshotSpeedHint
         snapshotLabel.stringValue = snapshot.title
         snapshotLabel.toolTip = url.path
     }
@@ -382,41 +393,41 @@ final class BuilderArtworkView: NSView {
         speed.isEnabled = true
         memory.isEnabled = true
         speed.toolTip = nil
-        snapshotLabel.stringValue = "No snapshot — normal startup"
+        snapshotLabel.stringValue = builderIntl.normalStartup
         snapshotLabel.toolTip = nil
     }
 
     @objc func createBlankDisk(_ sender: Any?) {
         let alert = NSAlert()
-        alert.messageText = "New Blank Disk Image"
+        alert.messageText = builderIntl.blankDiskTitle
         alert.informativeText =
-            "Create an empty writable disk. Initialize it inside the emulated computer before saving files to it. Blank disks do not contain a bootable system."
-        alert.addButton(withTitle: "Continue…")
-        alert.addButton(withTitle: "Cancel")
+            builderIntl.blankDiskExplanation
+        alert.addButton(withTitle: commonIntl.continueAction)
+        alert.addButton(withTitle: commonIntl.cancel)
         let options = NSView(frame: NSRect(x: 0, y: 0, width: 340, height: 70))
         let format = NSPopUpButton(frame: NSRect(x: 0, y: 38, width: 340, height: 28))
         format.addItems(withTitles: BlankDiskImage.allCases.map { $0.label })
         format.selectItem(at: 1)
         options.addSubview(format)
-        let add = NSButton(checkboxWithTitle: "Add to this player's disks", target: nil, action: nil)
+        let add = NSButton(checkboxWithTitle: builderIntl.addToPlayerDisks, target: nil, action: nil)
         add.frame = NSRect(x: 0, y: 0, width: 340, height: 28)
         add.isEnabled = startupSnapshot == nil
         add.state = startupSnapshot == nil ? .on : .off
         add.toolTip =
-            startupSnapshot == nil ? nil : "Clear the startup snapshot before changing its disk set."
+            startupSnapshot == nil ? nil : builderIntl.snapshotDiskSetHint
         options.addSubview(add)
         alert.accessoryView = options
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let image = BlankDiskImage.allCases[format.indexOfSelectedItem]
         let panel = NSSavePanel()
-        panel.title = "Save Blank Disk Image"
-        panel.nameFieldStringValue = "Untitled." + image.fileExtension
+        panel.title = builderIntl.saveBlankDiskImage
+        panel.nameFieldStringValue = builderIntl.untitledDisk(fileExtension: image.fileExtension)
         panel.allowedContentTypes = [UTType(filenameExtension: image.fileExtension) ?? .data]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             guard !disks.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) else {
                 throw PlayerManifest.failure(
-                    "Choose a new file instead of replacing a disk selected in this player.")
+                    builderIntl.selectedDiskOverwriteError)
             }
             try image.write(to: url)
             if add.state == .on {
@@ -426,7 +437,7 @@ final class BuilderArtworkView: NSView {
                     disks.append(url)
                     rebuildMounts()
                     mountChoices.last?.selectItem(at: 0)
-                    summary.stringValue = "\(disks.count) disk images selected"
+                    summary.stringValue = builderIntl.diskImagesSelected(count: disks.count)
                 }
             }
         } catch { showError(error.localizedDescription) }
@@ -455,7 +466,7 @@ final class BuilderArtworkView: NSView {
         diskNameFields = []
         mountChoices = []
         disks = urls
-        summary.stringValue = "\(disks.count) disk image\(disks.count == 1 ? "" : "s") selected"
+        summary.stringValue = builderIntl.diskImagesSelected(count: disks.count)
         if appName.stringValue.isEmpty || appName.stringValue == previousDefault {
             appName.stringValue = disks[0].deletingPathExtension().lastPathComponent
         }
@@ -519,7 +530,7 @@ final class BuilderArtworkView: NSView {
             content.addSubview(label)
             diskNameFields.append(label)
             let choice = NSPopUpButton(frame: NSRect(x: 296, y: y + 7, width: 234, height: 28))
-            choice.addItem(withTitle: "Not initially mounted")
+            choice.addItem(withTitle: builderIntl.notInitiallyMounted)
             choice.addItems(withTitles: configuredDrives.map { $0.label })
             let bootSlot = [6, 5, 7][slot.indexOfSelectedItem]
             var desired =
@@ -541,7 +552,7 @@ final class BuilderArtworkView: NSView {
 
     @objc func chooseIcon(_ sender: Any?) {
         guard let disk = disks.first else {
-            showError("Choose a disk first.")
+            showError(builderIntl.chooseADiskFirst)
             return
         }
 
@@ -557,7 +568,7 @@ final class BuilderArtworkView: NSView {
 
     @objc func createPlayer(_ sender: Any?) {
         guard !disks.isEmpty else {
-            showError("Choose a disk first.")
+            showError(builderIntl.chooseADiskFirst)
             return
         }
 
@@ -592,7 +603,7 @@ final class BuilderArtworkView: NSView {
                     $0.bundleURL?.standardizedFileURL == existing.standardizedFileURL
                 })
             else {
-                showError("Quit this player before saving changes.")
+                showError(builderIntl.quitPlayerBeforeSavingError)
                 return
             }
             do {
@@ -604,7 +615,7 @@ final class BuilderArtworkView: NSView {
                     startInFullScreen: fullScreen.state == .on, startupSnapshot: startupSnapshot,
                     expansionMemoryKB: PlayerManifest.expansionMemoryChoices[memory.indexOfSelectedItem])
                 loadPlayer(existing)
-                summary.stringValue = "Saved changes to \(existing.lastPathComponent)"
+                summary.stringValue = builderIntl.savedChangesTo(filename: existing.lastPathComponent)
             } catch {
                 showError(error.localizedDescription)
             }
@@ -675,10 +686,10 @@ final class BuilderArtworkView: NSView {
         for (i, count) in driveCounts.enumerated() {
             count.selectItem(at: i == 0 ? 1 : 0)
         }
-        heading.stringValue = "Create a standalone Apple IIGS player"
-        exportButton.title = "Create Player…"
-        window.title = "Apple IIGS Player Builder"
-        summary.stringValue = "Choose disks, or drop an existing player here to edit it."
+        heading.stringValue = builderIntl.createPlayerHeading
+        exportButton.title = builderIntl.createPlayer
+        window.title = builderIntl.appleIigsPlayerBuilder
+        summary.stringValue = builderIntl.emptyPlayerHint
         rebuildMounts()
     }
 
@@ -714,7 +725,7 @@ final class BuilderArtworkView: NSView {
             memory.isEnabled = startupSnapshot == nil
             speed.isEnabled = startupSnapshot == nil
             snapshotLabel.stringValue =
-                startupSnapshot == nil ? "No snapshot — normal startup" : "Bundled startup snapshot"
+                startupSnapshot == nil ? builderIntl.normalStartup : builderIntl.bundledStartupSnapshot
             rebuildMounts()
             for index in disks.indices {
                 diskNameFields[index].stringValue = manifest.diskName(at: index)
@@ -725,11 +736,11 @@ final class BuilderArtworkView: NSView {
             iconData = try? Data(contentsOf: resources.appendingPathComponent("PlayerIcon.png"))
             iconPreview.image =
                 iconData.flatMap { NSImage(data: $0) } ?? NSWorkspace.shared.icon(forFile: url.path)
-            heading.stringValue = "Edit this Apple IIGS player"
+            heading.stringValue = builderIntl.editThisAppleIigsPlayer
             editingPlayer = url
-            exportButton.title = "Save"
-            window.title = "Edit \(url.lastPathComponent)"
-            summary.stringValue = "Editing \(url.lastPathComponent)"
+            exportButton.title = commonIntl.save
+            window.title = builderIntl.edit(filename: url.lastPathComponent)
+            summary.stringValue = builderIntl.editing(filename: url.lastPathComponent)
             window.makeKeyAndOrderFront(nil)
         } catch {
             showError(error.localizedDescription)
@@ -738,7 +749,7 @@ final class BuilderArtworkView: NSView {
 
     func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "Could not update player"
+        alert.messageText = builderIntl.couldNotUpdatePlayer
         alert.informativeText = message
         alert.runModal()
     }

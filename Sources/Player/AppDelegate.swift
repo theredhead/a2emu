@@ -10,6 +10,9 @@
 
 import Cocoa
 
+private let commonIntl = CommonIntl()
+private let playerIntl = PlayerIntl()
+
 /// Selects direct context-memory rendering instead of the default bitmap-image path.
 let usesDirectContextDrawing = false
 
@@ -209,8 +212,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 } catch {
                     setEmulationPaused(true, reason: "Startup snapshot could not be restored")
                     let alert = NSAlert()
-                    alert.messageText = "Could not restore startup snapshot"
-                    alert.informativeText = error.localizedDescription + " You can resume to boot normally."
+                    alert.messageText = playerIntl.couldNotRestoreStartupSnapshot
+                    alert.informativeText = playerIntl.startupRecoveryHint(
+                        errorDescription: error.localizedDescription)
                     alert.runModal()
                 }
             }
@@ -221,7 +225,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             }
         } catch {
             let alert = NSAlert()
-            alert.messageText = "Could not start emulator"
+            alert.messageText = playerIntl.couldNotStartEmulator
             alert.informativeText = error.localizedDescription
             alert.runModal()
             NSApp.terminate(nil)
@@ -493,7 +497,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         guard names.count <= 256, Set(names).count == names.count,
             names.allSatisfy({ PlayerSnapshot.safeName($0) && !machine.diskFiles.contains($0) })
         else {
-            throw PlayerManifest.failure("The imported disk library is invalid.")
+            throw PlayerManifest.failure(playerIntl.invalidDiskLibrary)
         }
         var updated = machine!
         updated.diskFiles += names
@@ -513,12 +517,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 extensions.contains($0.pathExtension.lowercased())
                     && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
             })
-        else { throw PlayerManifest.failure("Drop disk image files to add them to this player.") }
+        else { throw PlayerManifest.failure(playerIntl.invalidDiskDrop) }
         var imported =
             manager.fileExists(atPath: importedDisksURL.path)
             ? try JSONDecoder().decode([String].self, from: Data(contentsOf: importedDisksURL)) : []
         guard imported.count + urls.count <= 256 else {
-            throw PlayerManifest.failure("This player can import up to 256 additional disks.")
+            throw PlayerManifest.failure(playerIntl.importLimitError)
         }
         let staging = supportDirectory.appendingPathComponent(".importing-" + UUID().uuidString)
         try manager.createDirectory(at: staging, withIntermediateDirectories: true)
@@ -592,11 +596,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         setDialogOpen(true, reason: "Rename Disk")
         defer { setDialogOpen(false, reason: "Rename Disk") }
         let alert = NSAlert()
-        alert.messageText = "Choose a Different Disk Name"
+        alert.messageText = playerIntl.chooseADifferentDiskName
         alert.informativeText =
-            "“\(name)” is already in use or is not a valid disk filename. Enter a new name with the original disk extension; existing files will be kept."
-        alert.addButton(withTitle: "Use This Name")
-        alert.addButton(withTitle: "Cancel")
+            playerIntl.diskNameCollision(name: name)
+        alert.addButton(withTitle: playerIntl.useThisName)
+        alert.addButton(withTitle: commonIntl.cancel)
         let field = NSTextField(string: name)
         field.frame = NSRect(x: 0, y: 0, width: 360, height: 24)
         alert.accessoryView = field
@@ -694,7 +698,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             customSpeedItems[EmulatorCore.acceleratorSpeedMHz] == nil
         {
             let item = NSMenuItem(
-                title: "\(EmulatorCore.acceleratorSpeedMHz) MHz", action: #selector(changeCustomSpeed(_:)),
+                title: playerIntl.mhz(megahertz: Int(EmulatorCore.acceleratorSpeedMHz)),
+                action: #selector(changeCustomSpeed(_:)),
                 keyEquivalent: "")
             item.target = self
             item.representedObject = [
@@ -718,8 +723,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             }
             unknownSpeedItem?.title =
                 knownLimit == nil
-                ? "Custom speed (mode \(EmulatorCore.speedLimit))"
-                : "\(EmulatorCore.acceleratorSpeedMHz) MHz (invalid setting)"
+                ? playerIntl.customSpeedMode(mode: Int(EmulatorCore.speedLimit))
+                : playerIntl.mhzInvalidSetting(megahertz: Int(EmulatorCore.acceleratorSpeedMHz))
             unknownSpeedItem?.state = .on
         } else if let item = unknownSpeedItem {
             menu.removeItem(item)
@@ -802,13 +807,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             }
         }
         let reason = pauseReason ?? dialogPauseReasons.sorted().first
-        let suffix = paused ? " — Paused" + (reason.map { " (\($0))" } ?? "") : ""
-        mainWindowInfo.window?.title = PlayerManifest.displayName + suffix
+        mainWindowInfo.window?.title =
+            paused
+            ? playerIntl.pausedTitle(gameName: PlayerManifest.displayName, reason: reason)
+            : PlayerManifest.displayName
         updatePauseMenu()
     }
 
     private func updatePauseMenu() {
-        pauseMenuItem?.title = emulationPaused ? "Resume" : "Pause"
+        pauseMenuItem?.title = emulationPaused ? commonIntl.resume : commonIntl.pause
         pauseMenuItem?.isEnabled = emulatorStarted && dialogPauseReasons.isEmpty
         if let layout = playerMenu { layout.refresh(layout.root) }
     }
@@ -960,7 +967,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             delegate: self)
         imagePointer = EmulatorCore.image(Int32(1))
         debugWindowInfo.setImage(
-            imagePointer, title: "Debugger",
+            imagePointer, title: playerIntl.debugger,
             delegate: self)
 
         mainWindowInfo.createWindow()

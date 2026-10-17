@@ -1,0 +1,28 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"chooseAnA2EmuPlayerApp" = "Choose an a2emu player app.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"couldNotPrepareTheStartupSnapshot" = "Could not prepare the startup snapshot for signing.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"couldNotSignTheExportedPlayer" = "Could not sign the exported player.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"eachDiskMustHaveADifferent" = "Each disk must have a different filename.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"thatAppAlreadyExistsChooseA" = "That app already exists. Choose a new name or location.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"theBundledStartupSnapshotUsesDifferent" = "The bundled startup snapshot uses different disks.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"theStartupSnapshotMustUseThis" = "The startup snapshot must use this player's disks and available drives.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"thisPlayerHasNoApplicationIdentifier" = "This player has no application identifier.";
+
+/* PlayerExporter: User-visible label, instruction, or error message. */
+"thisPlayerIsMissingABundled" = "This player is missing a bundled disk image.";

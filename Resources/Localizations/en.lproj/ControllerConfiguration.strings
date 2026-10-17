@@ -1,0 +1,292 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"activeGameController" = "Active game controller";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"appleIiAnalogJoystick" = "Apple II Analog Joystick";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"automatic" = "Automatic";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"backslash" = "Backslash";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"backtick" = "Backtick";
+
+/* ControllerConfiguration: Formatted message. bindings: runtime text; keep its placeholder */
+"boundTo" = "Bound to: %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"buttonInstructions" = "Choose the controller button that should press this orange joystick button.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"capsLock" = "Caps Lock";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"clearKeyBindings" = "Clear Key Bindings";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"clearMouseBinding" = "Clear Mouse Binding";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"idleBindingHint" = "Click a key, then activate a controller input.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"commandOpenApple" = "Command / Open Apple";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"configureControls" = "Configure Controls";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"control" = "Control";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controller" = "Controller";
+
+/* ControllerConfiguration: Formatted message. control: runtime text; keep its placeholder */
+"controllerAssignment" = "%1$@ controller assignment";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerButton" = "Controller button";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerDeadZone" = "Controller dead zone";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerMovement" = "Controller movement";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"dPad" = "D-pad";
+
+/* ControllerConfiguration: Formatted message. direction: runtime text; keep its placeholder */
+"dPadDirection" = "D-pad %1$@";
+
+/* ControllerConfiguration: Formatted message. percent: numeric value */
+"deadZone" = "Dead zone: %1$ld%%";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"initialDeadZone" = "Dead zone: 8%";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"delete" = "Delete";
+
+/* ControllerConfiguration: Formatted message. control: runtime text; keep its placeholder */
+"direction" = "%1$@ direction";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"directionInstructions" = "All four directions follow the movement source below. Move your controller to test the stick and orange buttons.";
+
+/* ControllerConfiguration: Formatted message. name: runtime text; keep its placeholder */
+"disconnected" = "%1$@ (disconnected)";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"disconnectedControllerHint" = "Selected controller disconnected · Choose a connected controller.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"down" = "Down";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"downArrow" = "Down arrow";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"escape" = "Escape";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"invertHorizontal" = "Invert horizontal";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"invertVertical" = "Invert vertical";
+
+/* ControllerConfiguration: Formatted message. control: runtime text; keep its placeholder */
+"joystick" = "Joystick %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"joystickInstructions" = "Choose a control on the left, then assign your controller on the right.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"joystickSettings" = "🕹️ Joystick Settings";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"key" = "Key";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keyboardInstructions" = "Choose a key or mouse control, then activate the controller input to bind it.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keyboardMouse" = "Keyboard & Mouse";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keyboardMouseSettings" = "⌨️ Keyboard & Mouse Settings";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad0" = "Keypad 0";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad1" = "Keypad 1";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad2" = "Keypad 2";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad3" = "Keypad 3";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad4" = "Keypad 4";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad5" = "Keypad 5";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad6" = "Keypad 6";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad7" = "Keypad 7";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad8" = "Keypad 8";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypad9" = "Keypad 9";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadClear" = "Keypad Clear";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadDecimal" = "Keypad .";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadDivide" = "Keypad /";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadEnter" = "Keypad Enter";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadEquals" = "Keypad =";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadMinus" = "Keypad -";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadMultiply" = "Keypad *";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"keypadPlus" = "Keypad +";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"left" = "Left";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftAnalogStickDPad" = "Left analog stick + D-pad";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftArrow" = "Left arrow";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftShoulder" = "Left shoulder";
+
+/* ControllerConfiguration: Formatted message. direction: runtime text; keep its placeholder */
+"leftStick" = "Left stick %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"leftTrigger" = "Left trigger";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"liveInputPreview" = "Live input preview";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"lowerLeft" = "Lower left";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"lowerRight" = "Lower right";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"menuStart" = "Menu / Start";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseButton" = "Mouse Button";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseDown" = "Mouse Down";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseLeft" = "Mouse Left";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseMovement" = "Mouse Movement";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseRight" = "Mouse Right";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseUp" = "Mouse Up";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"previewHint" = "Move your controller to preview. Click a control to assign it.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"noControllerHint" = "No controller connected · Assignments can still be edited.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"optionClosedApple" = "Option / Closed Apple";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"optionsSelect" = "Options / Select";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseMovementBindingHint" = "Release the controller, then move a stick or D-pad. This replaces its keyboard bindings.";
+
+/* ControllerConfiguration: Formatted message. name: runtime text; keep its placeholder */
+"keyBindingHint" = "Release the controller, then press a button or move in a direction to bind %1$@.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"mouseButtonBindingHint" = "Release the controller, then press the button that should click the mouse.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"restoreDefaults" = "Restore Defaults";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"returnLabel" = "Return";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"right" = "Right";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightAnalogStick" = "Right analog stick";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightArrow" = "Right arrow";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightShoulder" = "Right shoulder";
+
+/* ControllerConfiguration: Formatted message. direction: runtime text; keep its placeholder */
+"rightStick" = "Right stick %1$@";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"rightTrigger" = "Right trigger";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"controllerSelectionHint" = "Select a controller for this running player. Automatic is restored on the next launch.";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"shift" = "Shift";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"space" = "Space";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"tab" = "Tab";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"up" = "Up";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"upArrow" = "Up arrow";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"upperLeft" = "Upper left";
+
+/* ControllerConfiguration: User-visible label, instruction, or error message. */
+"upperRight" = "Upper right";

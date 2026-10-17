@@ -1,0 +1,24 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"bindAdbMouseButton" = "Bind ADB mouse button";
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"bindAdbMouseMovement" = "Bind ADB mouse movement";
+
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"clickThenMoveEitherStickOr" = "Click, then move either stick or the D-pad to bind all four mouse directions";
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"clickToBindAControllerInput" = "Click to bind a controller input";
+
+/* KeyboardConfiguration: User-visible label, instruction, or error message. */
+"clickToBindThisMouseDirection" = "Click to bind this mouse direction";
+
+
+/* Accessibility label for one mouse direction control; direction is a translated direction name. */
+"bindMouseDirection" = "Bind mouse %1$@";
+
+/* Mouse button tooltip; bindings is a list of controller input symbols or Unassigned. */
+"mouseClickBindings" = "Mouse click: %1$@";

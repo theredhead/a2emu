@@ -1,0 +1,76 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* PlayerMenu: Formatted message. appName: runtime text; keep its placeholder */
+"about" = "About %1$@";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"automaticControllerOrKeyboard" = "Automatic (Controller or Keyboard)";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"changeRom" = "Change ROM…";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"configuration" = "Configuration";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"configurationF4" = "Configuration  F4";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"configureControls" = "Configure Controls…";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"controls" = "Controls";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"copyTextScreen" = "Copy Text Screen";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"disks" = "Disks";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"edit" = "Edit";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"eject" = "Eject";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"emulation" = "Emulation";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"gameController" = "Game Controller";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"keyboardJoystickNumericKeypad" = "Keyboard Joystick (Numeric Keypad)";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"mouseJoystick" = "Mouse Joystick";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"paste" = "Paste";
+
+/* PlayerMenu: Formatted message. appName: runtime text; keep its placeholder */
+"quit" = "Quit %1$@";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"resizeInIntegerMultiples" = "Resize in Integer Multiples";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"restartFromDiskWithClearedRam" = "Restart from disk with cleared RAM; keep disk data and the selected speed.";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"saveScreenshot" = "Save Screenshot";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"showDebugger" = "Show Debugger";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"showSavedDisk" = "Show Saved Disk";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"speed" = "Speed";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"toggleFullScreen" = "Toggle Full Screen";
+
+/* PlayerMenu: User-visible label, instruction, or error message. */
+"view" = "View";

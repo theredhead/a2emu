@@ -1,6 +1,9 @@
 import Cocoa
 import GameController
 
+private let commonIntl = CommonIntl()
+private let controllerConfigurationIntl = ControllerConfigurationIntl()
+
 /// Per-player controller preferences persisted in user defaults.
 struct ControllerMapping: Codable {
     var keyboardMode: Bool? = false
@@ -25,12 +28,21 @@ struct ControllerMapping: Codable {
     /// Legacy virtual keys retained when decoding older preferences.
     static let defaultKeyCodes = [86, 88, 91, 87, 55, 58]
     static let keyChoices: [(String, Int)] = [
-        ("Keypad 7", 89), ("Keypad 9", 92), ("Keypad 1", 83), ("Keypad 3", 85),
-        ("Keypad 0", 82), ("Keypad .", 65), ("Keypad Enter", 76), ("Keypad Clear", 71),
-        ("Keypad =", 81), ("Keypad /", 75), ("Keypad *", 67), ("Keypad -", 78), ("Keypad +", 69),
-        ("Keypad 4", 86), ("Keypad 6", 88), ("Keypad 8", 91), ("Keypad 5", 87), ("Keypad 2", 84),
-        ("Command / Open Apple", 55), ("Option / Closed Apple", 58), ("Left arrow", 123),
-        ("Right arrow", 124), ("Up arrow", 126), ("Down arrow", 125), ("Space", 49), ("Return", 36), ("A", 0),
+        (controllerConfigurationIntl.keypad7, 89), (controllerConfigurationIntl.keypad9, 92),
+        (controllerConfigurationIntl.keypad1, 83), (controllerConfigurationIntl.keypad3, 85),
+        (controllerConfigurationIntl.keypad0, 82), (controllerConfigurationIntl.keypadDecimal, 65),
+        (controllerConfigurationIntl.keypadEnter, 76), (controllerConfigurationIntl.keypadClear, 71),
+        (controllerConfigurationIntl.keypadEquals, 81), (controllerConfigurationIntl.keypadDivide, 75),
+        (controllerConfigurationIntl.keypadMultiply, 67), (controllerConfigurationIntl.keypadMinus, 78),
+        (controllerConfigurationIntl.keypadPlus, 69),
+        (controllerConfigurationIntl.keypad4, 86), (controllerConfigurationIntl.keypad6, 88),
+        (controllerConfigurationIntl.keypad8, 91), (controllerConfigurationIntl.keypad5, 87),
+        (controllerConfigurationIntl.keypad2, 84),
+        (controllerConfigurationIntl.commandOpenApple, 55),
+        (controllerConfigurationIntl.optionClosedApple, 58), (controllerConfigurationIntl.leftArrow, 123),
+        (controllerConfigurationIntl.rightArrow, 124), (controllerConfigurationIntl.upArrow, 126),
+        (controllerConfigurationIntl.downArrow, 125), (controllerConfigurationIntl.space, 49),
+        (controllerConfigurationIntl.returnLabel, 36), ("A", 0),
         ("B", 11), ("C", 8), ("D", 2), ("E", 14), ("F", 3), ("G", 5), ("H", 4),
         ("I", 34), ("J", 38), ("K", 40), ("L", 37), ("M", 46), ("N", 45), ("O", 31),
         ("P", 35), ("Q", 12), ("R", 15), ("S", 1), ("T", 17), ("U", 32), ("V", 9),
@@ -38,8 +50,11 @@ struct ControllerMapping: Codable {
         ("0", 29), ("1", 18), ("2", 19), ("3", 20), ("4", 21), ("5", 23), ("6", 22),
         ("7", 26), ("8", 28), ("9", 25),
         ("-", 27), ("=", 24), ("[", 33), ("]", 30), (";", 41), ("'", 39),
-        (",", 43), (".", 47), ("/", 44), ("Backslash", 42), ("Backtick", 50),
-        ("Caps Lock", 57), ("Escape", 53), ("Tab", 48), ("Delete", 51), ("Shift", 56), ("Control", 59),
+        (",", 43), (".", 47), ("/", 44), (controllerConfigurationIntl.backslash, 42),
+        (controllerConfigurationIntl.backtick, 50),
+        (controllerConfigurationIntl.capsLock, 57), (controllerConfigurationIntl.escape, 53),
+        (controllerConfigurationIntl.tab, 48), (controllerConfigurationIntl.delete, 51),
+        (controllerConfigurationIntl.shift, 56), (controllerConfigurationIntl.control, 59),
     ]
 
     /// Movement source: 0 uses the left stick with D-pad override, 1 the right stick, and 2 the D-pad.
@@ -50,10 +65,15 @@ struct ControllerMapping: Codable {
     var invertY = false
     var deadZone: Float = 0.08
     static let buttonNames = [
-        "A", "B", "X", "Y", "Left shoulder", "Right shoulder", "Left trigger", "Right trigger",
-        "Menu / Start", "Options / Select",
+        "A", "B", "X", "Y", controllerConfigurationIntl.leftShoulder,
+        controllerConfigurationIntl.rightShoulder, controllerConfigurationIntl.leftTrigger,
+        controllerConfigurationIntl.rightTrigger,
+        controllerConfigurationIntl.menuStart, controllerConfigurationIntl.optionsSelect,
     ]
-    static let movementNames = ["Left analog stick + D-pad", "Right analog stick", "D-pad"]
+    static let movementNames = [
+        controllerConfigurationIntl.leftAnalogStickDPad, controllerConfigurationIntl.rightAnalogStick,
+        controllerConfigurationIntl.dPad,
+    ]
     static let defaultsKey = "AppleIIControllerMapping"
 
     /// New-player bindings; decoding older preferences continues to use their original defaults.
@@ -313,21 +333,24 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
             width: 240 * ControllerMappingPanel.peripheralScale,
             height: 340 * ControllerMappingPanel.peripheralScale))
     private let bindingStatus = NSTextField(wrappingLabelWithString: "")
-    private let clearBinding = NSButton(title: "Clear Key Bindings", target: nil, action: nil)
+    private let clearBinding = NSButton(
+        title: controllerConfigurationIntl.clearKeyBindings, target: nil, action: nil)
     private var bindingCapture = ControllerBindingCapture()
     private let targetMode = NSPopUpButton(frame: .zero)
     private let selectionTitle = NSTextField(labelWithString: "")
     private let explanation = NSTextField(wrappingLabelWithString: "")
     private let sourceLabel = NSTextField(labelWithString: "")
     private let source = NSPopUpButton(frame: .zero)
-    private let movementLabel = NSTextField(labelWithString: "Controller movement")
+    private let movementLabel = NSTextField(labelWithString: controllerConfigurationIntl.controllerMovement)
     private let movement = NSPopUpButton(frame: .zero)
-    private let invertX = NSButton(checkboxWithTitle: "Invert horizontal", target: nil, action: nil)
-    private let invertY = NSButton(checkboxWithTitle: "Invert vertical", target: nil, action: nil)
+    private let invertX = NSButton(
+        checkboxWithTitle: controllerConfigurationIntl.invertHorizontal, target: nil, action: nil)
+    private let invertY = NSButton(
+        checkboxWithTitle: controllerConfigurationIntl.invertVertical, target: nil, action: nil)
     private let deadZone = NSSlider(value: 8, minValue: 8, maxValue: 30, target: nil, action: nil)
-    private let deadZoneLabel = NSTextField(labelWithString: "Dead zone: 8%")
+    private let deadZoneLabel = NSTextField(labelWithString: controllerConfigurationIntl.initialDeadZone)
     private let footerHint = NSTextField(
-        labelWithString: "Move your controller to preview. Click a control to assign it.")
+        labelWithString: controllerConfigurationIntl.previewHint)
     private let subtitle = NSTextField(labelWithString: "")
     private let heading = NSTextField(labelWithString: "")
     private let device = NSPopUpButton(frame: .zero)
@@ -336,9 +359,12 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
     private var controllerChoices: (() -> [ControllerChoice])?
     private var lastChoices: [ControllerChoice] = []
     private var draftControllerID: String?
-    private var selectedControllerName = "Controller"
+    private var selectedControllerName = controllerConfigurationIntl.controller
     private let directions = [
-        "Left", "Right", "Up", "Down", "Upper left", "Upper right", "Lower left", "Lower right",
+        controllerConfigurationIntl.left, controllerConfigurationIntl.right, controllerConfigurationIntl.up,
+        controllerConfigurationIntl.down, controllerConfigurationIntl.upperLeft,
+        controllerConfigurationIntl.upperRight, controllerConfigurationIntl.lowerLeft,
+        controllerConfigurationIntl.lowerRight,
     ]
     private var selectedKey = 87
     private var previewTimer: Timer?
@@ -386,7 +412,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 940, height: 720),
             styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "Configure Controls"
+        window.title = controllerConfigurationIntl.configureControls
         window.isReleasedWhenClosed = false
         window.delegate = self
         let root = window.contentView!
@@ -397,16 +423,16 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         subtitle.textColor = .secondaryLabelColor
         subtitle.frame = NSRect(x: 28, y: 634, width: 880, height: 24)
         root.addSubview(subtitle)
-        let controllerLabel = NSTextField(labelWithString: "Controller")
+        let controllerLabel = NSTextField(labelWithString: controllerConfigurationIntl.controller)
         controllerLabel.frame = NSRect(x: 28, y: 604, width: 80, height: 22)
         controllerLabel.textColor = .secondaryLabelColor
         root.addSubview(controllerLabel)
         device.frame = NSRect(x: 112, y: 600, width: 346, height: 28)
         device.target = self
         device.action = #selector(selectController(_:))
-        device.setAccessibilityLabel("Active game controller")
+        device.setAccessibilityLabel(controllerConfigurationIntl.activeGameController)
         device.toolTip =
-            "Select a controller for this running player. Automatic is restored on the next launch."
+            controllerConfigurationIntl.controllerSelectionHint
         root.addSubview(device)
         previewStatus.frame = NSRect(x: 500, y: 604, width: 410, height: 22)
         previewStatus.font = .systemFont(ofSize: 12)
@@ -441,7 +467,9 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         root.addSubview(clearBinding)
         joystick.selectionChanged = { [weak self] _ in self?.refreshEditor() }
         targetMode.frame = NSRect(x: 28, y: 552, width: 430, height: 28)
-        targetMode.addItems(withTitles: ["Apple II Analog Joystick", "Keyboard & Mouse"])
+        targetMode.addItems(withTitles: [
+            controllerConfigurationIntl.appleIiAnalogJoystick, controllerConfigurationIntl.keyboardMouse,
+        ])
         targetMode.target = self
         targetMode.action = #selector(changeMode(_:))
         root.addSubview(targetMode)
@@ -475,22 +503,23 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         deadZone.frame = NSRect(x: 654, y: 108, width: 246, height: 24)
         deadZone.target = self
         deadZone.action = #selector(changeDeadZone(_:))
-        deadZone.setAccessibilityLabel("Controller dead zone")
+        deadZone.setAccessibilityLabel(controllerConfigurationIntl.controllerDeadZone)
         root.addSubview(deadZone)
         footerHint.font = .systemFont(ofSize: 11)
         footerHint.textColor = .secondaryLabelColor
         footerHint.frame = NSRect(x: 28, y: 78, width: 440, height: 20)
         root.addSubview(footerHint)
-        let reset = NSButton(title: "Restore Defaults", target: self, action: #selector(reset(_:)))
+        let reset = NSButton(
+            title: controllerConfigurationIntl.restoreDefaults, target: self, action: #selector(reset(_:)))
         reset.bezelStyle = .rounded
         reset.frame = NSRect(x: 28, y: 18, width: 154, height: 32)
         root.addSubview(reset)
-        let cancel = NSButton(title: "Cancel", target: self, action: #selector(cancel(_:)))
+        let cancel = NSButton(title: commonIntl.cancel, target: self, action: #selector(cancel(_:)))
         cancel.bezelStyle = .rounded
         cancel.keyEquivalent = "\u{1b}"
         cancel.frame = NSRect(x: 688, y: 18, width: 100, height: 32)
         root.addSubview(cancel)
-        let save = NSButton(title: "Save", target: self, action: #selector(save(_:)))
+        let save = NSButton(title: commonIntl.save, target: self, action: #selector(save(_:)))
         save.bezelStyle = .rounded
         save.keyEquivalent = "\r"
         save.frame = NSRect(x: 800, y: 18, width: 112, height: 32)
@@ -504,7 +533,8 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         invertX.state = draft.invertX ? .on : .off
         invertY.state = draft.invertY ? .on : .off
         deadZone.doubleValue = Double(draft.deadZone * 100)
-        deadZoneLabel.stringValue = "Dead zone: \(Int(deadZone.doubleValue.rounded()))%"
+        deadZoneLabel.stringValue = controllerConfigurationIntl.deadZone(
+            percent: Int(deadZone.doubleValue.rounded()))
         joystick.showAssignments(draft)
         refreshEditor()
     }
@@ -531,11 +561,11 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         adbMouse.isHidden = !keyboardBindings
         subtitle.stringValue =
             keyboardBindings
-            ? "Choose a key or mouse control, then activate the controller input to bind it."
-            : "Choose a control on the left, then assign your controller on the right."
+            ? controllerConfigurationIntl.keyboardInstructions
+            : controllerConfigurationIntl.joystickInstructions
         heading.stringValue =
             keyboardBindings
-            ? "⌨️ Keyboard & Mouse Settings" : "🕹️ Joystick Settings"
+            ? controllerConfigurationIntl.keyboardMouseSettings : controllerConfigurationIntl.joystickSettings
         joystick.isHidden = keyboardBindings
         source.isHidden = keyboardBindings || joystick.selectedControl.isDirection
         sourceLabel.isHidden = source.isHidden
@@ -558,12 +588,16 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         if keyboardBindings {
             let name =
                 selectedKey <= -4
-                ? ["Mouse Left", "Mouse Right", "Mouse Up", "Mouse Down"][-selectedKey - 4]
+                ? [
+                    controllerConfigurationIntl.mouseLeft, controllerConfigurationIntl.mouseRight,
+                    controllerConfigurationIntl.mouseUp, controllerConfigurationIntl.mouseDown,
+                ][-selectedKey - 4]
                 : selectedKey == -2
-                    ? "Mouse Button"
+                    ? controllerConfigurationIntl.mouseButton
                     : (selectedKey == -3
-                        ? "Mouse Movement"
-                        : (ControllerMapping.keyChoices.first { $0.1 == selectedKey }?.0 ?? "Key"))
+                        ? controllerConfigurationIntl.mouseMovement
+                        : (ControllerMapping.keyChoices.first { $0.1 == selectedKey }?.0
+                            ?? controllerConfigurationIntl.key))
             selectionTitle.stringValue = name
             let titleHeight =
                 selectionTitle.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: 235, height: 32)).height
@@ -571,9 +605,10 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
             selectionTitle.frame = NSRect(x: 235, y: 112 - titleHeight / 2, width: 235, height: titleHeight)
             let inputs = draft.keyboardInputKeys
             let names =
-                directions.map { "Left stick " + $0.lowercased() } + ControllerMapping.buttonNames
-                + directions.map { "Right stick " + $0.lowercased() }
-                + directions.map { "D-pad " + $0.lowercased() }
+                directions.map { controllerConfigurationIntl.leftStick(direction: $0.lowercased()) }
+                + ControllerMapping.buttonNames
+                + directions.map { controllerConfigurationIntl.rightStick(direction: $0.lowercased()) }
+                + directions.map { controllerConfigurationIntl.dPadDirection(direction: $0.lowercased()) }
             var assigned = inputs.indices.filter { inputs[$0] == selectedKey }.map { names[$0] }
             if selectedKey == -2 {
                 assigned = (draft.mouseButtonInputs ?? []).map { ControllerMapping.buttonNames[$0] }
@@ -585,17 +620,17 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
             }
             bindingStatus.stringValue =
                 bindingCapture.armed
-                ? "Release the controller, then press a button or move in a direction to bind \(name)."
+                ? controllerConfigurationIntl.keyBindingHint(name: name)
                 : (assigned.isEmpty
-                    ? "Click a key, then activate a controller input."
-                    : "Bound to: " + assigned.joined(separator: ", "))
+                    ? controllerConfigurationIntl.idleBindingHint
+                    : controllerConfigurationIntl.boundTo(bindings: assigned.joined(separator: ", ")))
             if bindingCapture.armed && selectedKey == -2 {
                 bindingStatus.stringValue =
-                    "Release the controller, then press the button that should click the mouse."
+                    controllerConfigurationIntl.mouseButtonBindingHint
             }
             if bindingCapture.armed && selectedKey == -3 {
                 bindingStatus.stringValue =
-                    "Release the controller, then move a stick or D-pad. This replaces its keyboard bindings."
+                    controllerConfigurationIntl.mouseMovementBindingHint
             }
             let statusBounds = NSRect(x: 0, y: 0, width: 412, height: 44)
             let statusHeight = min(44, bindingStatus.cell?.cellSize(forBounds: statusBounds).height ?? 18)
@@ -603,23 +638,28 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
             bindingStatus.toolTip = bindingStatus.stringValue
             fullKeyboard.selectedKey = bindingCapture.armed ? selectedKey : -1
             adbMouse.showAssignments(draft, selectedControl: bindingCapture.armed ? selectedKey : nil)
-            clearBinding.title = selectedKey < 0 ? "Clear Mouse Binding" : "Clear Key Bindings"
+            clearBinding.title =
+                selectedKey < 0
+                ? controllerConfigurationIntl.clearMouseBinding : controllerConfigurationIntl.clearKeyBindings
             fullKeyboard.showAssignments(draft)
         } else {
             let control = joystick.selectedControl
             selectionTitle.stringValue =
-                control.isDirection ? "\(control.label) direction" : "Joystick \(control.label.lowercased())"
+                control.isDirection
+                ? controllerConfigurationIntl.direction(control: control.label)
+                : controllerConfigurationIntl.joystick(control: control.label.lowercased())
             explanation.stringValue =
                 control.isDirection
-                ? "All four directions follow the movement source below. Move your controller to test the stick and orange buttons."
-                : "Choose the controller button that should press this orange joystick button."
+                ? controllerConfigurationIntl.directionInstructions
+                : controllerConfigurationIntl.buttonInstructions
             if !control.isDirection {
-                sourceLabel.stringValue = "Controller button"
+                sourceLabel.stringValue = controllerConfigurationIntl.controllerButton
                 source.removeAllItems()
                 source.menu?.autoenablesItems = false
                 source.addItems(withTitles: ControllerMapping.buttonNames)
                 source.selectItem(at: control == .button0 ? draft.button0 : draft.button1)
-                source.setAccessibilityLabel("\(control.label) controller assignment")
+                source.setAccessibilityLabel(
+                    controllerConfigurationIntl.controllerAssignment(control: control.label))
             }
         }
     }
@@ -690,7 +730,8 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
 
     @objc private func changeDeadZone(_ sender: Any?) {
         draft.deadZone = Float(deadZone.doubleValue.rounded()) / 100
-        deadZoneLabel.stringValue = "Dead zone: \(Int(deadZone.doubleValue.rounded()))%"
+        deadZoneLabel.stringValue = controllerConfigurationIntl.deadZone(
+            percent: Int(deadZone.doubleValue.rounded()))
     }
 
     @objc private func reset(_ sender: Any?) {
@@ -709,14 +750,14 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         guard force || choices != lastChoices else { return }
         lastChoices = choices
         device.removeAllItems()
-        device.addItem(withTitle: "Automatic")
+        device.addItem(withTitle: controllerConfigurationIntl.automatic)
         device.lastItem?.representedObject = ""
         for choice in choices {
             device.addItem(withTitle: choice.name)
             device.lastItem?.representedObject = choice.id
         }
         if let identifier = draftControllerID, !choices.contains(where: { $0.id == identifier }) {
-            device.addItem(withTitle: "\(selectedControllerName) (disconnected)")
+            device.addItem(withTitle: controllerConfigurationIntl.disconnected(name: selectedControllerName))
             device.lastItem?.representedObject = identifier
             device.lastItem?.isEnabled = false
         }
@@ -745,8 +786,8 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         guard let state = preview?(draft, draftControllerID) else {
             previewStatus.stringValue =
                 draftControllerID == nil
-                ? "No controller connected · Assignments can still be edited."
-                : "Selected controller disconnected · Choose a connected controller."
+                ? controllerConfigurationIntl.noControllerHint
+                : controllerConfigurationIntl.disconnectedControllerHint
             joystick.showInput(buttons: 0, x: 0, y: 0)
             fullKeyboard.showAssignments(draft)
             return
@@ -800,7 +841,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
             }
             fullKeyboard.showAssignments(draft, pressedKeys: state.keys)
         }
-        previewStatus.stringValue = "Live input preview"
+        previewStatus.stringValue = controllerConfigurationIntl.liveInputPreview
         joystick.showInput(buttons: state.buttons, x: state.x, y: state.y)
     }
 

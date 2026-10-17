@@ -1,5 +1,8 @@
 import Cocoa
 
+private let commonIntl = CommonIntl()
+private let playerMenuIntl = PlayerMenuIntl()
+
 /// Edit titles, ordering, separators, and submenu placement here.
 /// IDs bind live state to items independently of their displayed names or positions.
 enum PlayerMenuLayout {
@@ -11,70 +14,76 @@ enum PlayerMenuLayout {
             .menu(
                 appName,
                 [
-                    .command("About \(appName)", action: #selector(AppDelegate.showAbout(_:))),
+                    .command(
+                        playerMenuIntl.about(appName: appName), action: #selector(AppDelegate.showAbout(_:))),
                     .separator,
                     .command(
-                        "Quit \(appName)", action: #selector(NSApplication.terminate(_:)),
+                        playerMenuIntl.quit(appName: appName), action: #selector(NSApplication.terminate(_:)),
                         target: .application, key: "q", modifiers: [.option, .command]),
                 ]),
             .menu(
-                "Edit",
+                playerMenuIntl.edit,
                 [
                     .command(
-                        "Copy Text Screen", action: #selector(MainView.copyTextScreen(_:)),
+                        playerMenuIntl.copyTextScreen, action: #selector(MainView.copyTextScreen(_:)),
                         target: .responderChain),
                     .separator,
-                    .command("Paste", action: #selector(MainView.pasteText(_:)), target: .responderChain),
+                    .command(
+                        playerMenuIntl.paste, action: #selector(MainView.pasteText(_:)),
+                        target: .responderChain),
                 ]),
             .menu(
-                "Configuration", id: .configuration, enabledWhen: isRunning,
+                playerMenuIntl.configuration, id: .configuration, enabledWhen: isRunning,
                 [
-                    .menu("Speed", id: .speed, []),
-                    .menu("Controls", id: .controls, []),
+                    .menu(playerMenuIntl.speed, id: .speed, []),
+                    .menu(playerMenuIntl.controls, id: .controls, []),
                     .separator,
-                    .command("Change ROM…", action: #selector(AppDelegate.changeROM(_:))),
+                    .command(playerMenuIntl.changeRom, action: #selector(AppDelegate.changeROM(_:))),
                     .separator,
                     .command(
-                        "Configuration  F4", action: #selector(MainView.showEmulatorConfiguration(_:)),
+                        playerMenuIntl.configurationF4,
+                        action: #selector(MainView.showEmulatorConfiguration(_:)),
                         target: .responderChain, visibleWhen: showAdvanced),
                     .command(
-                        "Show Debugger", action: #selector(AppDelegate.showDebugger(_:)),
+                        playerMenuIntl.showDebugger, action: #selector(AppDelegate.showDebugger(_:)),
                         visibleWhen: showAdvanced),
                 ]),
             .menu(
-                "View",
+                playerMenuIntl.view,
                 [
                     .command(
-                        "Toggle Full Screen", action: #selector(AppDelegate.toggleFullscreen(_:)),
+                        playerMenuIntl.toggleFullScreen, action: #selector(AppDelegate.toggleFullscreen(_:)),
                         key: "f", modifiers: [.control, .command]),
                     .command(
-                        "Resize in Integer Multiples", action: #selector(AppDelegate.toggleIntegerResize(_:)),
+                        playerMenuIntl.resizeInIntegerMultiples,
+                        action: #selector(AppDelegate.toggleIntegerResize(_:)),
                         id: .integerResize),
                     .separator,
                     .command(
-                        "Save Screenshot", action: #selector(AppDelegate.takeScreenshot(_:)),
+                        playerMenuIntl.saveScreenshot, action: #selector(AppDelegate.takeScreenshot(_:)),
                         key: String(UnicodeScalar(NSF3FunctionKey)!), modifiers: []),
                 ]),
             .menu(
-                "Emulation", id: .emulation, enabledWhen: isRunning,
+                playerMenuIntl.emulation, id: .emulation, enabledWhen: isRunning,
                 [
                     .command(
-                        "Pause", action: #selector(AppDelegate.togglePause(_:)), key: "p", id: .pause,
+                        commonIntl.pause, action: #selector(AppDelegate.togglePause(_:)), key: "p",
+                        id: .pause,
                         enabledWhen: canTogglePause),
                     .command(
-                        "Reset", action: #selector(AppDelegate.resetGame(_:)),
-                        toolTip: "Restart from disk with cleared RAM; keep disk data and the selected speed."),
+                        commonIntl.reset, action: #selector(AppDelegate.resetGame(_:)),
+                        toolTip: playerMenuIntl.restartFromDiskWithClearedRam),
                     .separator,
                     .command(
-                        "Snapshots…", action: #selector(AppDelegate.showSnapshots(_:)),
+                        commonIntl.snapshots, action: #selector(AppDelegate.showSnapshots(_:)),
                         key: String(UnicodeScalar(NSF2FunctionKey)!), modifiers: [], id: .snapshots),
                 ]),
-            .menu("Disks", id: .disks, enabledWhen: isRunning, savedDisks),
+            .menu(playerMenuIntl.disks, id: .disks, enabledWhen: isRunning, savedDisks),
         ]
     }
 
     static var savedDisks: [PlayerMenuEntry] {
-        [.command("Show Saved Disk", action: #selector(AppDelegate.showSavedDisk(_:)))]
+        [.command(playerMenuIntl.showSavedDisk, action: #selector(AppDelegate.showSavedDisk(_:)))]
     }
 
     static var speeds: [PlayerMenuEntry] {
@@ -85,15 +94,16 @@ enum PlayerMenuLayout {
 
     static func controls(controllerName: String) -> [PlayerMenuEntry] {
         let modes: [(String, Int)] = [
-            ("Automatic (Controller or Keyboard)", 4), ("Keyboard Joystick (Numeric Keypad)", 0),
-            ("Mouse Joystick", 1), ("Game Controller", 2),
+            (playerMenuIntl.automaticControllerOrKeyboard, 4),
+            (playerMenuIntl.keyboardJoystickNumericKeypad, 0),
+            (playerMenuIntl.mouseJoystick, 1), (playerMenuIntl.gameController, 2),
         ]
         return modes.map { title, type in
             .command(title, action: #selector(AppDelegate.changeControls(_:)), tag: type)
         } + [
             .separator,
             .command(controllerName, action: nil, id: .controllerStatus),
-            .command("Configure Controls…", action: #selector(AppDelegate.configureControls(_:))),
+            .command(playerMenuIntl.configureControls, action: #selector(AppDelegate.configureControls(_:))),
         ]
     }
 
@@ -107,7 +117,8 @@ enum PlayerMenuLayout {
             choices.append((address, nil))
             var drive: [PlayerMenuEntry] = [
                 .command(
-                    "Eject", action: #selector(AppDelegate.swapDisk(_:)), id: .diskChoice(eject), tag: eject),
+                    playerMenuIntl.eject, action: #selector(AppDelegate.swapDisk(_:)), id: .diskChoice(eject),
+                    tag: eject),
                 .separator,
             ]
             for index in machine.diskFiles.indices {

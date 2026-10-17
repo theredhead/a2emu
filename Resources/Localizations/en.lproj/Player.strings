@@ -1,0 +1,82 @@
+/* English source strings. Preserve numbered format placeholders when translating. */
+
+/* Player: User-visible label, instruction, or error message. */
+"chooseADifferentDiskName" = "Choose a Different Disk Name";
+
+/* Player: User-visible label, instruction, or error message. */
+"couldNotRestoreStartupSnapshot" = "Could not restore startup snapshot";
+
+/* Player: User-visible label, instruction, or error message. */
+"couldNotStartEmulator" = "Could not start emulator";
+
+/* Player: Formatted message. mode: numeric value */
+"customSpeedMode" = "Custom speed (mode %1$ld)";
+
+/* Player: User-visible label, instruction, or error message. */
+"debugger" = "Debugger";
+
+/* Player: User-visible label, instruction, or error message. */
+"invalidDiskDrop" = "Drop disk image files to add them to this player.";
+
+/* Player: Formatted message. name: runtime text; keep its placeholder */
+"diskNameCollision" = "“%1$@” is already in use or is not a valid disk filename. Enter a new name with the original disk extension; existing files will be kept.";
+
+/* Player: Formatted message. megahertz: numeric value */
+"mhz" = "%1$ld MHz";
+
+/* Player: Formatted message. megahertz: numeric value */
+"mhzInvalidSetting" = "%1$ld MHz (invalid setting)";
+
+/* Player: User-visible label, instruction, or error message. */
+"paused" = " — Paused";
+
+/* Player: User-visible label, instruction, or error message. */
+"invalidDiskLibrary" = "The imported disk library is invalid.";
+
+/* Player: User-visible label, instruction, or error message. */
+"importLimitError" = "This player can import up to 256 additional disks.";
+
+/* Player: User-visible label, instruction, or error message. */
+"useThisName" = "Use This Name";
+
+/* Player: Formatted message. errorDescription: runtime text; keep its placeholder */
+"startupRecoveryHint" = "%1$@ You can resume to boot normally.";
+
+/* Human-readable pause reason. */
+"pauseReasonAbout" = "About";
+
+/* Human-readable pause reason. */
+"pauseReasonCredits" = "Credits";
+
+/* Human-readable pause reason. */
+"pauseReasonControllerdisconnected" = "Controller disconnected";
+
+/* Human-readable pause reason. */
+"pauseReasonStartupsnapshotcouldnotberestored" = "Startup snapshot could not be restored";
+
+/* Human-readable pause reason. */
+"pauseReasonRenameDisk" = "Rename Disk";
+
+/* Human-readable pause reason. */
+"pauseReasonControllerSettings" = "Controller Settings";
+
+/* Human-readable pause reason. */
+"pauseReasonSnapshots" = "Snapshots";
+
+/* Human-readable pause reason. */
+"pauseReasonROMSetup" = "ROM Setup";
+
+/* Human-readable pause reason. */
+"pauseReasonImportDisks" = "Import Disks";
+
+/* Human-readable pause reason. */
+"pauseReasonScreenshotError" = "Screenshot Error";
+
+/* Human-readable pause reason. */
+"pauseReasonSnapshotrecoveryfailed" = "Snapshot recovery failed";
+
+/* Window title while paused, without a reason. Preserve the game name placeholder. */
+"pausedGameTitle" = "%1$@ — Paused";
+
+/* Window title while paused, including a translated reason. */
+"pausedGameTitleWithReason" = "%1$@ — Paused (%2$@)";

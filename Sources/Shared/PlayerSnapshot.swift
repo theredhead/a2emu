@@ -2,6 +2,8 @@ import Compression
 import CryptoKit
 import Foundation
 
+private let playerSnapshotIntl = PlayerSnapshotIntl()
+
 /// A portable snapshot package owns its state, preview, and all game disk images.
 struct PlayerSnapshot: Codable {
     let version: Int
@@ -44,7 +46,7 @@ struct PlayerSnapshot: Codable {
             let values = try directory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
             guard values.isDirectory == true, values.isSymbolicLink != true else {
                 throw PlayerManifest.failure(
-                    "Snapshots must contain their own disk directory, without symbolic links.")
+                    playerSnapshotIntl.snapshotsMustContainTheirOwnDisk)
             }
         }
         let metadataURL = url.appendingPathComponent("Snapshot.json")
@@ -52,10 +54,10 @@ struct PlayerSnapshot: Codable {
             .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey,
         ])
         guard metadataValues.isRegularFile == true, metadataValues.isSymbolicLink != true else {
-            throw PlayerManifest.failure("The snapshot metadata must be an ordinary file.")
+            throw PlayerManifest.failure(playerSnapshotIntl.theSnapshotMetadataMustBeAn)
         }
         guard (metadataValues.fileSize ?? 0) < 1_048_576 else {
-            throw PlayerManifest.failure("The snapshot metadata is too large.")
+            throw PlayerManifest.failure(playerSnapshotIntl.theSnapshotMetadataIsTooLarge)
         }
         let snapshot = try JSONDecoder().decode(Self.self, from: Data(contentsOf: metadataURL))
         let names = snapshot.diskFiles + [stateName, previewName]
@@ -69,12 +71,12 @@ struct PlayerSnapshot: Codable {
             Set(snapshot.mounts.map { $0.address }).count == snapshot.mounts.count,
             Set(snapshot.mounts.map { $0.diskIndex }).count == snapshot.mounts.count
         else {
-            throw PlayerManifest.failure("The snapshot metadata is invalid or uses an unsupported format.")
+            throw PlayerManifest.failure(playerSnapshotIntl.invalidMetadata)
         }
         if let compressed = snapshot.compressedPayloads {
             guard Set(compressed.keys).isSubset(of: Set(snapshot.diskFiles + [stateName])),
                 compressed.values.allSatisfy({ $0.size > 0 && $0.size <= maximumCompressedPayloadSize })
-            else { throw PlayerManifest.failure("The compressed snapshot metadata is invalid.") }
+            else { throw PlayerManifest.failure(playerSnapshotIntl.theCompressedSnapshotMetadataIsInvalid) }
         }
         for name in names {
             let file = payload(name, at: url)
@@ -82,7 +84,7 @@ struct PlayerSnapshot: Codable {
             guard values.isRegularFile == true, values.isSymbolicLink != true,
                 manager.fileExists(atPath: file.path), try digest(file) == snapshot.hashes[name]
             else {
-                throw PlayerManifest.failure("The snapshot is incomplete or damaged: \(name).")
+                throw PlayerManifest.failure(playerSnapshotIntl.theSnapshotIsIncompleteOrDamaged(name: name))
             }
         }
         return snapshot
@@ -107,7 +109,7 @@ struct PlayerSnapshot: Codable {
             String(data: prefix.dropFirst(8).prefix(64), encoding: .utf8) == expected
         else {
             throw PlayerManifest.failure(
-                "This snapshot was saved by a different emulator build. Capture a new one with this player version."
+                playerSnapshotIntl.thisSnapshotWasSavedByA
             )
         }
     }
@@ -137,11 +139,11 @@ struct PlayerSnapshot: Codable {
             return
         }
         guard expanded.size > 0, expanded.size <= Self.maximumCompressedPayloadSize else {
-            throw PlayerManifest.failure("The expanded snapshot payload is too large.")
+            throw PlayerManifest.failure(playerSnapshotIntl.theExpandedSnapshotPayloadIsToo)
         }
         let packed = try Data(contentsOf: Self.payload(name, at: package), options: .mappedIfSafe)
         guard !packed.isEmpty, packed.count <= Self.maximumCompressedPayloadSize else {
-            throw PlayerManifest.failure("The compressed snapshot payload is invalid.")
+            throw PlayerManifest.failure(playerSnapshotIntl.theCompressedSnapshotPayloadIsInvalid)
         }
         var bytes = Data(count: expanded.size)
         let decoded = bytes.withUnsafeMutableBytes { (output: UnsafeMutableRawBufferPointer) in
@@ -153,7 +155,9 @@ struct PlayerSnapshot: Codable {
         }
         guard decoded == expanded.size,
             SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == expanded.hash
-        else { throw PlayerManifest.failure("The compressed snapshot payload is damaged: \(name).") }
+        else {
+            throw PlayerManifest.failure(playerSnapshotIntl.theCompressedSnapshotPayloadIsDamaged(name: name))
+        }
         try bytes.write(to: destination, options: .atomic)
     }
 
@@ -161,7 +165,7 @@ struct PlayerSnapshot: Codable {
     func capturedExpansionMemoryKB(at package: URL) throws -> Int {
         if let memory = expansionMemoryKB {
             guard PlayerManifest.expansionMemoryChoices.contains(memory) else {
-                throw PlayerManifest.failure("This snapshot uses an unsupported RAM configuration.")
+                throw PlayerManifest.failure(playerSnapshotIntl.thisSnapshotUsesAnUnsupportedRam)
             }
             return memory
         }
@@ -173,13 +177,15 @@ struct PlayerSnapshot: Codable {
         let handle = try FileHandle(forReadingFrom: state)
         defer { try? handle.close() }
         let header = handle.readData(ofLength: 80)
-        guard header.count == 80 else { throw PlayerManifest.failure("The snapshot header is incomplete.") }
+        guard header.count == 80 else {
+            throw PlayerManifest.failure(playerSnapshotIntl.theSnapshotHeaderIsIncomplete)
+        }
         let total = (0..<4).reduce(0) { $0 | (Int(header[76 + $1]) << ($1 * 8)) }
         if total == 0xdf0000 { return 14336 }
         let base = total % (1024 * 1024) == 128 * 1024 ? 128 * 1024 : 1024 * 1024
         let memory = max(0, total - base) / 1024
         guard PlayerManifest.expansionMemoryChoices.contains(memory) else {
-            throw PlayerManifest.failure("This snapshot uses an unsupported RAM configuration.")
+            throw PlayerManifest.failure(playerSnapshotIntl.thisSnapshotUsesAnUnsupportedRam)
         }
         return memory
     }

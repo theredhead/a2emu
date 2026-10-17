@@ -2,6 +2,8 @@ import Cocoa
 import UniformTypeIdentifiers
 import WebKit
 
+private let iconPickerIntl = IconPickerIntl()
+
 /// Displays a draggable square crop and renders it as a 1024-pixel PNG.
 final class SquareCropView: NSView {
     var image: NSImage? {
@@ -48,7 +50,7 @@ final class SquareCropView: NSView {
         NSColor.black.setFill()
         bounds.fill()
         guard let image = image else {
-            let text = "Select an image to crop"
+            let text = iconPickerIntl.selectAnImageToCrop
             text.draw(
                 at: CGPoint(x: 35, y: bounds.midY),
                 withAttributes: [
@@ -102,10 +104,11 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
     private var searchBrowser: WKWebView!
     private var searchQuery = ""
     private var gridReady = false
+    private var isAwaitingResults = false
     private var pendingResults: [String] = []
     private let crop = SquareCropView(frame: NSRect(x: 682, y: 174, width: 300, height: 300))
     private let query = NSTextField(string: "")
-    private let status = NSTextField(labelWithString: "Click an image result, or choose a local image.")
+    private let status = NSTextField(labelWithString: iconPickerIntl.clickAnImageResultOrChoose)
     private var zoomSlider: NSSlider!
     private var requestID = 0
     private var completion: ((Data) -> Void)?
@@ -115,17 +118,17 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1010, height: 640),
             styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        window.title = "Choose Player Icon"
+        window.title = iconPickerIntl.choosePlayerIcon
         window.isReleasedWhenClosed = false
         window.delegate = self
         let root = window.contentView!
-        query.stringValue = "Apple 2gs game " + searchName
+        query.stringValue = iconPickerIntl.apple2GsGame(searchName: searchName)
         query.frame = NSRect(x: 20, y: 592, width: 520, height: 28)
         query.cell?.sendsActionOnEndEditing = false
         query.target = self
         query.action = #selector(searchImages(_:))
         root.addSubview(query)
-        let search = NSButton(title: "Search", target: self, action: #selector(searchImages(_:)))
+        let search = NSButton(title: iconPickerIntl.search, target: self, action: #selector(searchImages(_:)))
         search.frame = NSRect(x: 548, y: 590, width: 100, height: 32)
         search.bezelStyle = .rounded
         root.addSubview(search)
@@ -169,7 +172,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         searchBrowser.navigationDelegate = self
         root.addSubview(browser)
         root.addSubview(crop)
-        let instruction = NSTextField(labelWithString: "Drag to position the square crop.")
+        let instruction = NSTextField(labelWithString: iconPickerIntl.dragToPositionTheSquareCrop)
         instruction.frame = NSRect(x: 682, y: 491, width: 308, height: 32)
         root.addSubview(instruction)
         let zoom = NSSlider(
@@ -177,11 +180,12 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         zoomSlider = zoom
         zoom.frame = NSRect(x: 682, y: 133, width: 300, height: 24)
         root.addSubview(zoom)
-        let local = NSButton(title: "Choose Local Image…", target: self, action: #selector(chooseLocal(_:)))
+        let local = NSButton(
+            title: iconPickerIntl.chooseLocalImage, target: self, action: #selector(chooseLocal(_:)))
         local.frame = NSRect(x: 682, y: 89, width: 300, height: 32)
         local.bezelStyle = .rounded
         root.addSubview(local)
-        let use = NSButton(title: "Use This Crop", target: self, action: #selector(useCrop(_:)))
+        let use = NSButton(title: iconPickerIntl.useThisCrop, target: self, action: #selector(useCrop(_:)))
         use.frame = NSRect(x: 682, y: 46, width: 300, height: 32)
         use.bezelStyle = .rounded
         root.addSubview(use)
@@ -204,12 +208,16 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         gridReady = false
         pendingResults = []
         showResults()
-        status.stringValue = "Searching DuckDuckGo images…"
+        isAwaitingResults = true
+        status.stringValue = iconPickerIntl.searchingDuckduckgoImages
         searchBrowser.load(URLRequest(url: url.url!))
     }
 
     /// Renders remote URLs as DOM properties, keeping result content out of executable markup.
     private func showResults() {
+        let labels = ["searching": iconPickerIntl.searchingForImages]
+        let labelsData = try! JSONSerialization.data(withJSONObject: labels)
+        let labelsJSON = String(data: labelsData, encoding: .utf8)!
         browser.loadHTMLString(
             """
             <!doctype html><meta name="color-scheme" content="light dark">
@@ -221,15 +229,18 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
             button:hover, button:focus { outline: 3px solid #0788ff; }
             img { width: 100%; height: 100%; object-fit: contain; }
             p { color: #888; line-height: 1.5; }
-            </style><div id="grid"></div><p id="empty">Searching for images…</p>
+            </style><div id="grid"></div><p id="empty"></p>
             <script>
+            const labels = \(labelsJSON);
+            document.getElementById('empty').textContent = labels.searching;
             const displayed = new Set();
             window.addResults = function(urls) {
-                for (const url of urls) {
+                for (const result of urls) {
+                    const url = typeof result === 'string' ? result : result.url;
                     if (displayed.has(url)) continue;
                     displayed.add(url);
                     const button = document.createElement('button');
-                    button.setAttribute('aria-label', 'Select image ' + displayed.size);
+                    button.setAttribute('aria-label', result.label || '');
                     const image = document.createElement('img');
                     image.src = url;
                     image.loading = 'lazy';
@@ -244,7 +255,10 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
     }
 
     private func updateResults() {
-        guard gridReady, let data = try? JSONSerialization.data(withJSONObject: pendingResults),
+        let results = pendingResults.enumerated().map { index, url in
+            ["url": url, "label": iconPickerIntl.selectImage(number: index + 1)]
+        }
+        guard gridReady, let data = try? JSONSerialization.data(withJSONObject: results),
             let json = String(data: data, encoding: .utf8)
         else { return }
         browser.evaluateJavaScript("window.addResults(\(json))", completionHandler: nil)
@@ -257,8 +271,8 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
             return
         }
         searchBrowser.evaluateJavaScript("collectImages()", completionHandler: nil)
-        if status.stringValue == "Searching DuckDuckGo images…" {
-            status.stringValue = "If no images appear, try another search or choose a local image."
+        if isAwaitingResults {
+            status.stringValue = iconPickerIntl.ifNoImagesAppearTryAnother
         }
     }
 
@@ -266,7 +280,8 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error
     ) {
         if (error as NSError).code != NSURLErrorCancelled {
-            status.stringValue = "Search unavailable. Try again or choose a local image."
+            isAwaitingResults = false
+            status.stringValue = iconPickerIntl.searchUnavailableTryAgainOrChoose
         }
     }
 
@@ -280,10 +295,9 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
             else { return }
             pendingResults = urls
             updateResults()
-            if status.stringValue == "Searching DuckDuckGo images…"
-                || status.stringValue == "If no images appear, try another search or choose a local image."
-            {
-                status.stringValue = "Click an image result, or choose a local image."
+            if isAwaitingResults {
+                isAwaitingResults = false
+                status.stringValue = iconPickerIntl.clickAnImageResultOrChoose
             }
             return
         }
@@ -295,15 +309,17 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
         if value.hasPrefix("data:image"), let part = value.components(separatedBy: ",").last,
             let data = Data(base64Encoded: part), let image = NSImage(data: data)
         {
+            isAwaitingResults = false
             crop.image = image
             zoomSlider.doubleValue = 1
-            status.stringValue = "Drag and zoom, then use this crop."
+            status.stringValue = iconPickerIntl.dragAndZoomThenUseThis
             return
         }
         guard let url = URL(string: value), ["https", "http"].contains(url.scheme ?? "") else {
             return
         }
-        status.stringValue = "Loading selected image…"
+        isAwaitingResults = false
+        status.stringValue = iconPickerIntl.loadingSelectedImage
         URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
             DispatchQueue.main.async {
                 guard let self = self, self.requestID == selectedID else {
@@ -312,9 +328,9 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
                 if let data = data, data.count <= 30 * 1024 * 1024, let image = NSImage(data: data) {
                     self.crop.image = image
                     self.zoomSlider.doubleValue = 1
-                    self.status.stringValue = "Drag and zoom, then use this crop."
+                    self.status.stringValue = iconPickerIntl.dragAndZoomThenUseThis
                 } else {
-                    self.status.stringValue = "Could not load that image. Try another result or a local file."
+                    self.status.stringValue = iconPickerIntl.couldNotLoadThatImageTry
                 }
             }
         }.resume()
@@ -332,14 +348,15 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
             return
         }
         requestID += 1
+        isAwaitingResults = false
         crop.image = image
         zoomSlider.doubleValue = 1
-        status.stringValue = "Drag and zoom, then use this crop."
+        status.stringValue = iconPickerIntl.dragAndZoomThenUseThis
     }
 
     @objc private func useCrop(_ sender: Any?) {
         guard let data = crop.png() else {
-            status.stringValue = "Choose an image first."
+            status.stringValue = iconPickerIntl.chooseAnImageFirst
             return
         }
         completion?(data)
