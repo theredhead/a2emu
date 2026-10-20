@@ -208,7 +208,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             if machine.startupSnapshot == true {
                 let startup = Bundle.main.resourceURL!.appendingPathComponent("Startup.a2snapshot")
                 do {
-                    try restoreSnapshot(at: startup)
+                    try restoreSnapshot(at: startup, applyAdditionalStartupMounts: true)
                 } catch {
                     setEmulationPaused(true, reason: "Startup snapshot could not be restored")
                     let alert = NSAlert()
@@ -232,15 +232,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         }
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard emulatorStarted else { return .terminateNow }
+        setDialogOpen(true, reason: "Save Temporary Media")
+        defer { setDialogOpen(false, reason: "Save Temporary Media") }
+        do {
+            return try confirmTemporaryMediaQuit() ? .terminateNow : .terminateCancel
+        } catch {
+            showTemporaryMediaSaveError(error)
+            return .terminateCancel
+        }
+    }
+
     func applicationWillTerminate(_ aNotification: Notification) {
+        defer {
+            if let directory = temporaryRunDirectory { try? FileManager.default.removeItem(at: directory) }
+        }
         guard emulatorStarted else {
             return
         }
-        EmulatorCore.writeConfiguration()
+        writePlayerConfiguration()
         // Save mounted drives before ejecting to flush disk writes on shutdown.
         for address in DriveAddress.all {
             EmulatorCore.ejectDisk(slot: Int32(address.slot), drive: Int32(address.drive))
         }
+        if let directory = temporaryDiskDirectory { try? FileManager.default.removeItem(at: directory) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(
@@ -365,7 +381,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             // User has clicked the close box on the main emulator
             //  window.  Just exit the app
             NSApp.terminate(window)
-            return true  // Let main window close
+            return false  // Keep the window open if quitting is cancelled.
         } else {
             EmulatorCore.setImageActivity(info.imagePointer, active: Int32(0))
             info.update()
@@ -384,7 +400,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             canTogglePause: { [weak self] in
                 self?.emulatorStarted == true && self?.dialogPauseReasons.isEmpty == true
             },
-            showAdvanced: { [weak self] in self?.advancedMenus == true })
+            showAdvanced: { [weak self] in self?.advancedMenus == true },
+            canSaveTemporaryMedia: { [weak self] in self?.temporaryMediaHaveChanges == true })
         let layout = PlayerMenu(entries: entries, target: self, menuDelegate: self)
         playerMenu = layout
         NSApp.mainMenu = layout.root
@@ -406,6 +423,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     var snapshotDiskDirectory: URL?
     var snapshotNeedsVideoRefresh = false
     var snapshotBrowser: SnapshotBrowser?
+    /// Only preview bundles in the system temporary directory may remove their containing folder.
+    private var temporaryRunDirectory: URL? {
+        guard CommandLine.arguments.contains("--temporary-player") else { return nil }
+        let directory = Bundle.main.bundleURL.deletingLastPathComponent().resolvingSymlinksInPath()
+        guard directory.lastPathComponent.hasPrefix("a2-preview-"),
+            directory.deletingLastPathComponent()
+                == FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+        else { return nil }
+        return directory
+    }
+
     var supportDirectory: URL!
     var selectedROM: URL?
     var emulatorStarted = false
@@ -423,7 +451,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         let manager = FileManager.default
         let base = try manager.url(
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        supportDirectory = base.appendingPathComponent(Bundle.main.bundleIdentifier!, isDirectory: true)
+        supportDirectory =
+            temporaryRunDirectory?.appendingPathComponent("Support", isDirectory: true)
+            ?? base.appendingPathComponent(Bundle.main.bundleIdentifier!, isDirectory: true)
         try manager.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
         let resource = Bundle.main.resourceURL!
         machine = try JSONDecoder().decode(
@@ -592,10 +622,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     /// Renaming owns a temporary pause without releasing an existing manual or dialog pause.
-    private func requestDiskImportName(_ name: String) -> String? {
+    func requestDiskImportName(_ name: String) -> String? {
         setDialogOpen(true, reason: "Rename Disk")
         defer { setDialogOpen(false, reason: "Rename Disk") }
-        let alert = NSAlert()
+        let alert = PlayerDiskAlert()
         alert.messageText = playerIntl.chooseADifferentDiskName
         alert.informativeText =
             playerIntl.diskNameCollision(name: name)
@@ -610,6 +640,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     }
 
     var mountedImages: [DriveAddress: Int] = [:]
+    var temporaryDiskDirectory: URL?
+    var temporaryDiskNames: Set<String> = []
+    var temporaryDiskPaths: [String: URL] = [:]
+    var temporaryDiskOriginalPaths: [String: URL] = [:]
+    var temporaryDiskSavedHashes: [String: String] = [:]
+    var temporaryMediaHaveChanges = false
+    var temporaryDrivePaths: [DriveAddress: String] = [:]
     var speedMenuItems: [NSMenuItem] = []
     private var customSpeedItems: [Int32: NSMenuItem] = [:]
     private var unknownSpeedItem: NSMenuItem?
@@ -644,7 +681,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 self?.gamepadInput.selectedControllerID = controllerID
                 self?.gamepadInput.mapping = mapping
                 EmulatorCore.joystickType = 4
-                EmulatorCore.writeConfiguration()
+                self?.writePlayerConfiguration()
                 self?.mainWindowInfo.window?.makeKeyAndOrderFront(nil)
                 if let view = self?.mainWindowInfo.view {
                     self?.mainWindowInfo.window?.makeFirstResponder(view)
@@ -673,13 +710,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             return
         }
         EmulatorCore.joystickType = Int32(sender.tag)
-        EmulatorCore.writeConfiguration()
+        writePlayerConfiguration()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
         // Latch the mode when opening a top-level menu; submenus inherit it after Option is released.
         if menu.supermenu === playerMenu?.root {
             advancedMenus = menuModifierFlags().contains(.option)
+        }
+        if let disksMenu = playerMenu?.submenu(.disks),
+            menu === disksMenu || menu.supermenu === disksMenu
+        {
+            if emulatorStarted { refreshMountedImagesFromCore() }
+            updateDiskChecks()
+            updateTemporaryMediaMenu()
         }
         updatePauseMenu()
         updateSpeedChecks()
@@ -746,7 +790,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         EmulatorCore.acceleratorSpeedMHz = Int32(values[1])
         EmulatorCore.updateAcceleratorSpeeds()
         updateSpeedChecks()
-        EmulatorCore.writeConfiguration()
+        writePlayerConfiguration()
     }
 
     @objc func changeSpeed(_ sender: NSMenuItem) {
@@ -759,7 +803,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             EmulatorCore.updateAcceleratorSpeeds()
         }
         updateSpeedChecks()
-        EmulatorCore.writeConfiguration()
+        writePlayerConfiguration()
     }
 
     @objc func togglePause(_ sender: Any?) {
@@ -825,7 +869,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     func addDiskMenus() {
         guard let layout = playerMenu else { return }
         let visible = machine.drives.count > 1 || machine.diskFiles.count > 1
-        layout.replaceContents(of: .disks, with: PlayerMenuLayout.savedDisks)
+        layout.replaceContents(
+            of: .disks,
+            with: PlayerMenuLayout.savedDisks(canSaveTemporaryMedia: { [weak self] in
+                self?.temporaryMediaHaveChanges == true
+            }))
         diskMenuItems = []
         guard visible else { return }
         mountedImages = [:]
@@ -858,7 +906,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 }
             }
         }
-        let contents = PlayerMenuLayout.disks(for: machine)
+        let contents = PlayerMenuLayout.disks(
+            for: machine, canSaveTemporaryMedia: { [weak self] in self?.temporaryMediaHaveChanges == true })
         layout.replaceContents(of: .disks, with: contents.entries)
         for (index, choice) in contents.choices.enumerated() {
             if let item = layout.item(.diskChoice(index)) {
@@ -868,9 +917,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         updateDiskChecks()
     }
 
+    /// Keeps the current disk visible, while excluding incompatible media and disks in other drives.
     func updateDiskChecks() {
+        let slots = machine.diskFiles.map {
+            DiskImageDevice.detect(diskURL(named: $0)).slot
+        }
         for (item, address, index) in diskMenuItems {
             item.state = mountedImages[address] == index ? .on : .off
+            if let index = index {
+                let mountedElsewhere = mountedImages.contains { $0.key != address && $0.value == index }
+                item.isHidden = slots[index] != address.slot || mountedElsewhere
+            }
         }
     }
 
@@ -879,20 +936,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             return
         }
 
+        updateDiskChecks()
+        guard !diskMenuItems[sender.tag].0.isHidden else { return }
         let (_, address, index) = diskMenuItems[sender.tag]
+        if let index = index, temporaryDiskNames.contains(machine.diskFiles[index]) {
+            if temporaryDrivePaths[address] == nil {
+                temporaryDrivePaths[address] =
+                    mountedImages[address].map {
+                        diskURL(named: machine.diskFiles[$0]).path
+                    } ?? ""
+            }
+        } else {
+            temporaryDrivePaths.removeValue(forKey: address)
+        }
         EmulatorCore.ejectDisk(slot: Int32(address.slot), drive: Int32(address.drive))
         mountedImages.removeValue(forKey: address)
         if let index = index {
-            for (old, mounted) in Array(mountedImages) where mounted == index {
-                EmulatorCore.ejectDisk(slot: Int32(old.slot), drive: Int32(old.drive))
-                mountedImages.removeValue(forKey: old)
-            }
-            EmulatorCore.mountDisk(
-                at: currentDiskDirectory.appendingPathComponent(machine.diskFiles[index]), in: address)
+            EmulatorCore.mountDisk(at: diskURL(named: machine.diskFiles[index]), in: address)
             mountedImages[address] = index
         }
         updateDiskChecks()
-        EmulatorCore.writeConfiguration()
+        writePlayerConfiguration()
     }
 
     @objc func changeROM(_ sender: Any?) {

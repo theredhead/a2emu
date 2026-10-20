@@ -8,7 +8,7 @@ private let playerMenuIntl = PlayerMenuIntl()
 enum PlayerMenuLayout {
     static func main(
         appName: String, isRunning: @escaping () -> Bool, canTogglePause: @escaping () -> Bool,
-        showAdvanced: @escaping () -> Bool
+        showAdvanced: @escaping () -> Bool, canSaveTemporaryMedia: @escaping () -> Bool = { false }
     ) -> [PlayerMenuEntry] {
         [
             .menu(
@@ -78,12 +78,20 @@ enum PlayerMenuLayout {
                         commonIntl.snapshots, action: #selector(AppDelegate.showSnapshots(_:)),
                         key: String(UnicodeScalar(NSF2FunctionKey)!), modifiers: [], id: .snapshots),
                 ]),
-            .menu(playerMenuIntl.disks, id: .disks, enabledWhen: isRunning, savedDisks),
+            .menu(
+                playerMenuIntl.disks, id: .disks, enabledWhen: isRunning,
+                savedDisks(canSaveTemporaryMedia: canSaveTemporaryMedia)),
         ]
     }
 
-    static var savedDisks: [PlayerMenuEntry] {
-        [.command(playerMenuIntl.showSavedDisk, action: #selector(AppDelegate.showSavedDisk(_:)))]
+    static func savedDisks(canSaveTemporaryMedia: @escaping () -> Bool = { false }) -> [PlayerMenuEntry] {
+        [
+            .command(
+                playerMenuIntl.saveTemporaryMedia, action: #selector(AppDelegate.saveTemporaryMedia(_:)),
+                id: .saveTemporaryMedia, visibleWhen: canSaveTemporaryMedia),
+            .separator,
+            .command(playerMenuIntl.showSavedDisk, action: #selector(AppDelegate.showSavedDisk(_:))),
+        ]
     }
 
     static var speeds: [PlayerMenuEntry] {
@@ -107,7 +115,9 @@ enum PlayerMenuLayout {
         ]
     }
 
-    static func disks(for machine: PlayerManifest) -> (
+    static func disks(
+        for machine: PlayerManifest, canSaveTemporaryMedia: @escaping () -> Bool = { false }
+    ) -> (
         entries: [PlayerMenuEntry], choices: [(DriveAddress, Int?)]
     ) {
         var entries: [PlayerMenuEntry] = []
@@ -131,6 +141,6 @@ enum PlayerMenuLayout {
             }
             entries.append(.menu(address.label, drive))
         }
-        return (entries + [.separator] + savedDisks, choices)
+        return (entries + [.separator] + savedDisks(canSaveTemporaryMedia: canSaveTemporaryMedia), choices)
     }
 }

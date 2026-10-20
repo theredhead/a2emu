@@ -17,3 +17,9 @@
 
 /* BlankDisk: User-visible label, instruction, or error message. */
 "smartportHardDisk5Mb" = "SmartPort-harde schijf — 5 MB";
+
+"unformatted" = "Niet geformatteerd";
+
+"incompatibleFormat" = "DOS 3.3 vereist een 5,25-inch schijf van 140 KB.";
+
+"dos33DataDisk" = "DOS 3.3 — gegevensschijf";

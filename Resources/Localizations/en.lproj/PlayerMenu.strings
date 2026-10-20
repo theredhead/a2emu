@@ -74,3 +74,5 @@
 
 /* PlayerMenu: User-visible label, instruction, or error message. */
 "view" = "View";
+
+"saveTemporaryMedia" = "Save Changes to Temporary Media…";

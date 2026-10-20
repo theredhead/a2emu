@@ -40,7 +40,7 @@ extension AppDelegate {
             at: staging.appendingPathComponent("Disks"), withIntermediateDirectories: true)
         try EmulatorCore.flushDisks()
         var mounts: [DiskMount] = []
-        var sources = machine.diskFiles.map { currentDiskDirectory.appendingPathComponent($0) }
+        var sources = machine.diskFiles.map { diskURL(named: $0) }
         for address in DriveAddress.all {
             if let path = EmulatorCore.mountedDiskPath(slot: Int32(address.slot), drive: Int32(address.drive))
             {
@@ -63,7 +63,8 @@ extension AppDelegate {
         let snapshot = try PlayerSnapshot.finish(
             at: staging, title: title, gameName: PlayerManifest.displayName,
             disks: machine.diskFiles, mounts: mounts, compress: true,
-            expansionMemoryKB: Int(EmulatorCore.expansionMemoryBytes / 1024))
+            expansionMemoryKB: Int(EmulatorCore.expansionMemoryBytes / 1024),
+            temporaryDiskFiles: machine.diskFiles.filter { temporaryDiskNames.contains($0) })
         let destination = snapshotsDirectory.appendingPathComponent(
             snapshot.fileName)
         try manager.moveItem(at: staging, to: destination)
@@ -85,10 +86,19 @@ extension AppDelegate {
         EmulatorCore.invalidateVideo()
     }
 
+    /// A snapshot may retain additional session disks, or predate disks added to the library.
+    func snapshotFitsDiskSet(_ snapshot: PlayerSnapshot) -> Bool {
+        let sessionNames = temporaryDiskNames.union(snapshot.temporaryDiskFiles ?? [])
+        let saved = snapshot.diskFiles.filter { !sessionNames.contains($0) }
+        let current = machine.diskFiles.filter { !sessionNames.contains($0) }
+        return !saved.isEmpty && !current.isEmpty
+            && (current.starts(with: saved) || saved.starts(with: current))
+    }
+
     /// Restores into new writable disks. Failed disk-layout validation rolls back the previous machine.
-    func restoreSnapshot(at url: URL) throws {
+    func restoreSnapshot(at url: URL, applyAdditionalStartupMounts: Bool = false) throws {
         let snapshot = try PlayerSnapshot.read(at: url)
-        guard machine.diskFiles.starts(with: snapshot.diskFiles) else {
+        guard snapshotFitsDiskSet(snapshot) else {
             throw PlayerManifest.failure(snapshotsIntl.thisSnapshotBelongsToAPlayer)
         }
         let manager = FileManager.default
@@ -101,9 +111,9 @@ extension AppDelegate {
             try snapshot.extract(name, from: url, to: working.appendingPathComponent(name))
         }
         // Disks imported after this checkpoint remain available without rewriting the saved snapshot.
-        for name in machine.diskFiles.dropFirst(snapshot.diskFiles.count) {
+        for name in machine.diskFiles where !snapshot.diskFiles.contains(name) {
             try manager.copyItem(
-                at: currentDiskDirectory.appendingPathComponent(name),
+                at: diskURL(named: name),
                 to: working.appendingPathComponent(name))
         }
         let state = working.appendingPathComponent("Restore.state")
@@ -149,11 +159,47 @@ extension AppDelegate {
         EmulatorCore.resetAudio()
         snapshotNeedsVideoRefresh = true
         mainWindowInfo.view?.showSnapshotPreview(at: url.appendingPathComponent(PlayerSnapshot.previewName))
+        let extraNames = snapshot.diskFiles.filter { !machine.diskFiles.contains($0) }
+        if !extraNames.isEmpty {
+            var updated = machine!
+            updated.diskFiles += extraNames
+            if let labels = updated.diskNames { updated.diskNames = labels + extraNames }
+            machine = updated
+            temporaryDiskNames.formUnion(extraNames)
+            for name in extraNames {
+                temporaryDiskSavedHashes[name] = try? PlayerSnapshot.digest(
+                    working.appendingPathComponent(name))
+            }
+        }
+        for mount in snapshot.mounts where temporaryDiskNames.contains(snapshot.diskFiles[mount.diskIndex]) {
+            if temporaryDrivePaths[mount.address] == nil {
+                temporaryDrivePaths[mount.address] =
+                    oldMounts.first {
+                        $0.0 == mount.address
+                            && !temporaryDiskNames.contains(URL(fileURLWithPath: $0.1).lastPathComponent)
+                    }?.1 ?? ""
+            }
+        }
+        for name in snapshot.diskFiles { temporaryDiskPaths.removeValue(forKey: name) }
         snapshotDiskDirectory = working
-        mountedImages = Dictionary(uniqueKeysWithValues: snapshot.mounts.map { ($0.address, $0.diskIndex) })
+        addDiskMenus()
+        mountedImages = Dictionary(
+            uniqueKeysWithValues: snapshot.mounts.map {
+                ($0.address, machine.diskFiles.firstIndex(of: snapshot.diskFiles[$0.diskIndex])!)
+            })
+        if applyAdditionalStartupMounts {
+            for mount in machine.mounts where !snapshot.diskFiles.contains(machine.diskFiles[mount.diskIndex])
+            {
+                EmulatorCore.ejectDisk(slot: Int32(mount.address.slot), drive: Int32(mount.address.drive))
+                EmulatorCore.mountDisk(
+                    at: diskURL(named: machine.diskFiles[mount.diskIndex]), in: mount.address)
+                mountedImages[mount.address] = mount.diskIndex
+            }
+        }
         updateDiskChecks()
+        updateTemporaryMediaMenu()
         updateSpeedChecks()
-        EmulatorCore.writeConfiguration()
+        writePlayerConfiguration()
         committed = true
     }
 

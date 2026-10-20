@@ -283,7 +283,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let snapshot = try PlayerSnapshot.read(at: url)
-            guard player.machine.diskFiles.starts(with: snapshot.diskFiles) else {
+            guard player.snapshotFitsDiskSet(snapshot) else {
                 throw PlayerManifest.failure(snapshotBrowserIntl.thisSnapshotUsesADifferentSet)
             }
             let destination = player.snapshotsDirectory.appendingPathComponent(

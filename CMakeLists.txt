@@ -53,8 +53,10 @@ set_source_files_properties(Vendor/gsplus/gsplus/src/joystick_driver.c
 add_executable(a2emu-player MACOSX_BUNDLE
     ${intl_sources}
     Sources/Shared/PlayerManifest.swift
+    Sources/Shared/DiskImageDevice.swift
     Sources/Shared/PlayerSnapshot.swift
     Sources/Player/EmulatorCore.swift
+    Sources/Player/DiskDrops.swift
     Sources/Player/Snapshots.swift
     Sources/Player/SnapshotBrowser.swift
     Sources/Player/EmulatorReset.c
@@ -96,7 +98,7 @@ add_custom_command(TARGET a2emu-player POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Player-Source.zip"
     COMMAND codesign --force --sign - "$<TARGET_BUNDLE_DIR:a2emu-player>")
 
-add_executable(a2emu-builder MACOSX_BUNDLE ${intl_sources} Sources/Shared/PlayerSnapshot.swift Sources/Shared/About.swift Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift Sources/Builder/Builder.swift Sources/Builder/DiskImageDevice.swift Sources/Builder/PlayerExporter.swift Sources/Shared/PlayerManifest.swift)
+add_executable(a2emu-builder MACOSX_BUNDLE ${intl_sources} Sources/Shared/DiskImageDevice.swift Sources/Shared/PlayerSnapshot.swift Sources/Shared/About.swift Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift Sources/Builder/Builder.swift Sources/Builder/BlankDiskImage.swift Sources/Builder/PlayerExporter.swift Sources/Shared/PlayerManifest.swift)
 target_compile_options(a2emu-builder PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:-target;${CMAKE_OSX_ARCHITECTURES}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET};-swift-version;4>")
 target_link_libraries(a2emu-builder PRIVATE "-framework Cocoa" "-framework WebKit")
 set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Sources/Builder/Info.plist.in" OUTPUT_NAME "Apple IIGS Player Builder" MACOSX_BUNDLE_GUI_IDENTIFIER "nl.theredhead.a2emu-wrapper-builder" MACOSX_BUNDLE_BUNDLE_NAME "Apple IIGS Player Builder" MACOSX_BUNDLE_SHORT_VERSION_STRING "${A2EMU_VERSION}" MACOSX_BUNDLE_BUNDLE_VERSION "3" MACOSX_BUNDLE_ICON_FILE "Builder.icns")
@@ -104,12 +106,16 @@ set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE
 target_sources(a2emu-builder PRIVATE Assets/Builder.icns)
 set_source_files_properties(Assets/Builder.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 set_property(TARGET a2emu-builder APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_SOURCE_DIR}/Resources/CiderPress-LICENSE.txt"
+    "${CMAKE_SOURCE_DIR}/Resources/ProDOS-Boot-NOTICE.txt"
     ${localization_resources}
     "${CMAKE_SOURCE_DIR}/Assets/Builder.icns"
     "${CMAKE_SOURCE_DIR}/Assets/BuilderIcon.png"
     "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png"
     "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns")
 add_custom_command(TARGET a2emu-builder POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Resources/CiderPress-LICENSE.txt" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/CiderPress-LICENSE.txt"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Resources/ProDOS-Boot-NOTICE.txt" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/ProDOS-Boot-NOTICE.txt"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Resources/Localizations" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/Snapshot.icns" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/Snapshot.icns"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/Assets/PlayerIcon.png" "$<TARGET_BUNDLE_DIR:a2emu-builder>/Contents/Resources/PlayerIcon.png"

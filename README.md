@@ -11,6 +11,11 @@ Runs on macOS 13 or later, on Intel and Apple Silicon.
 3. Choose the initial speed, expansion RAM, fullscreen preference and optional icon.
 4. Click **Create Player…** and choose where to save the app.
 
+Hold **Option** to change **Create Player…** (or **Save** while editing) to **Run Now**.
+This launches a temporary player with the current settings without asking for a save location.
+Its app and test saved data are removed when the player quits; your source disks and existing player are preserved.
+
+
 You can also choose or drop a startup snapshot. Its bundled disks, game name, RAM
 and disk mounts fill in the setup automatically; the saved state restores the speed.
 
@@ -25,8 +30,8 @@ with the builder. Compatible installed ROMs are shared between players; use
 To edit a player, quit it, then drop its app onto the builder or choose
 **File → Open Player…**. Save updates the app while preserving its saved disks.
 
-Use **File → New Blank Disk Image…** to create an empty floppy or SmartPort disk.
-Initialize it in the emulated computer before using it; blank disks contain no operating system.
+Use **File → New Blank Disk Image…** to create a ProDOS-formatted floppy or SmartPort
+disk, a DOS 3.3 data disk (140 KB), or an unformatted image. No operating system is included.
 
 ## First launch
 
@@ -43,10 +48,14 @@ another Mac may need the same first-launch approval.
 
 ## Playing
 
-- **Disks:** swap or eject images when the game asks for another disk. Drop images
-  onto the player to add saved copies to its disk library, then insert them from this
-  menu. Existing disks stay mounted and imported disks remain available after reopening.
-  Filename collisions ask for a new name; Cancel leaves the whole drop unchanged.
+- **Disks:** each drive lists compatible images that are not mounted elsewhere.
+  Drop an image onto the player to use a disposable copy in the first free compatible
+  drive, or choose which disk to eject if those drives are occupied. Hold Option while
+  dropping to add the image and its drive assignment permanently to the portable app.
+  Changed disposable disks can be saved back to their original files using
+  **Save Changes to Temporary Media…**; another location is offered if that fails.
+  Quitting prompts only when disposable disks still have unsaved changes.
+  Filename collisions ask for a new name.
 - **Configuration → Controls → Configure Controls:** assign controller directions and
   buttons using the joystick or keyboard/keypad layout. For keyboard-only games,
   choose **Keyboard & Mouse**, click a key on the IIGS keyboard, then activate the

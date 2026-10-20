@@ -83,6 +83,7 @@ final class BuilderArtworkView: NSView {
     var editingPlayer: URL?
     var pendingPlayer: URL?
     let exportButton = NSButton(title: builderIntl.createPlayer, target: nil, action: nil)
+    private var modifierMonitor: Any?
     var delegateLifetime: Builder?
 
     static func main() {
@@ -274,6 +275,7 @@ final class BuilderArtworkView: NSView {
         snapshotLabel.frame = NSRect(x: 212, y: 614, width: 334, height: 24)
         snapshotLabel.lineBreakMode = .byTruncatingMiddle
         root.addSubview(snapshotLabel)
+        align(snapshotLabel, with: snapshotButton)
         let clearSnapshot = snapshotClearButton
         clearSnapshot.target = self
         clearSnapshot.action = #selector(clearSnapshot(_:))
@@ -293,6 +295,11 @@ final class BuilderArtworkView: NSView {
             separator.boxType = .separator
             root.addSubview(separator)
         }
+        modifierMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            self?.refreshExportButton(optionHeld: event.modifierFlags.contains(.option))
+            return event
+        }
+        refreshExportButton(optionHeld: NSEvent.modifierFlags.contains(.option))
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -447,6 +454,19 @@ final class BuilderArtworkView: NSView {
         snapshotLabel.toolTip = nil
     }
 
+    private var blankDiskFormatMenu: NSPopUpButton?
+
+    @objc func blankDiskCapacityChanged(_ sender: NSPopUpButton) {
+        guard let formats = blankDiskFormatMenu else { return }
+        let image = BlankDiskImage.allCases[sender.indexOfSelectedItem]
+        for format in BlankDiskFormat.allCases {
+            formats.item(at: format.rawValue)?.isEnabled = image.supports(format)
+        }
+        if !image.supports(BlankDiskFormat.allCases[formats.indexOfSelectedItem]) {
+            formats.selectItem(at: BlankDiskFormat.proDOS.rawValue)
+        }
+    }
+
     @objc func createBlankDisk(_ sender: Any?) {
         let alert = NSAlert()
         alert.messageText = builderIntl.blankDiskTitle
@@ -454,11 +474,28 @@ final class BuilderArtworkView: NSView {
             builderIntl.blankDiskExplanation
         alert.addButton(withTitle: commonIntl.continueAction)
         alert.addButton(withTitle: commonIntl.cancel)
-        let options = NSView(frame: NSRect(x: 0, y: 0, width: 340, height: 70))
-        let format = NSPopUpButton(frame: NSRect(x: 0, y: 38, width: 340, height: 28))
-        format.addItems(withTitles: BlankDiskImage.allCases.map { $0.label })
-        format.selectItem(at: 1)
+        let options = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 112))
+        let capacity = NSPopUpButton(frame: NSRect(x: 104, y: 82, width: 296, height: 28))
+        capacity.addItems(withTitles: BlankDiskImage.allCases.map { $0.label })
+        capacity.selectItem(at: 1)
+        capacity.target = self
+        capacity.action = #selector(blankDiskCapacityChanged(_:))
+        options.addSubview(capacity)
+        let capacityLabel = NSTextField(labelWithString: builderIntl.diskCapacity)
+        capacityLabel.frame = NSRect(x: 0, y: 82, width: 100, height: 24)
+        align(capacityLabel, with: capacity)
+        options.addSubview(capacityLabel)
+        let format = NSPopUpButton(frame: NSRect(x: 104, y: 44, width: 296, height: 28))
+        format.addItems(withTitles: BlankDiskFormat.allCases.map { $0.label })
+        format.menu?.autoenablesItems = false
+        blankDiskFormatMenu = format
+        defer { blankDiskFormatMenu = nil }
+        blankDiskCapacityChanged(capacity)
         options.addSubview(format)
+        let formatLabel = NSTextField(labelWithString: builderIntl.diskFormat)
+        formatLabel.frame = NSRect(x: 0, y: 44, width: 100, height: 24)
+        align(formatLabel, with: format)
+        options.addSubview(formatLabel)
         let add = NSButton(checkboxWithTitle: builderIntl.addToPlayerDisks, target: nil, action: nil)
         add.frame = NSRect(x: 0, y: 0, width: 340, height: 28)
         add.isEnabled = startupSnapshot == nil
@@ -468,18 +505,20 @@ final class BuilderArtworkView: NSView {
         options.addSubview(add)
         alert.accessoryView = options
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let image = BlankDiskImage.allCases[format.indexOfSelectedItem]
+        let image = BlankDiskImage.allCases[capacity.indexOfSelectedItem]
+        let filesystem = BlankDiskFormat.allCases[format.indexOfSelectedItem]
+        let fileExtension = image.fileExtension(for: filesystem)
         let panel = NSSavePanel()
         panel.title = builderIntl.saveBlankDiskImage
-        panel.nameFieldStringValue = builderIntl.untitledDisk(fileExtension: image.fileExtension)
-        panel.allowedContentTypes = [UTType(filenameExtension: image.fileExtension) ?? .data]
+        panel.nameFieldStringValue = builderIntl.untitledDisk(fileExtension: fileExtension)
+        panel.allowedContentTypes = [UTType(filenameExtension: fileExtension) ?? .data]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             guard !disks.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) else {
                 throw PlayerManifest.failure(
                     builderIntl.selectedDiskOverwriteError)
             }
-            try image.write(to: url)
+            try image.write(to: url, format: filesystem)
             if add.state == .on {
                 if disks.isEmpty {
                     selectDisks([url])
@@ -625,6 +664,7 @@ final class BuilderArtworkView: NSView {
                 choice.selectItem(at: address + 1)
             }
             content.addSubview(choice)
+            align(label, with: choice)
             mountChoices.append(choice)
         }
         mountList.documentView = content
@@ -680,7 +720,20 @@ final class BuilderArtworkView: NSView {
         }
     }
 
+    private func refreshExportButton(optionHeld: Bool) {
+        exportButton.title =
+            optionHeld
+            ? builderIntl.runNow
+            : (editingPlayer == nil ? builderIntl.createPlayer : commonIntl.save)
+        exportButton.toolTip = builderIntl.runNowHint
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        refreshExportButton(optionHeld: NSEvent.modifierFlags.contains(.option))
+    }
+
     @objc func createPlayer(_ sender: Any?) {
+        let runNow = NSEvent.modifierFlags.contains(.option)
         guard !disks.isEmpty else {
             showError(builderIntl.chooseADiskFirst)
             return
@@ -709,6 +762,10 @@ final class BuilderArtworkView: NSView {
             ).validate()
         } catch {
             showError(error.localizedDescription)
+            return
+        }
+        if runNow {
+            runTemporaryPlayer(name: name, mounts: mounts, diskNames: diskNames)
             return
         }
         if let existing = editingPlayer {
@@ -752,6 +809,34 @@ final class BuilderArtworkView: NSView {
                 expansionMemoryKB: PlayerManifest.expansionMemoryChoices[memory.indexOfSelectedItem])
             NSWorkspace.shared.activateFileViewerSelecting([output])
         } catch {
+            showError(error.localizedDescription)
+        }
+    }
+
+    /// Runs an isolated export; the player also cleans up if the builder quits first.
+    private func runTemporaryPlayer(name: String, mounts: [DiskMount], diskNames: [String]) {
+        let manager = FileManager.default
+        let directory = manager.temporaryDirectory.appendingPathComponent("a2-preview-" + UUID().uuidString)
+        do {
+            try manager.createDirectory(at: directory, withIntermediateDirectories: true)
+            let output = directory.appendingPathComponent(name + ".app")
+            try PlayerExporter.export(
+                disks: disks, slot: [6, 5, 7][slot.indexOfSelectedItem],
+                template: Bundle.main.resourceURL!.appendingPathComponent("PlayerTemplate.app"),
+                destination: output, icon: iconData, displayName: name, mounts: mounts, diskNames: diskNames,
+                availableDrives: configuredDrives,
+                initialSpeed: EmulationSpeed.allCases[speed.indexOfSelectedItem],
+                startInFullScreen: fullScreen.state == .on,
+                bundleIdentifier: "nl.theredhead.a2emu-player.preview." + UUID().uuidString,
+                startupSnapshot: startupSnapshot,
+                expansionMemoryKB: PlayerManifest.expansionMemoryChoices[memory.indexOfSelectedItem])
+            let process = Process()
+            process.executableURL = Bundle(url: output)!.executableURL!
+            process.arguments = ["--temporary-player"]
+            process.terminationHandler = { _ in try? FileManager.default.removeItem(at: directory) }
+            try process.run()
+        } catch {
+            try? manager.removeItem(at: directory)
             showError(error.localizedDescription)
         }
     }
@@ -801,7 +886,7 @@ final class BuilderArtworkView: NSView {
             count.selectItem(at: i == 0 ? 1 : 0)
         }
         heading.stringValue = builderIntl.createPlayerHeading
-        exportButton.title = builderIntl.createPlayer
+        refreshExportButton(optionHeld: NSEvent.modifierFlags.contains(.option))
         window.title = builderIntl.appleIigsPlayerBuilder
         summary.stringValue = builderIntl.emptyPlayerHint
         rebuildMounts()
@@ -853,7 +938,7 @@ final class BuilderArtworkView: NSView {
                 iconData.flatMap { NSImage(data: $0) } ?? NSWorkspace.shared.icon(forFile: url.path)
             heading.stringValue = builderIntl.editThisAppleIigsPlayer
             editingPlayer = url
-            exportButton.title = commonIntl.save
+            refreshExportButton(optionHeld: NSEvent.modifierFlags.contains(.option))
             window.title = builderIntl.edit(filename: url.lastPathComponent)
             summary.stringValue = builderIntl.editing(filename: url.lastPathComponent)
             window.makeKeyAndOrderFront(nil)

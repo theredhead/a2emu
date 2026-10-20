@@ -4,6 +4,25 @@ import Foundation
 final class BlankDiskIntl {
     private let bundle: Bundle
 
+    var unformatted: String {
+        NSLocalizedString(
+            "unformatted", tableName: "BlankDisk", bundle: bundle, value: "Unformatted",
+            comment: "Disk creation option or validation message.")
+    }
+
+    var incompatibleFormat: String {
+        NSLocalizedString(
+            "incompatibleFormat", tableName: "BlankDisk", bundle: bundle,
+            value: "DOS 3.3 requires a 140 KB 5.25-inch disk.",
+            comment: "Disk creation option or validation message.")
+    }
+
+    var dos33DataDisk: String {
+        NSLocalizedString(
+            "dos33DataDisk", tableName: "BlankDisk", bundle: bundle, value: "DOS 3.3 — data disk",
+            comment: "DOS 3.3 filesystem without DOS system tracks; usable as data storage, not bootable.")
+    }
+
     init(bundle: Bundle = .main) {
         self.bundle = bundle
     }

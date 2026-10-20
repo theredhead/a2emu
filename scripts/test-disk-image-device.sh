@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT
-xcrun swiftc Sources/Shared/Intl/*.swift -module-cache-path "$test_dir/cache" Sources/Builder/DiskImageDevice.swift \
+xcrun swiftc Sources/Shared/Intl/*.swift -module-cache-path "$test_dir/cache" Sources/Shared/DiskImageDevice.swift Sources/Builder/BlankDiskImage.swift \
     scripts/test-disk-image-device.swift -o "$test_dir/test"
 "$test_dir/test"
 sed 's/^@main final class Builder/final class Builder/' Sources/Builder/Builder.swift > "$test_dir/Builder.swift"
@@ -17,7 +17,7 @@ source = source[:start] + '    func showError(_ message: String) { dropErrors.ap
 open(path, 'w').write(source)
 PYTHON
 xcrun swiftc Sources/Shared/Intl/*.swift -swift-version 4 -module-cache-path "$test_dir/cache" \
-    "$test_dir/Builder.swift" Sources/Builder/DiskImageDevice.swift \
+    "$test_dir/Builder.swift" Sources/Shared/DiskImageDevice.swift Sources/Builder/BlankDiskImage.swift \
     Sources/Builder/PlayerExporter.swift Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift \
     Sources/Shared/About.swift Sources/Shared/PlayerManifest.swift Sources/Shared/PlayerSnapshot.swift \
     scripts/test-builder-disk-selection.swift -o "$test_dir/builder-test"

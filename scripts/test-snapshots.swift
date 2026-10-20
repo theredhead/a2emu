@@ -229,6 +229,28 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         require(delegate.machine.diskFiles.last == "Additional.po")
         require(try Data(contentsOf: delegate.currentDiskDirectory.appendingPathComponent("Additional.po")) == addedBytes)
         print("PASS older snapshot restore retains disks imported after capture")
+        if !floppy {
+            let sessionDisk = incoming.appendingPathComponent("Session.hdv")
+            try Data(repeating: 0, count: 1024 * 1024).write(to: sessionDisk)
+            require(try delegate.mountDroppedDisks([sessionDisk], permanently: false, chooseDrive: { _, drives in drives[0] }))
+            let sessionSnapshot = try delegate.saveSnapshot(title: "Session disks")
+            let sessionMetadata = try PlayerSnapshot.read(at: sessionSnapshot)
+            require(sessionMetadata.temporaryDiskFiles == ["Session.hdv"])
+            try manager.removeItem(at: sessionDisk)
+            delegate.machine = try PlayerManifest.make(disks: [diskName, "Additional.po"], slot: slot)
+            delegate.temporaryDiskNames = []
+            delegate.temporaryDiskPaths = [:]
+            delegate.temporaryDiskOriginalPaths = [:]
+            delegate.temporaryDiskSavedHashes = [:]
+            delegate.temporaryDrivePaths = [:]
+            try delegate.restoreSnapshot(at: sessionSnapshot)
+            require(delegate.machine.diskFiles.last == "Session.hdv")
+            require(delegate.temporaryDiskNames.contains("Session.hdv"))
+            require(try Data(contentsOf: delegate.diskURL(named: "Session.hdv")) == Data(repeating: 0, count: 1024 * 1024))
+            require(try delegate.changedTemporaryDisks().isEmpty)
+            print("PASS snapshots retain disposable media after its source is removed and restore it into a fresh disk library")
+            if let folder = delegate.temporaryDiskDirectory { try? manager.removeItem(at: folder) }
+        }
         try manager.removeItem(at: saved)
         _ = try PlayerSnapshot.read(at: bundled)
         print("PASS self-contained exported startup snapshot remains valid after source snapshot removal")

@@ -43,7 +43,7 @@
 "couldNotUpdatePlayer" = "Speler bijwerken mislukt";
 
 /* Builder: User-visible label, instruction, or error message. */
-"blankDiskExplanation" = "Maak een lege, beschrijfbare schijf. Initialiseer deze in de geëmuleerde computer voordat je er bestanden op bewaart. Lege schijven bevatten geen opstartbaar systeem.";
+"blankDiskExplanation" = "Maak een beschrijfbare schijf in het gekozen formaat, of laat deze ongeformatteerd. Er worden geen besturingssysteembestanden toegevoegd.";
 
 /* Builder: User-visible label, instruction, or error message. */
 "createPlayer" = "Maak speler…";
@@ -156,3 +156,10 @@
 "editMenu" = "Wijzig";
 "paste" = "Plak";
 "unhandledFiles" = "Deze bestanden konden niet worden verwerkt:\n%1$@";
+
+"diskCapacity" = "Capaciteit:";
+
+"diskFormat" = "Formaat:";
+
+"runNow" = "Nu uitvoeren";
+"runNowHint" = "Houd Option ingedrukt om deze instellingen in een tijdelijke speler te testen. De app en opgeslagen gegevens worden verwijderd bij het afsluiten.";

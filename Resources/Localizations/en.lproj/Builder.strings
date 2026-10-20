@@ -43,7 +43,7 @@
 "couldNotUpdatePlayer" = "Could not update player";
 
 /* Builder: User-visible label, instruction, or error message. */
-"blankDiskExplanation" = "Create an empty writable disk. Initialize it inside the emulated computer before saving files to it. Blank disks do not contain a bootable system.";
+"blankDiskExplanation" = "Create a writable disk in the chosen format, or leave it unformatted. No operating system files are included.";
 
 /* Builder: User-visible label, instruction, or error message. */
 "createPlayer" = "Create Player…";
@@ -156,3 +156,10 @@
 "editMenu" = "Edit";
 "paste" = "Paste";
 "unhandledFiles" = "These files could not be handled:\n%1$@";
+
+"diskCapacity" = "Capacity:";
+
+"diskFormat" = "Format:";
+
+"runNow" = "Run Now";
+"runNowHint" = "Hold Option to test these settings in a temporary player. Its app and saved data are removed when it quits.";

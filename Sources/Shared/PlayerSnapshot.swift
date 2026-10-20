@@ -14,6 +14,7 @@ struct PlayerSnapshot: Codable {
     let diskFiles: [String]
     let mounts: [DiskMount]
     let hashes: [String: String]
+    var temporaryDiskFiles: [String]? = nil
     var expansionMemoryKB: Int? = nil
     var compressedPayloads: [String: ExpandedPayload]? = nil
 
@@ -65,6 +66,8 @@ struct PlayerSnapshot: Codable {
             snapshot.diskFiles.count <= 256, Set(names).count == names.count,
             snapshot.diskFiles.allSatisfy({ safeName($0) }),
             Set(snapshot.hashes.keys) == Set(names),
+            Set(snapshot.temporaryDiskFiles ?? []).isSubset(of: Set(snapshot.diskFiles)),
+            Set(snapshot.temporaryDiskFiles ?? []).count == (snapshot.temporaryDiskFiles ?? []).count,
             snapshot.mounts.allSatisfy({
                 snapshot.diskFiles.indices.contains($0.diskIndex) && DriveAddress.all.contains($0.address)
             }),
@@ -193,8 +196,13 @@ struct PlayerSnapshot: Codable {
     /// Publishes metadata last; callers stage packages and rename them only after this succeeds.
     static func finish(
         at url: URL, title: String, gameName: String, disks: [String], mounts: [DiskMount],
-        compress: Bool = false, expansionMemoryKB: Int? = nil
+        compress: Bool = false, expansionMemoryKB: Int? = nil, temporaryDiskFiles: [String] = []
     ) throws -> PlayerSnapshot {
+        guard Set(temporaryDiskFiles).isSubset(of: Set(disks)),
+            Set(temporaryDiskFiles).count == temporaryDiskFiles.count
+        else {
+            throw PlayerManifest.failure(playerSnapshotIntl.invalidMetadata)
+        }
         var compressed: [String: ExpandedPayload] = [:]
         if compress {
             for name in disks + [stateName] {
@@ -216,6 +224,7 @@ struct PlayerSnapshot: Codable {
             version: compressed.isEmpty ? 1 : 2, id: UUID(), title: title, gameName: gameName,
             createdAt: Date(),
             diskFiles: disks, mounts: mounts, hashes: hashes)
+        snapshot.temporaryDiskFiles = temporaryDiskFiles.isEmpty ? nil : temporaryDiskFiles
         snapshot.expansionMemoryKB = expansionMemoryKB
         snapshot.compressedPayloads = compressed.isEmpty ? nil : compressed
         try JSONEncoder().encode(snapshot).write(

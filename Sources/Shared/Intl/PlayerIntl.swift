@@ -4,6 +4,71 @@ import Foundation
 final class PlayerIntl {
     private let bundle: Bundle
 
+    func noCompatibleDrive(filename: String) -> String {
+        String.localizedStringWithFormat(
+            NSLocalizedString(
+                "noCompatibleDrive", tableName: "Player", bundle: bundle,
+                value: "No compatible drive is configured for %1$@. Add a suitable drive in the builder.",
+                comment: "Disk drop message. filename: dropped disk name."), filename)
+    }
+
+    var chooseDiskDrive: String {
+        NSLocalizedString(
+            "chooseDiskDrive", tableName: "Player", bundle: bundle, value: "Choose a drive",
+            comment: "Disk mount dialog.")
+    }
+
+    func replaceMountedDisk(filename: String) -> String {
+        String.localizedStringWithFormat(
+            NSLocalizedString(
+                "replaceMountedDisk", tableName: "Player", bundle: bundle,
+                value: "All compatible drives are occupied. Choose which disk to eject before mounting %1$@.",
+                comment: "Disk drop message. filename: dropped disk name."), filename)
+    }
+
+    var ejectAndMount: String {
+        NSLocalizedString(
+            "ejectAndMount", tableName: "Player", bundle: bundle, value: "Eject and Mount",
+            comment: "Disk mount dialog.")
+    }
+
+    var saveTemporaryMediaElsewhere: String {
+        NSLocalizedString(
+            "saveTemporaryMediaElsewhere", tableName: "Player", bundle: bundle,
+            value: "Save Temporary Media Elsewhere", comment: "Saving changed disposable disk images.")
+    }
+
+    var unsavedTemporaryMedia: String {
+        NSLocalizedString(
+            "unsavedTemporaryMedia", tableName: "Player", bundle: bundle,
+            value: "Save changes to temporary media?", comment: "Saving changed disposable disk images.")
+    }
+
+    var saveTemporaryMediaBeforeQuitting: String {
+        NSLocalizedString(
+            "saveTemporaryMediaBeforeQuitting", tableName: "Player", bundle: bundle,
+            value: "Temporary disks have unsaved changes. Save them to their original files before quitting?",
+            comment: "Saving changed disposable disk images.")
+    }
+
+    var discardTemporaryChanges: String {
+        NSLocalizedString(
+            "discardTemporaryChanges", tableName: "Player", bundle: bundle, value: "Discard Changes",
+            comment: "Saving changed disposable disk images.")
+    }
+
+    var couldNotSaveTemporaryMedia: String {
+        NSLocalizedString(
+            "couldNotSaveTemporaryMedia", tableName: "Player", bundle: bundle,
+            value: "Could not save temporary media", comment: "Saving changed disposable disk images.")
+    }
+
+    var temporaryMediaTitle: String {
+        NSLocalizedString(
+            "temporaryMediaTitle", tableName: "Player", bundle: bundle, value: "Temporary Media",
+            comment: "Pause reason while saving disposable disk images.")
+    }
+
     init(bundle: Bundle = .main) {
         self.bundle = bundle
     }
@@ -148,6 +213,7 @@ final class PlayerIntl {
             return NSLocalizedString(
                 "pauseReasonROMSetup", tableName: "Player", bundle: bundle, value: "ROM Setup",
                 comment: "Human-readable pause reason; the internal identity must remain unchanged.")
+        case "Save Temporary Media": return temporaryMediaTitle
         case "Import Disks":
             return NSLocalizedString(
                 "pauseReasonImportDisks", tableName: "Player", bundle: bundle, value: "Import Disks",

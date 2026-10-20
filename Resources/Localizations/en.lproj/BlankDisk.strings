@@ -17,3 +17,9 @@
 
 /* BlankDisk: User-visible label, instruction, or error message. */
 "smartportHardDisk5Mb" = "SmartPort hard disk — 5 MB";
+
+"unformatted" = "Unformatted";
+
+"incompatibleFormat" = "DOS 3.3 requires a 140 KB 5.25-inch disk.";
+
+"dos33DataDisk" = "DOS 3.3 — data disk";

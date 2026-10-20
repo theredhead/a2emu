@@ -4,6 +4,13 @@ import Foundation
 final class PlayerMenuIntl {
     private let bundle: Bundle
 
+    var saveTemporaryMedia: String {
+        NSLocalizedString(
+            "saveTemporaryMedia", tableName: "PlayerMenu", bundle: bundle,
+            value: "Save Changes to Temporary Media…",
+            comment: "Only visible while disposable disks have unsaved changes.")
+    }
+
     init(bundle: Bundle = .main) {
         self.bundle = bundle
     }

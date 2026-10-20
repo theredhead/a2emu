@@ -37,7 +37,7 @@ struct PlayerExporter {
         try manifest.validate()
         if let snapshotURL = startupSnapshot {
             let snapshot = try PlayerSnapshot.read(at: snapshotURL)
-            guard snapshot.diskFiles == names,
+            guard names.starts(with: snapshot.diskFiles),
                 snapshot.mounts.allSatisfy({ manifest.drives.contains($0.address) })
             else {
                 throw PlayerManifest.failure(
@@ -127,7 +127,7 @@ struct PlayerExporter {
         if manifest.startupSnapshot == true {
             let snapshotURL = app.appendingPathComponent("Contents/Resources/Startup.a2snapshot")
             let snapshot = try PlayerSnapshot.read(at: snapshotURL)
-            guard snapshot.diskFiles == manifest.diskFiles else {
+            guard manifest.diskFiles.starts(with: snapshot.diskFiles) else {
                 throw PlayerManifest.failure(playerExporterIntl.theBundledStartupSnapshotUsesDifferent)
             }
             try PlayerSnapshot.checkCore(at: snapshotURL, template: app)

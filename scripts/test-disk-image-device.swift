@@ -43,7 +43,7 @@ import Foundation
         try check("disk.woz", size: woz.count, header: woz, slot: 6)
         for image in BlankDiskImage.allCases {
             let url = directory.appendingPathComponent("Blank-\(image.rawValue)." + image.fileExtension)
-            try image.write(to: url)
+            try image.write(to: url, format: .unformatted)
             let data = try Data(contentsOf: url)
             let header = image == .floppy35 ? 64 : 0
             precondition(data.count == image.byteCount + header)
@@ -57,6 +57,70 @@ import Foundation
                 precondition(blocks * 512 == image.byteCount)
             }
         }
+        for image in BlankDiskImage.allCases {
+            let url = directory.appendingPathComponent("Formatted-\(image.rawValue)." + image.fileExtension)
+            try image.write(to: url)
+            let bytes = try Data(contentsOf: url)
+            let start = image == .floppy35 ? 64 : 0
+            precondition(Array(bytes[start..<(start + 4)]) == [1, 0x38, 0xb0, 3])
+            precondition(bytes[(start + 289)..<(start + 295)] == Data("PRODOS".utf8))
+            precondition(bytes[(start + 512)..<(start + 1024)].allSatisfy { $0 == 0 })
+            let root = start + 1024
+            let blocks = image.byteCount / 512
+            precondition(Int(bytes[root + 0x29]) + Int(bytes[root + 0x2a]) * 256 == blocks)
+            precondition(bytes[root + 4] >> 4 == 15 && bytes[root + 0x23] == 39)
+            precondition(bytes[root + 0x24] == 13 && bytes[root + 0x25] == 0 && bytes[root + 0x26] == 0)
+            var directories: [Int] = []
+            var current = 2
+            while current != 0 {
+                precondition(!directories.contains(current), "Directory chain must terminate")
+                let offset = start + current * 512
+                let previous = Int(bytes[offset]) + Int(bytes[offset + 1]) * 256
+                precondition(previous == (directories.last ?? 0))
+                directories.append(current)
+                current = Int(bytes[offset + 2]) + Int(bytes[offset + 3]) * 256
+            }
+            precondition(directories == [2, 3, 4, 5])
+            var free = 0
+            let reserved = 6 + (blocks + 4095) / 4096
+            for block in 0..<(((blocks + 4095) / 4096) * 4096) {
+                let available = bytes[start + 3072 + block / 8] & UInt8(0x80 >> (block % 8)) != 0
+                precondition(available == (block >= reserved && block < blocks))
+                if available { free += 1 }
+            }
+            precondition(free == blocks - reserved)
+        }
+        let dos = directory.appendingPathComponent("DOS33.do")
+        try BlankDiskImage.floppy525.write(to: dos, format: .dos33)
+        let dosBytes = try Data(contentsOf: dos)
+        let vtoc = 17 * 4096
+        precondition(dosBytes[vtoc + 1] == 17 && dosBytes[vtoc + 2] == 15)
+        precondition(dosBytes[vtoc + 3] == 3 && dosBytes[vtoc + 0x34] == 35)
+        var sector = 15
+        var catalogSectors = 0
+        while sector > 0 {
+            let offset = vtoc + sector * 256
+            precondition(dosBytes[(offset + 11)..<(offset + 256)].allSatisfy { $0 == 0 })
+            sector = dosBytes[offset + 1] == 0 ? 0 : Int(dosBytes[offset + 2])
+            catalogSectors += 1
+            precondition(catalogSectors <= 15)
+        }
+        precondition(catalogSectors == 15)
+        for track in 0..<35 {
+            let free = dosBytes[vtoc + 0x38 + track * 4] == 255
+            precondition(free == (track >= 3 && track != 17))
+        }
+        let protected = directory.appendingPathComponent("Protected.2mg")
+        try Data([1, 2, 3]).write(to: protected)
+        do {
+            try BlankDiskImage.floppy35.write(to: protected, format: .dos33)
+            preconditionFailure("Incompatible filesystem accepted")
+        } catch {
+            precondition(try! Data(contentsOf: protected) == Data([1, 2, 3]))
+        }
+        precondition(BlankDiskImage.floppy525.fileExtension(for: .dos33) == "do")
+        precondition(!BlankDiskImage.hardDisk32.supports(.dos33))
+        print("PASS ProDOS directory chains and complete allocation maps at every capacity; DOS catalog and geometry; incompatible-format safety")
         print("PASS blank floppy and SmartPort capacities, zero-filled sectors and 2IMG header")
         print("Disk image device detection passed.")
     }

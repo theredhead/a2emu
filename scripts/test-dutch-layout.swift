@@ -41,6 +41,15 @@ import Cocoa
         }
         let builder = Builder()
         builder.applicationDidFinishLaunching(Notification(name: NSApplication.didFinishLaunchingNotification))
+        let snapshotButton = builder.snapshotLabel.superview!.subviews.compactMap { $0 as? NSButton }.first {
+            $0.action == #selector(Builder.chooseSnapshot(_:))
+        }!
+        precondition(abs(builder.snapshotLabel.frame.midY - snapshotButton.frame.midY) < 0.5)
+        builder.selectDisks([URL(fileURLWithPath: "/nonexistent/HyperCard.hdv")])
+        for (field, choice) in zip(builder.diskNameFields, builder.mountChoices) {
+            precondition(abs(field.frame.midY - choice.frame.midY) < 0.5)
+            precondition(abs(field.frame.height - field.intrinsicContentSize.height) < 0.5)
+        }
         inspect(builder.window.contentView!)
         let panel = ControllerMappingPanel()
         panel.build()

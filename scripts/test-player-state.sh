@@ -19,12 +19,12 @@ BRIDGE
 xcrun swiftc Sources/Shared/Intl/*.swift -swift-version 4 -target "$(uname -m)-apple-macosx13.0" \
     -module-cache-path "$stage/module-cache" -Xcc "-I$repo_root/Sources/Player" \
     -Xcc "-I$repo_root/Vendor/gsplus/gsplus/src" -import-objc-header "$stage/Bridge.h" \
-    Sources/Player/EmulatorCore.swift Sources/Player/PlayerMenu.swift Sources/Player/PlayerMenuLayout.swift \
+    Sources/Player/EmulatorCore.swift Sources/Player/DiskDrops.swift Sources/Player/PlayerMenu.swift Sources/Player/PlayerMenuLayout.swift \
     "$stage/AppDelegate.swift" Sources/Player/MainView.swift Sources/Player/ROMSetup.swift \
     Sources/Player/ControllerHardware.swift Sources/Player/GamepadInput.swift Sources/Player/KeyboardConfigurationView.swift Sources/Player/ControllerMapping.swift \
     Sources/Player/JoystickConfigurationView.swift Sources/Player/KeypadConfigurationView.swift \
     Sources/Player/Snapshots.swift Sources/Player/SnapshotBrowser.swift Sources/Shared/PlayerSnapshot.swift \
-    Sources/Shared/PlayerManifest.swift Sources/Shared/About.swift Sources/Builder/PlayerExporter.swift \
+    Sources/Shared/DiskImageDevice.swift Sources/Shared/PlayerManifest.swift Sources/Shared/About.swift Sources/Builder/PlayerExporter.swift \
     Sources/Builder/IconEncoder.swift "${A2_PLAYER_TEST_SOURCE:-scripts/test-player-state.swift}" \
     build/CMakeFiles/a2emu-player.dir/Sources/Player/EmulatorReset.c.o \
     build/CMakeFiles/a2emu-player.dir/Sources/Player/HIDGamepad.c.o \

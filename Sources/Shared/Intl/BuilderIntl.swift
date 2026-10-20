@@ -22,6 +22,18 @@ final class BuilderIntl {
                 comment: "Unprocessed dropped file paths. files: newline-separated paths."), files)
     }
 
+    var diskCapacity: String {
+        NSLocalizedString(
+            "diskCapacity", tableName: "Builder", bundle: bundle, value: "Capacity:",
+            comment: "Disk creation option or validation message.")
+    }
+
+    var diskFormat: String {
+        NSLocalizedString(
+            "diskFormat", tableName: "Builder", bundle: bundle, value: "Format:",
+            comment: "Disk creation option or validation message.")
+    }
+
     init(bundle: Bundle = .main) {
         self.bundle = bundle
     }
@@ -119,8 +131,22 @@ final class BuilderIntl {
         NSLocalizedString(
             "blankDiskExplanation", tableName: "Builder", bundle: bundle,
             value:
-                "Create an empty writable disk. Initialize it inside the emulated computer before saving files to it. Blank disks do not contain a bootable system.",
+                "Create a writable disk in the chosen format, or leave it unformatted. No operating system files are included.",
             comment: "Builder: User-visible label, instruction, or error message.")
+    }
+
+    var runNow: String {
+        NSLocalizedString(
+            "runNow", tableName: "Builder", bundle: bundle, value: "Run Now",
+            comment: "Launch a temporary player while Option is held.")
+    }
+
+    var runNowHint: String {
+        NSLocalizedString(
+            "runNowHint", tableName: "Builder", bundle: bundle,
+            value:
+                "Hold Option to test these settings in a temporary player. Its app and saved data are removed when it quits.",
+            comment: "Tooltip for the create/save player button.")
     }
 
     var createPlayer: String {

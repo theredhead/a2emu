@@ -58,6 +58,82 @@ import Cocoa
         precondition(try! FileManager.default.contentsOfDirectory(atPath: libraryDirectory.path).sorted() == beforeCancel)
         print("PASS collision rename, cancel and multi-file import rollback")
         print("PASS persistent disk imports, collision handling, snapshot working copies and unchanged mounts")
+        let diskAlert = PlayerDiskAlert()
+        diskAlert.icon = NSImage(contentsOf: root.appendingPathComponent("Assets/PlayerIcon.png"))!
+        diskAlert.messageText = "Choose a drive"
+        diskAlert.accessoryView = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 420, height: 28))
+        diskAlert.addButton(withTitle: "Mount")
+        diskAlert.layout()
+        let alertContent = diskAlert.window.contentView!
+        let alertIcon = alertContent.subviews.compactMap { $0 as? NSImageView }.first!
+        precondition(abs(alertIcon.frame.midX - alertContent.bounds.midX) < 0.5)
+        diskAlert.layout()
+        precondition(abs(alertIcon.frame.midX - alertContent.bounds.midX) < 0.5)
+        print("PASS wide disk dialogs retain the player artwork and center their icon after repeated layout")
+        let drops = AppDelegate()
+        let dropLibrary = directory.appendingPathComponent("DropLibrary")
+        try FileManager.default.createDirectory(at: dropLibrary, withIntermediateDirectories: true)
+        drops.supportDirectory = dropLibrary
+        let firstDrive = DriveAddress(slot: 5, drive: 0)
+        let secondDrive = DriveAddress(slot: 5, drive: 1)
+        drops.machine = try PlayerManifest.make(disks: ["Base.2mg"], slot: 5, availableDrives: [firstDrive, secondDrive])
+        try Data([9]).write(to: dropLibrary.appendingPathComponent("Base.2mg"))
+        drops.mountedImages = [firstDrive: 0]
+        drops.setUpMenus()
+        defer { if let url = drops.temporaryDiskDirectory { try? FileManager.default.removeItem(at: url) } }
+        precondition(try! drops.mountDroppedDisks([sourceDisk], permanently: false, chooseDrive: { _, _ in
+            preconditionFailure("A free compatible drive must be used without a dialog")
+        }))
+        precondition(drops.mountedImages[secondDrive] == 1)
+        precondition(!FileManager.default.fileExists(atPath: dropLibrary.appendingPathComponent("Game.2mg").path))
+        precondition(!FileManager.default.fileExists(atPath: dropLibrary.appendingPathComponent("Imported-Disks.json").path))
+        let workingDisk = drops.diskURL(named: "Game.2mg")
+        precondition(workingDisk != sourceDisk && (try! Data(contentsOf: workingDisk)) == Data([1, 2, 3, 4]))
+        precondition(try! drops.changedTemporaryDisks().isEmpty)
+        precondition(try! drops.confirmTemporaryMediaQuit(choose: { _ in preconditionFailure("Clean media must not prompt") }))
+        precondition(drops.playerMenu!.item(.saveTemporaryMedia)!.isHidden)
+        try Data([4, 3, 2, 1]).write(to: workingDisk)
+        drops.updateTemporaryMediaMenu()
+        precondition(!drops.playerMenu!.item(.saveTemporaryMedia)!.isHidden)
+        precondition(!(try! drops.confirmTemporaryMediaQuit(choose: { _ in .cancel })))
+        precondition(try! drops.confirmTemporaryMediaQuit(choose: { _ in .discard }))
+        precondition(try! drops.saveTemporaryDisks(chooseDestination: { _ in preconditionFailure("A writable original must not prompt") }))
+        precondition(try! Data(contentsOf: sourceDisk) == Data([4, 3, 2, 1]))
+        precondition(drops.playerMenu!.item(.saveTemporaryMedia)!.isHidden)
+        let recovered = sourceDirectory.appendingPathComponent("Recovered.2mg")
+        try Data([5, 6, 7]).write(to: workingDisk)
+        var destinations = 0
+        precondition(try! drops.saveTemporaryDisks(chooseDestination: { _ in destinations += 1
+            return recovered }, write: { data, url in
+            if url == sourceDisk { throw NSError(domain: "SaveFailure", code: 1) }
+            try data.write(to: url, options: .atomic)
+        }))
+        precondition(destinations == 1 && (try! Data(contentsOf: recovered)) == Data([5, 6, 7]))
+        precondition(try! drops.changedTemporaryDisks().isEmpty)
+        try Data([8]).write(to: workingDisk)
+        precondition(!(try! drops.saveTemporaryDisks(chooseDestination: { _ in nil }, write: { _, _ in
+            throw NSError(domain: "SaveFailure", code: 2)
+        })))
+        precondition(try! drops.changedTemporaryDisks() == ["Game.2mg"])
+        let serialized = drops.persistentDiskConfiguration("g_limit_speed = 2\ns5d1 = base\ns5d2 = \(workingDisk.path)\n")
+        precondition(serialized.contains("g_limit_speed = 2") && serialized.contains("s5d1 = base") && !serialized.contains(workingDisk.path))
+        let occupiedDisk = sourceDirectory.appendingPathComponent("Occupied.2mg")
+        try Data([7]).write(to: occupiedDisk)
+        precondition(!(try! drops.mountDroppedDisks([occupiedDisk], permanently: false, chooseDrive: { _, _ in nil })))
+        precondition(drops.machine.diskFiles.count == 2)
+        precondition(try! drops.mountDroppedDisks([occupiedDisk], permanently: false, chooseDrive: { _, drives in
+            precondition(drives == [firstDrive, secondDrive])
+            return firstDrive
+        }))
+        precondition(drops.mountedImages[firstDrive] == 2)
+        do {
+            try drops.mountDroppedDisks([extraSource], permanently: false)
+            preconditionFailure("A 5.25-inch disk must not mount in a 3.5-inch drive")
+        } catch { precondition(drops.machine.diskFiles.count == 3) }
+        let originalConfig = drops.persistentDiskConfiguration("s5d1 = \(drops.diskURL(named: "Occupied.2mg").path)\n")
+        precondition(originalConfig.contains(dropLibrary.appendingPathComponent("Base.2mg").path))
+        print("PASS temporary drops use free compatible drives, occupied-drive choices, cancellation and disposable copies")
+        print("PASS temporary media change detection, original-file saves, fallback destinations, cancellation and conditional quit prompts")
         g_limit_speed = 1
         g_zip_speed_mhz = 8
         precondition(EmulatorCore.speedLimit == 1 && EmulatorCore.acceleratorSpeedMHz == 8)
@@ -129,7 +205,7 @@ import Cocoa
                 choice.0.tag == index && choice.0.target === delegate
             })
         delegate.addDiskMenus()
-        precondition(delegate.diskMenuItems.count == 6 && layout.submenu(.disks)!.numberOfItems == 4)
+        precondition(delegate.diskMenuItems.count == 6 && visibleTitles(layout.submenu(.disks)!).count == 4)
         delegate.machine = try PlayerManifest.make(disks: ["test.woz"], slot: 6)
         delegate.addDiskMenus()
         layout.item(.emulation)!.title = "Emulation"
@@ -139,6 +215,44 @@ import Cocoa
         precondition(layout.root.items.contains { $0 === layout.item(.disks) })
         precondition(!emulation.items.contains { $0 === layout.item(.disks) })
         precondition(visibleTitles(layout.submenu(.disks)!) == ["Show Saved Disk"])
+        let media = ["Floppy.woz", "Large.2mg", "System.hdv", "Small.2mg", "Data.hdv"]
+        try Data(repeating: 0, count: 800 * 1024).write(to: directory.appendingPathComponent(media[1]))
+        try Data(repeating: 0, count: 140 * 1024).write(to: directory.appendingPathComponent(media[3]))
+        let floppy = DriveAddress(slot: 6, drive: 0)
+        let otherFloppy = DriveAddress(slot: 6, drive: 1)
+        let large = DriveAddress(slot: 5, drive: 0)
+        let hard = DriveAddress(slot: 7, drive: 0)
+        let otherHard = DriveAddress(slot: 7, drive: 1)
+        delegate.machine = try PlayerManifest.make(
+            disks: media, slot: 7,
+            mounts: [DiskMount(diskIndex: 0, address: floppy), DiskMount(diskIndex: 2, address: hard)],
+            availableDrives: [floppy, otherFloppy, large, hard, otherHard])
+        delegate.addDiskMenus()
+        delegate.mountedImages = [floppy: 0, hard: 2]
+        delegate.updateDiskChecks()
+        func offered(_ address: DriveAddress) -> [Int] {
+            delegate.diskMenuItems.compactMap { item, drive, index in
+                drive == address && !item.isHidden ? index : nil
+            }
+        }
+        precondition(offered(floppy) == [0, 3])
+        precondition(offered(otherFloppy) == [3])
+        precondition(offered(large) == [1])
+        precondition(offered(hard) == [2, 4])
+        precondition(offered(otherHard) == [4])
+        let current = delegate.diskMenuItems.first { $0.1 == hard && $0.2 == 2 }!.0
+        precondition(current.state == .on && !current.isHidden)
+        let occupied = delegate.diskMenuItems.first { $0.1 == otherHard && $0.2 == 2 }!.0
+        delegate.swapDisk(occupied)
+        precondition(delegate.mountedImages == [floppy: 0, hard: 2], "Hidden choices must not move mounted disks")
+        delegate.mountedImages.removeValue(forKey: hard)
+        delegate.updateDiskChecks()
+        precondition(offered(otherHard) == [2, 4], "Ejected media must become available in other compatible drives")
+        delegate.mountedImages = [otherHard: 4]
+        delegate.updateDiskChecks()
+        precondition(offered(hard) == [2] && offered(otherHard) == [2, 4])
+        precondition(delegate.diskMenuItems.filter { $0.2 == nil }.allSatisfy { !$0.0.isHidden })
+        print("PASS disk menus filter actual media types, preserve the current disk and prevent duplicate mounts")
         var available = false
         var visible = false
         let conditional = PlayerMenu(
@@ -234,6 +348,45 @@ import Cocoa
             revisions[0] != revisions[1],
             "A fresh export must reapply startup defaults even for the same game")
         print("PASS fresh exports carry distinct startup-default revisions")
+
+        let portable = AppDelegate()
+        let portableStorage = directory.appendingPathComponent("PortableStorage")
+        try FileManager.default.createDirectory(at: portableStorage, withIntermediateDirectories: true)
+        portable.supportDirectory = portableStorage
+        let portableApp = directory.appendingPathComponent("Export-0.app")
+        portable.machine = try PlayerExporter.read(app: portableApp)
+        try FileManager.default.copyItem(at: disk, to: portableStorage.appendingPathComponent("fixture.woz"))
+        portable.mountedImages = [DriveAddress(slot: 6, drive: 0): 0]
+        defer { if let url = portable.temporaryDiskDirectory { try? FileManager.default.removeItem(at: url) } }
+        precondition(try! portable.mountDroppedDisks([extraSource], permanently: false,
+            chooseDrive: { _, drives in drives[0] }))
+        let permanentSource = sourceDirectory.appendingPathComponent("Permanent.po")
+        try Data([11, 12, 13]).write(to: permanentSource)
+        let beforeApp = try Data(contentsOf: portableApp.appendingPathComponent("Contents/Resources/Player.json"))
+        do {
+            try portable.mountDroppedDisks([permanentSource], permanently: true,
+                chooseDrive: { _, drives in drives[0] }, app: portableApp,
+                sign: { _ in throw NSError(domain: "SigningFailure", code: 1) })
+            preconditionFailure("A signing failure must not publish changes")
+        } catch {
+            precondition(try! Data(contentsOf: portableApp.appendingPathComponent("Contents/Resources/Player.json")) == beforeApp)
+            precondition(!FileManager.default.fileExists(atPath: portableStorage.appendingPathComponent("Permanent.po").path))
+        }
+        precondition(try! portable.mountDroppedDisks([permanentSource], permanently: true,
+            chooseDrive: { _, drives in drives[0] }, app: portableApp))
+        let portableManifest = try PlayerExporter.read(app: portableApp)
+        precondition(portableManifest.diskFiles == ["fixture.woz", "Permanent.po"])
+        precondition(portableManifest.initialSpeed == .oneMHz)
+        precondition(!FileManager.default.fileExists(atPath: portableApp.appendingPathComponent("Contents/Resources/Fresh.po").path))
+        precondition(try! Data(contentsOf: portableApp.appendingPathComponent("Contents/Resources/Permanent.po")) == Data([11, 12, 13]))
+        precondition(portableManifest.mounts.contains { $0.diskIndex == 1 && $0.address == DriveAddress(slot: 6, drive: 0) })
+        var withSessionMedia = PlayerSnapshot(version: 1, id: UUID(), title: "Session", gameName: "Player", createdAt: Date(),
+            diskFiles: ["fixture.woz", "Fresh.po", "Permanent.po"], mounts: [], hashes: [:])
+        withSessionMedia.temporaryDiskFiles = ["Fresh.po"]
+        let freshPlayer = AppDelegate()
+        freshPlayer.machine = portableManifest
+        precondition(freshPlayer.snapshotFitsDiskSet(withSessionMedia), "Session media must not make snapshots incompatible after Option-drop changes disk order")
+        print("PASS Option-drop embeds and signs a portable disk, preserves settings, excludes temporary media and rolls back signing failures")
 
         let view = MainView(frame: NSRect(x: 0, y: 0, width: 4, height: 3))
         let screenshots = directory.appendingPathComponent("Screenshots")

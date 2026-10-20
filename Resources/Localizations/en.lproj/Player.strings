@@ -80,3 +80,23 @@
 
 /* Window title while paused, including a translated reason. */
 "pausedGameTitleWithReason" = "%1$@ — Paused (%2$@)";
+
+"noCompatibleDrive" = "No compatible drive is configured for %1$@. Add a suitable drive in the builder.";
+
+"chooseDiskDrive" = "Choose a drive";
+
+"replaceMountedDisk" = "All compatible drives are occupied. Choose which disk to eject before mounting %1$@.";
+
+"ejectAndMount" = "Eject and Mount";
+
+"saveTemporaryMediaElsewhere" = "Save Temporary Media Elsewhere";
+
+"unsavedTemporaryMedia" = "Save changes to temporary media?";
+
+"saveTemporaryMediaBeforeQuitting" = "Temporary disks have unsaved changes. Save them to their original files before quitting?";
+
+"discardTemporaryChanges" = "Discard Changes";
+
+"couldNotSaveTemporaryMedia" = "Could not save temporary media";
+
+"temporaryMediaTitle" = "Temporary Media";

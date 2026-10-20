@@ -80,3 +80,23 @@
 
 /* Window title while paused, including a translated reason. */
 "pausedGameTitleWithReason" = "%1$@ — Gepauzeerd (%2$@)";
+
+"noCompatibleDrive" = "Er is geen geschikt station ingesteld voor %1$@. Voeg een passend station toe in de bouwer.";
+
+"chooseDiskDrive" = "Kies een station";
+
+"replaceMountedDisk" = "Alle geschikte stations zijn bezet. Kies welke schijf je wilt uitwerpen om %1$@ te plaatsen.";
+
+"ejectAndMount" = "Werp uit en plaats";
+
+"saveTemporaryMediaElsewhere" = "Bewaar tijdelijke schijf elders";
+
+"unsavedTemporaryMedia" = "Wijzigingen aan tijdelijke schijven bewaren?";
+
+"saveTemporaryMediaBeforeQuitting" = "Tijdelijke schijven bevatten onbewaarde wijzigingen. Wil je deze vóór het stoppen in de oorspronkelijke bestanden bewaren?";
+
+"discardTemporaryChanges" = "Verwerp wijzigingen";
+
+"couldNotSaveTemporaryMedia" = "Tijdelijke schijven konden niet worden bewaard";
+
+"temporaryMediaTitle" = "Tijdelijke schijven";

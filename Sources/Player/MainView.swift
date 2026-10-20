@@ -61,15 +61,11 @@ class MainView: NSView {
         player.setDialogOpen(true, reason: "Import Disks")
         defer { player.setDialogOpen(false, reason: "Import Disks") }
         do {
-            guard try player.importDiskImages(urls) else { return false }
-            let alert = NSAlert()
-            alert.messageText = playerViewIntl.disksAdded
-            alert.informativeText =
-                playerViewIntl.chooseADriveInTheDisks
-            alert.runModal()
+            let permanent = NSEvent.modifierFlags.contains(.option)
+            guard try player.mountDroppedDisks(urls, permanently: permanent) else { return false }
             return true
         } catch {
-            let alert = NSAlert()
+            let alert = PlayerDiskAlert()
             alert.messageText = playerViewIntl.couldNotAddDisks
             alert.informativeText = error.localizedDescription
             alert.runModal()

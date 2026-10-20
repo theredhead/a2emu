@@ -18,7 +18,7 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 PLIST
 xcrun swiftc -swift-version 4 -module-cache-path "$stage/cache" \
     Sources/Shared/Intl/*.swift Sources/Shared/PlayerManifest.swift Sources/Shared/PlayerSnapshot.swift \
-    Sources/Shared/About.swift Sources/Builder/DiskImageDevice.swift Sources/Builder/PlayerExporter.swift \
+    Sources/Shared/About.swift Sources/Shared/DiskImageDevice.swift Sources/Builder/BlankDiskImage.swift Sources/Builder/PlayerExporter.swift \
     Sources/Builder/IconEncoder.swift Sources/Builder/IconPicker.swift "$stage/Builder.swift" \
     Sources/Player/KeyboardConfigurationView.swift Sources/Player/JoystickConfigurationView.swift \
     Sources/Player/KeypadConfigurationView.swift "$stage/ControllerMapping.swift" \
