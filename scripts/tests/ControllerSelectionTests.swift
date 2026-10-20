@@ -34,7 +34,9 @@ extension GCController {
         precondition(input.supportedButtonIndices(controllerID: choices[0].id)!.contains(8))
         precondition(input.supportedButtonIndices(controllerID: "hid:100") == Set(0..<8))
         let pad = first.extendedGamepad!
-        precondition(input.supportedButtonIndices(controllerID: choices[0].id)!.contains(9) == (pad.buttonOptions != nil))
+        precondition(
+            input.supportedButtonIndices(controllerID: choices[0].id)!.contains(9)
+                == (pad.buttonOptions != nil))
         input.selectedControllerID = choices[0].id
         input.mapping.keyboardMode = true
         input.mapping.keyboardButtonKeyCodes = [-1, -1, -1, -1, -1, -1, -1, -1, 36, 53]
@@ -91,7 +93,9 @@ extension GCController {
         input.update(active: false)
         precondition(mouseEvents.count == pausedCount)
         input.update(active: true)
-        precondition(mouseEvents.last!.0 == 0 && mouseEvents.last!.2 == true, "Resuming must not accumulate mouse movement")
+        precondition(
+            mouseEvents.last!.0 == 0 && mouseEvents.last!.2 == true,
+            "Resuming must not accumulate mouse movement")
         pad.buttonMenu.setValue(0)
         pad.rightThumbstick.setValueForXAxis(0, yAxis: 0)
         input.update(active: true)

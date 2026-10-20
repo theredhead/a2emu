@@ -2,6 +2,7 @@
 # likely mistakes without size limits or competing shorthand preferences.
 included:
   - Sources
+  - scripts
 only_rules:
   - duplicate_imports
   - duplicate_enum_cases

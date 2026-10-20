@@ -33,8 +33,9 @@ import Foundation
         for (size, slot) in [(140 * 1024, 6), (800 * 1024, 5), (4 * 1024 * 1024, 7)] {
             try check("wrapped.2mg", size: size + 64 + 120, header: twoMG(size), slot: slot)
         }
-        try check("blocks.2img", size: 800 * 1024 + 64,
-                  header: twoMG(800 * 1024, blockFallback: true), slot: 5)
+        try check(
+            "blocks.2img", size: 800 * 1024 + 64,
+            header: twoMG(800 * 1024, blockFallback: true), slot: 5)
         try check("nibble.2mg", size: 232960 + 64, header: twoMG(232960, format: 2), slot: 6)
         var woz = Data("WOZ2".utf8) + Data(repeating: 0, count: 8)
         woz += Data("INFO".utf8) + Data([2, 0, 0, 0, 2, 2])
@@ -120,7 +121,9 @@ import Foundation
         }
         precondition(BlankDiskImage.floppy525.fileExtension(for: .dos33) == "do")
         precondition(!BlankDiskImage.hardDisk32.supports(.dos33))
-        print("PASS ProDOS directory chains and complete allocation maps at every capacity; DOS catalog and geometry; incompatible-format safety")
+        print(
+            "PASS ProDOS directory chains and complete allocation maps at every capacity; DOS catalog and geometry; incompatible-format safety"
+        )
         print("PASS blank floppy and SmartPort capacities, zero-filled sectors and 2IMG header")
         print("Disk image device detection passed.")
     }

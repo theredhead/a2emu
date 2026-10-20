@@ -3,8 +3,33 @@ import Foundation
 /// Access to the process-wide emulator. Call on the main thread, between emulation ticks.
 enum EmulatorCore {
     /// Borrowed core storage; valid for the lifetime of the emulator, never freed by Swift.
-    typealias Image = UnsafeMutablePointer<Kimage>
-    typealias ChangeRect = Change_rect
+    struct Image {
+        fileprivate let storage: UnsafeMutablePointer<Kimage>
+
+        fileprivate init(_ storage: UnsafeMutablePointer<Kimage>) { self.storage = storage }
+    }
+
+    struct ChangeRect {
+        var x: Int32
+        var y: Int32
+        var width: Int32
+        var height: Int32
+
+        fileprivate var native: Change_rect {
+            return Change_rect(x: x, y: y, width: width, height: height)
+        }
+
+        fileprivate init(_ value: Change_rect) {
+            self.init(x: value.x, y: value.y, width: value.width, height: value.height)
+        }
+
+        init(x: Int32, y: Int32, width: Int32, height: Int32) {
+            self.x = x
+            self.y = y
+            self.width = width
+            self.height = height
+        }
+    }
 
     static let maximumChangeRects = MAX_CHANGE_RECTS
     static let defaultImageWidth = A2_WINDOW_WIDTH
@@ -18,15 +43,15 @@ enum EmulatorCore {
     }
 
     static func emulatedImageWidth(_ image: Image?) -> Int32 {
-        return video_get_a2_width(image)
+        return video_get_a2_width(image?.storage)
     }
 
     static func emulatedImageHeight(_ image: Image?) -> Int32 {
-        return video_get_a2_height(image)
+        return video_get_a2_height(image?.storage)
     }
 
     static func updateModifiers(_ image: Image?, value: UInt32, mask: UInt32) {
-        adb_update_c025_mask(image, value, mask)
+        adb_update_c025_mask(image?.storage, value, mask)
     }
 
     /// Opens the existing debugger display without halting or advancing the emulated CPU.
@@ -79,8 +104,8 @@ enum EmulatorCore {
         return adb_get_copy_requested()
     }
 
-    static func pointerVisibility(_ kimagePtr: Image?, warp warpptr: UnsafeMutablePointer<Int32>?) -> Int32 {
-        return adb_get_hide_warp_info(kimagePtr, warpptr)
+    static func pointerVisibility(_ kimagePtr: Image?, warp warpptr: inout Int32) -> Int32 {
+        return adb_get_hide_warp_info(kimagePtr?.storage, &warpptr)
     }
 
     static func stopKeyRepeat() {
@@ -98,14 +123,14 @@ enum EmulatorCore {
     static func updateKey(
         _ kimagePtr: Image?, keyCode rawA2code: Int32, unicode unicodeC: UInt32, isUp: Bool
     ) {
-        adb_physical_key_update(kimagePtr, rawA2code, unicodeC, isUp ? 1 : 0)
+        adb_physical_key_update(kimagePtr?.storage, rawA2code, unicodeC, isUp ? 1 : 0)
     }
 
     static func updateMouse(
         _ kimagePtr: Image?, x: Int32, y: Int32, buttons buttonStates: Int32,
         validButtons buttonsValid: Int32
     ) -> Int32 {
-        return adb_update_mouse(kimagePtr, x, y, buttonStates, buttonsValid)
+        return adb_update_mouse(kimagePtr?.storage, x, y, buttonStates, buttonsValid)
     }
 
     static func setROMPath(_ url: URL) {
@@ -144,11 +169,8 @@ enum EmulatorCore {
     }
 
     @discardableResult
-    static func parseArguments(
-        _ argc: Int32, arguments argv: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?,
-        pathComponentsToStrip slashesToFind: Int32
-    ) -> Int32 {
-        return parse_argv(argc, argv, slashesToFind)
+    static func parseLaunchArguments(pathComponentsToStrip: Int32) -> Int32 {
+        return parse_argv(CommandLine.argc, CommandLine.unsafeArgv, pathComponentsToStrip)
     }
 
     static func runFrame() -> Int32 {
@@ -164,62 +186,68 @@ enum EmulatorCore {
     }
 
     static func imageActivity(_ kimagePtr: Image?) -> Int32 {
-        return video_get_active(kimagePtr)
+        return video_get_active(kimagePtr?.storage)
     }
 
     static func image(_ winId: Int32) -> Image? {
-        return video_get_kimage(winId)
+        return video_get_kimage(winId).map { Image($0) }
     }
 
     static func imageHeight(_ kimagePtr: Image?) -> Int32 {
-        return video_get_x_height(kimagePtr)
+        return video_get_x_height(kimagePtr?.storage)
     }
 
     static func imageWidth(_ kimagePtr: Image?) -> Int32 {
-        return video_get_x_width(kimagePtr)
+        return video_get_x_width(kimagePtr?.storage)
     }
 
     static func windowX(_ kimagePtr: Image?) -> Int32 {
-        return video_get_x_xpos(kimagePtr)
+        return video_get_x_xpos(kimagePtr?.storage)
     }
 
     static func windowY(_ kimagePtr: Image?) -> Int32 {
-        return video_get_x_ypos(kimagePtr)
+        return video_get_x_ypos(kimagePtr?.storage)
     }
 
     static func drawImageChanges(
         into vptr: UnsafeMutableRawPointer?, image kimagePtr: Image?, pixelsPerRow outWidthAct: Int32,
-        rect rectptr: UnsafeMutablePointer<ChangeRect>?, index pos: Int32
+        rect rectptr: inout ChangeRect, index pos: Int32
     ) -> Int32 {
-        return video_out_data(vptr, kimagePtr, outWidthAct, rectptr, pos)
+        var native = rectptr.native
+        let result = video_out_data(vptr, kimagePtr?.storage, outWidthAct, &native, pos)
+        rectptr = ChangeRect(native)
+        return result
     }
 
     @discardableResult
     static func drawScaledImage(
         into vptr: UnsafeMutableRawPointer?, image kimagePtr: Image?, pixelsPerRow outWidthAct: Int32,
-        rect rectptr: UnsafeMutablePointer<ChangeRect>?
+        rect rectptr: inout ChangeRect
     ) -> Int32 {
-        return video_out_data_scaled(vptr, kimagePtr, outWidthAct, rectptr)
+        var native = rectptr.native
+        let result = video_out_data_scaled(vptr, kimagePtr?.storage, outWidthAct, &native)
+        rectptr = ChangeRect(native)
+        return result
     }
 
     static func finishDrawing(_ kimagePtr: Image?) {
-        video_out_done(kimagePtr)
+        video_out_done(kimagePtr?.storage)
     }
 
     static func imageChanges(_ kimagePtr: Image?) -> Int32 {
-        return video_out_query(kimagePtr)
+        return video_out_query(kimagePtr?.storage)
     }
 
     static func scaleMouseX(_ kimagePtr: Image?, x rawX: Int32, width xWidth: Int32) -> Int32 {
-        return video_scale_mouse_x(kimagePtr, rawX, xWidth)
+        return video_scale_mouse_x(kimagePtr?.storage, rawX, xWidth)
     }
 
     static func scaleMouseY(_ kimagePtr: Image?, y rawY: Int32, height yHeight: Int32) -> Int32 {
-        return video_scale_mouse_y(kimagePtr, rawY, yHeight)
+        return video_scale_mouse_y(kimagePtr?.storage, rawY, yHeight)
     }
 
     static func setImageActivity(_ kimagePtr: Image?, active: Int32) {
-        video_set_active(kimagePtr, active)
+        video_set_active(kimagePtr?.storage, active)
     }
 
     static func setAlphaMask(_ alphaMask: UInt32) {
@@ -243,21 +271,21 @@ enum EmulatorCore {
     }
 
     static func unscaleMouseX(_ kimagePtr: Image?, x a2X: Int32, width xWidth: Int32) -> Int32 {
-        return video_unscale_mouse_x(kimagePtr, a2X, xWidth)
+        return video_unscale_mouse_x(kimagePtr?.storage, a2X, xWidth)
     }
 
     static func unscaleMouseY(_ kimagePtr: Image?, y a2Y: Int32, height yHeight: Int32) -> Int32 {
-        return video_unscale_mouse_y(kimagePtr, a2Y, yHeight)
+        return video_unscale_mouse_y(kimagePtr?.storage, a2Y, yHeight)
     }
 
     static func updateImageScale(
         _ kimagePtr: Image?, width outWidth: Int32, height outHeight: Int32, force mustUpdate: Bool
     ) {
-        video_update_scale(kimagePtr, outWidth, outHeight, mustUpdate ? 1 : 0)
+        video_update_scale(kimagePtr?.storage, outWidth, outHeight, mustUpdate ? 1 : 0)
     }
 
     static func updateWindowPosition(_ kimagePtr: Image?, x xXpos: Int32, y xYpos: Int32) {
-        video_update_xpos_ypos(kimagePtr, xXpos, xYpos)
+        video_update_xpos_ypos(kimagePtr?.storage, xXpos, xYpos)
     }
 
     static var speedLimit: Int32 {

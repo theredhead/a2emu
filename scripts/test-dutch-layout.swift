@@ -12,35 +12,45 @@ import Cocoa
             if view is JoystickConfigurationView {
                 // Hotspot titles are accessibility text; the illustration draws arrows instead.
                 for control in JoystickControl.allCases where control.isDirection {
-                    let size = control.label.size(withAttributes: [.font: NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)])
+                    let size = control.label.size(withAttributes: [
+                        .font: NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)
+                    ])
                     precondition(size.width <= 48, "Drawn joystick caption must fit")
                 }
                 return
             }
             if let button = view as? NSButton, !(button is NSPopUpButton), !button.title.isEmpty,
-                button.imagePosition != .imageOnly {
+                button.imagePosition != .imageOnly
+            {
                 let needed = button.intrinsicContentSize.width
                 if needed > button.frame.width + 2 {
-                    failures.append("Button: \(button.title) needs \(Int(needed)), has \(Int(button.frame.width))")
+                    failures.append(
+                        "Button: \(button.title) needs \(Int(needed)), has \(Int(button.frame.width))")
                 }
             } else if let field = view as? NSTextField, !field.isEditable, !field.stringValue.isEmpty {
                 let cell = field.cell!
                 if cell.wraps {
-                    let needed = cell.cellSize(forBounds: NSRect(x: 0, y: 0, width: field.frame.width, height: 1000)).height
+                    let needed = cell.cellSize(
+                        forBounds: NSRect(x: 0, y: 0, width: field.frame.width, height: 1000)
+                    ).height
                     if needed > field.frame.height + 2 {
-                        failures.append("Wrapped label: \(field.stringValue) needs height \(Int(needed)), has \(Int(field.frame.height))")
+                        failures.append(
+                            "Wrapped label: \(field.stringValue) needs height \(Int(needed)), has \(Int(field.frame.height))"
+                        )
                     }
                 } else {
                     let needed = cell.cellSize.width
                     if needed > field.frame.width + 2 {
-                        failures.append("Label: \(field.stringValue) needs \(Int(needed)), has \(Int(field.frame.width))")
+                        failures.append(
+                            "Label: \(field.stringValue) needs \(Int(needed)), has \(Int(field.frame.width))")
                     }
                 }
             }
             for child in view.subviews { inspect(child) }
         }
         let builder = Builder()
-        builder.applicationDidFinishLaunching(Notification(name: NSApplication.didFinishLaunchingNotification))
+        builder.applicationDidFinishLaunching(
+            Notification(name: NSApplication.didFinishLaunchingNotification))
         let snapshotButton = builder.snapshotLabel.superview!.subviews.compactMap { $0 as? NSButton }.first {
             $0.action == #selector(Builder.chooseSnapshot(_:))
         }!

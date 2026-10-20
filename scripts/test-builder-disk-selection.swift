@@ -86,13 +86,14 @@ var dropErrors: [String] = []
         let pastedImage = NSImage(data: builder.iconData!)!
         precondition(pastedImage.size == NSSize(width: 1024, height: 1024))
         print("PASS mixed image and disk drop applies first icon image and ignores subsequent images")
-        let oldClipboard = NSPasteboard.general.pasteboardItems?.compactMap { item -> NSPasteboardItem? in
-            let copy = NSPasteboardItem()
-            for type in item.types {
-                if let data = item.data(forType: type) { copy.setData(data, forType: type) }
-            }
-            return copy
-        } ?? []
+        let oldClipboard =
+            NSPasteboard.general.pasteboardItems?.compactMap { item -> NSPasteboardItem? in
+                let copy = NSPasteboardItem()
+                for type in item.types {
+                    if let data = item.data(forType: type) { copy.setData(data, forType: type) }
+                }
+                return copy
+            } ?? []
         NSPasteboard.general.clearContents()
         NSPasteboard.general.writeObjects([image])
         builder.iconData = nil
@@ -115,7 +116,8 @@ var dropErrors: [String] = []
         let names = ["First.2mg", "Second.2mg"]
         let bytes = Data(repeating: 42, count: 819200)
         for name in names { try! bytes.write(to: PlayerSnapshot.payload(name, at: package)) }
-        try! Data(repeating: 0, count: 1024).write(to: PlayerSnapshot.payload(PlayerSnapshot.stateName, at: package))
+        try! Data(repeating: 0, count: 1024).write(
+            to: PlayerSnapshot.payload(PlayerSnapshot.stateName, at: package))
         try! Data([1, 2, 3]).write(to: PlayerSnapshot.payload(PlayerSnapshot.previewName, at: package))
         _ = try! PlayerSnapshot.finish(
             at: package, title: "Ready", gameName: "Snapshot Game", disks: names,
@@ -126,7 +128,8 @@ var dropErrors: [String] = []
         precondition(builder.disks.map { $0.lastPathComponent } == names + [disk.lastPathComponent])
         precondition(builder.startupSnapshot == nil)
         precondition(try! Data(contentsOf: builder.disks[0]) == bytes)
-        precondition(builder.configuredDrives == [DriveAddress(slot: 5, drive: 0), DriveAddress(slot: 5, drive: 1)])
+        precondition(
+            builder.configuredDrives == [DriveAddress(slot: 5, drive: 0), DriveAddress(slot: 5, drive: 1)])
         precondition(builder.mountChoices[0].indexOfSelectedItem == 0)
         precondition(builder.mountChoices[1].indexOfSelectedItem == 2)
         precondition(PlayerManifest.expansionMemoryChoices[builder.memory.indexOfSelectedItem] == 1024)
@@ -151,12 +154,15 @@ var dropErrors: [String] = []
         builder.selectDisks([disk])
         precondition(builder.startupSnapshot == nil && builder.memory.isEnabled && builder.speed.isEnabled)
         precondition(!FileManager.default.fileExists(atPath: workingDisk.path))
-        print("PASS disk drops, compressed snapshot setup, exact mounts, failure isolation and working-copy cleanup")
+        print(
+            "PASS disk drops, compressed snapshot setup, exact mounts, failure isolation and working-copy cleanup"
+        )
         builder.window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1003, height: 760),
             styleMask: [.titled], backing: .buffered, defer: false)
         builder.newPlayer(nil)
-        precondition(builder.speed.indexOfSelectedItem == EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz))
+        precondition(
+            builder.speed.indexOfSelectedItem == EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz))
         print("PASS New Player restores the 2.8 MHz IIGS default")
         print("PASS RAM choices and backward-compatible player manifests")
         print("Builder boot selection, speed defaults, initial mount and manual override passed.")

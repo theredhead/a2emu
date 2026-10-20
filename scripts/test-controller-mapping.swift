@@ -21,7 +21,8 @@ import Cocoa
         capture.begin()
         capture.cancel()
         precondition(capture.consume([]) == nil && capture.consume([8]) == nil)
-        precondition(ControllerMapping.activeInputs(x: -32767, y: -32767, physicalButtons: 1 << 9) == [4, 17])
+        precondition(
+            ControllerMapping.activeInputs(x: -32767, y: -32767, physicalButtons: 1 << 9) == [4, 17])
         let keyboardView = KeyboardConfigurationView(frame: NSRect(x: 0, y: 0, width: 884, height: 288))
         let caps = keyboardView.subviews.compactMap { $0 as? NSButton }
         var selected: Int?
@@ -32,16 +33,20 @@ import Cocoa
         precondition(caps.count >= 80, "The keyboard includes letters, modifiers, arrows and numpad")
         let returnKey = caps.first { $0.accessibilityLabel() == "Return" }!
         precondition(returnKey.frame.height > returnKey.frame.width)
-        precondition(returnKey.hitTest(NSPoint(x: returnKey.frame.minX + 10, y: returnKey.frame.maxY - 10)) == nil,
+        precondition(
+            returnKey.hitTest(NSPoint(x: returnKey.frame.minX + 10, y: returnKey.frame.maxY - 10)) == nil,
             "The Return notch must not intercept the bracket key")
-        precondition(returnKey.hitTest(NSPoint(x: returnKey.frame.maxX - 10, y: returnKey.frame.maxY - 10)) === returnKey)
+        precondition(
+            returnKey.hitTest(NSPoint(x: returnKey.frame.maxX - 10, y: returnKey.frame.maxY - 10))
+                === returnKey)
         let padPlus = caps.first { $0.accessibilityLabel() == "Keypad +" }!
         let padMinus = caps.first { $0.accessibilityLabel() == "Keypad -" }!
         precondition(padPlus.frame.minY > padMinus.frame.minY, "Match the reference keypad operator order")
 
         if let bitmap = keyboardView.bitmapImageRepForCachingDisplay(in: keyboardView.bounds) {
             keyboardView.cacheDisplay(in: keyboardView.bounds, to: bitmap)
-            try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: "/private/tmp/a2-keyboard-layout.png"))
+            try bitmap.representation(using: .png, properties: [:])!.write(
+                to: URL(fileURLWithPath: "/private/tmp/a2-keyboard-layout.png"))
         }
         print("PASS full keyboard selection, bounds, neutral gating and one-shot controller binding")
         let preset = ControllerMapping.defaults
@@ -49,8 +54,10 @@ import Cocoa
         precondition(preset.keyboardDpadAxisOwners == [0, 0])
         precondition(preset.buttonKeys == [55, 58, 58, 55, -1, -1, -1, -1, 53, -1])
         precondition(preset.mouseDirections == [[18], [19], [20], [21]] && preset.mouseButtonInputs == [5])
-        precondition(preset.independentKeyboardKeys(leftX: 0, leftY: 32767, rightX: 32767, rightY: 0,
-            dpadX: -32767, dpadY: 0, physicalButtons: (1 << 0) | (1 << 3) | (1 << 8)) == [84, 86, 55, 53])
+        precondition(
+            preset.independentKeyboardKeys(
+                leftX: 0, leftY: 32767, rightX: 32767, rightY: 0,
+                dpadX: -32767, dpadY: 0, physicalButtons: (1 << 0) | (1 << 3) | (1 << 8)) == [84, 86, 55, 53])
         print("PASS requested default preset: numpad 4/6/8/2, Apple buttons, Escape and right-stick mouse")
         let legacy = ControllerMapping()
         precondition(keys(legacy) == [])
@@ -116,7 +123,8 @@ import Cocoa
         }
         print("PASS full keyboard choices, saved mappings, simultaneous movement/action keys and release")
         var menuKeys = try load(keypad)
-        precondition(menuKeys.buttonKeys.count == 10, "Legacy eight-button mappings gain unassigned menu inputs")
+        precondition(
+            menuKeys.buttonKeys.count == 10, "Legacy eight-button mappings gain unassigned menu inputs")
         precondition(menuKeys.buttonKeys.suffix(2) == [-1, -1])
         menuKeys.keyboardButtonKeyCodes = menuKeys.buttonKeys
         menuKeys.keyboardButtonKeyCodes![8] = 36
@@ -138,33 +146,44 @@ import Cocoa
         axesMapping.keyboardStickKeys = [0, 2, 13, 1, -1, -1, -1, -1, 123, 124, 126, 125, -1, -1, -1, -1]
         axesMapping.keyboardDpadKeys = Array(repeating: -1, count: 8)
         axesMapping.setDpadOwner(1, axis: 0, enabled: true)
-        precondition(axesMapping.keyboardDpadAxisOwners == [0, 0], "An axis cannot be claimed from the other stick")
+        precondition(
+            axesMapping.keyboardDpadAxisOwners == [0, 0], "An axis cannot be claimed from the other stick")
         axesMapping.setDpadOwner(0, axis: 0, enabled: false)
         axesMapping.setDpadOwner(1, axis: 0, enabled: true)
-        precondition(axesMapping.keyboardDpadAxisOwners == [1, 0], "Horizontal and vertical ownership are independent")
+        precondition(
+            axesMapping.keyboardDpadAxisOwners == [1, 0], "Horizontal and vertical ownership are independent")
         let savedAxes = try load(axesMapping)
         precondition(savedAxes.keyboardDpadAxisOwners == [1, 0])
-        precondition(savedAxes.independentKeyboardKeys(leftX: -32767, leftY: 0, rightX: 32767, rightY: 0,
-            dpadX: -32767, dpadY: -32767, physicalButtons: 0) == [0, 124, 123, 13])
-        precondition(savedAxes.independentKeyboardKeys(leftX: 0, leftY: 0, rightX: 0, rightY: 0,
-            dpadX: 0, dpadY: 0, physicalButtons: 0) == [])
+        precondition(
+            savedAxes.independentKeyboardKeys(
+                leftX: -32767, leftY: 0, rightX: 32767, rightY: 0,
+                dpadX: -32767, dpadY: -32767, physicalButtons: 0) == [0, 124, 123, 13])
+        precondition(
+            savedAxes.independentKeyboardKeys(
+                leftX: 0, leftY: 0, rightX: 0, rightY: 0,
+                dpadX: 0, dpadY: 0, physicalButtons: 0) == [])
         precondition(ControllerMapping.activeInputs(x: 0, y: 32767, physicalButtons: 0) == [3])
         print("PASS independent sticks, diagonal fallback, exclusive per-axis D-pad sharing and persistence")
         let panel = ControllerMappingPanel()
         var liveInputs: Set<Int> = [18]
-        panel.show(mapping: savedAxes, controllers: { [] }, selectedControllerID: nil,
+        panel.show(
+            mapping: savedAxes, controllers: { [] }, selectedControllerID: nil,
             preview: { _, _ in (0, 0, 0, [], liveInputs) }, supportedButtons: { _ in Set(0..<10) },
             completion: { _, _ in preconditionFailure("Closing the panel must not save") })
         let window = NSApp.windows.first { $0.title == "Configure Controls" }!
         let root = window.contentView!
-        let mode = root.subviews.compactMap { $0 as? NSPopUpButton }.first { $0.itemTitles.contains("Apple II Analog Joystick") }!
+        let mode = root.subviews.compactMap { $0 as? NSPopUpButton }.first {
+            $0.itemTitles.contains("Apple II Analog Joystick")
+        }!
         precondition(mode.itemTitles == ["Apple II Analog Joystick", "Keyboard & Mouse"])
 
         let fullKeyboard = root.subviews.compactMap { $0 as? KeyboardConfigurationView }.first!
-        fullKeyboard.subviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == "Space" }!.performClick(nil)
+        fullKeyboard.subviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == "Space" }!
+            .performClick(nil)
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
         func workingMapping() -> ControllerMapping {
-            return Mirror(reflecting: panel).children.first { $0.label == "draft" }!.value as! ControllerMapping
+            return Mirror(reflecting: panel).children.first { $0.label == "draft" }!.value
+                as! ControllerMapping
         }
         precondition(workingMapping().keyboardStickKeys![8] == 123)
         liveInputs = []
@@ -173,28 +192,43 @@ import Cocoa
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
         precondition(workingMapping().keyboardStickKeys![8] == 49)
         precondition(fullKeyboard.selectedKey == -1, "Completed binding must immediately drop the selection")
-        precondition(!root.subviews.compactMap { $0 as? NSButton }.contains { $0.title.contains("Also bind") })
-        precondition(root.subviews.compactMap { $0 as? ADBMouseConfigurationView }.first!.frame.minX > fullKeyboard.frame.maxX)
+        precondition(
+            !root.subviews.compactMap { $0 as? NSButton }.contains { $0.title.contains("Also bind") })
+        precondition(
+            root.subviews.compactMap { $0 as? ADBMouseConfigurationView }.first!.frame.minX
+                > fullKeyboard.frame.maxX)
         let scaledMouse = root.subviews.compactMap { $0 as? ADBMouseConfigurationView }.first!
         let keyboardScale = fullKeyboard.frame.width / fullKeyboard.bounds.width
         let mouseScale = scaledMouse.frame.width / scaledMouse.bounds.width
         precondition(abs(keyboardScale - mouseScale) < 0.001)
-        precondition(abs(KeyboardConfigurationView.bodyDepth * keyboardScale - ADBMouseConfigurationView.bodyRect.height * mouseScale) < 0.001)
-        precondition(abs(fullKeyboard.frame.minY + 20 * keyboardScale - (scaledMouse.frame.minY + ADBMouseConfigurationView.bodyRect.minY * mouseScale)) < 0.001)
+        precondition(
+            abs(
+                KeyboardConfigurationView.bodyDepth * keyboardScale - ADBMouseConfigurationView.bodyRect
+                    .height * mouseScale) < 0.001)
+        precondition(
+            abs(
+                fullKeyboard.frame.minY + 20 * keyboardScale
+                    - (scaledMouse.frame.minY + ADBMouseConfigurationView.bodyRect.minY * mouseScale)) < 0.001
+        )
 
         if let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) {
             root.cacheDisplay(in: root.bounds, to: bitmap)
-            try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: "/private/tmp/a2-keyboard-panel.png"))
+            try bitmap.representation(using: .png, properties: [:])!.write(
+                to: URL(fileURLWithPath: "/private/tmp/a2-keyboard-panel.png"))
         }
         let mouse = root.subviews.compactMap { $0 as? ADBMouseConfigurationView }.first!
-        mouse.subviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == "Bind ADB mouse button" }!.performClick(nil)
+        mouse.subviews.compactMap { $0 as? NSButton }.first {
+            $0.accessibilityLabel() == "Bind ADB mouse button"
+        }!.performClick(nil)
         liveInputs = []
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
         liveInputs = [16]
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
         precondition(workingMapping().mouseButtonInputs == [8])
         precondition(workingMapping().buttonKeys[8] == -1)
-        mouse.subviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == "Bind ADB mouse movement" }!.performClick(nil)
+        mouse.subviews.compactMap { $0 as? NSButton }.first {
+            $0.accessibilityLabel() == "Bind ADB mouse movement"
+        }!.performClick(nil)
         liveInputs = []
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
         liveInputs = [18]
@@ -229,11 +263,14 @@ import Cocoa
         annotated.keyboardButtonKeyCodes = [49, -1, -1, -1, -1, -1, -1, -1, -1, -1]
         annotationView.showAssignments(annotated)
         let spaceCap = annotationView.subviews.compactMap { $0 as? KeypadKey }.first { $0.code == 49 }!
-        precondition(spaceCap.assignmentBadges.map { $0.input }.contains("L←") && spaceCap.assignmentBadges.map { $0.input }.contains("A"))
+        precondition(
+            spaceCap.assignmentBadges.map { $0.input }.contains("L←")
+                && spaceCap.assignmentBadges.map { $0.input }.contains("A"))
         precondition(spaceCap.toolTip!.contains("D←"), "Mirrored D-pad bindings must also be annotated")
         let loaded = try load(keypad)
         precondition(loaded.diagonalKeyCodes == [89, 92, 83, 85])
-        precondition(loaded.keyboardLayout == true && loaded.keyboardStickKeys?.prefix(8) == keypad.directionKeys[...])
+        precondition(
+            loaded.keyboardLayout == true && loaded.keyboardStickKeys?.prefix(8) == keypad.directionKeys[...])
         precondition(loaded.keyboardDpadAxisOwners == [0, 0], "Legacy keypad D-pad behavior is preserved")
         var invalid = keypad
         invalid.diagonalKeyCodes = [89]

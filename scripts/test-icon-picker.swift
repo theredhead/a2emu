@@ -1,5 +1,6 @@
 import Cocoa
 import WebKit
+
 @main struct IconClickTest {
     static func main() {
         let app = NSApplication.shared
@@ -43,15 +44,23 @@ import WebKit
             }
             picker.pendingResults = [url]
             picker.updateResults()
-            picker.browser.evaluateJavaScript("window.firstResult = document.querySelector('button'); firstResult.click();") { _, error in
+            picker.browser.evaluateJavaScript(
+                "window.firstResult = document.querySelector('button'); firstResult.click();"
+            ) { _, error in
                 precondition(error == nil)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     precondition(picker.crop.image != nil, "A single click must select the image")
                     picker.pendingResults = [url, url + "#second"]
                     picker.updateResults()
-                    picker.browser.evaluateJavaScript("document.querySelectorAll('button').length === 2 && document.querySelector('button') === window.firstResult") { result, error in
-                        precondition(error == nil && (result as? Bool) == true, "Results must append without rebuilding existing buttons")
-                        print("PASS search field focus behavior, single-click selection, stable results and deduplication")
+                    picker.browser.evaluateJavaScript(
+                        "document.querySelectorAll('button').length === 2 && document.querySelector('button') === window.firstResult"
+                    ) { result, error in
+                        precondition(
+                            error == nil && (result as? Bool) == true,
+                            "Results must append without rebuilding existing buttons")
+                        print(
+                            "PASS search field focus behavior, single-click selection, stable results and deduplication"
+                        )
                         picker.window.close()
                         exit(0)
                     }

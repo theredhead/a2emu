@@ -69,7 +69,9 @@ import Cocoa
         debugger.performClose(nil)
         delegate.setEmulationPaused(false)
         delegate.mainWindowInfo.window?.makeKeyAndOrderFront(nil)
-        print("PASS advanced debugger opens while paused, closes, and reuses its window without advancing frames")
+        print(
+            "PASS advanced debugger opens while paused, closes, and reuses its window without advancing frames"
+        )
         try delegate.restoreSnapshot(at: snapshot)
         precondition(delegate.snapshotNeedsVideoRefresh)
         precondition(String(cString: a2_snapshot_disk_path(5, 0)).hasSuffix("RastanB.2mg"))

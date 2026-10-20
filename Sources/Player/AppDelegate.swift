@@ -1003,9 +1003,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         var imagePointer: EmulatorCore.Image!
         var rect = NSRect.zero
 
-        let argc = CommandLine.argc
-        let argv = CommandLine.unsafeArgv
-        EmulatorCore.parseArguments(argc, arguments: argv, pathComponentsToStrip: 3)
+        EmulatorCore.parseLaunchArguments(pathComponentsToStrip: 3)
 
         rect.size.width = 2560
         rect.size.height = 1440

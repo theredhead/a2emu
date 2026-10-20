@@ -112,3 +112,7 @@ Snapshots require matching core, ROM, RAM and audio rate. Host-folder, compresse
 or partition disk mounts and active serial/network connections are unsupported.
 Restore uses fresh writable disk copies and attempts to roll back if mounting or
 layout validation fails. These working copies are retained under `Snapshot Disks`.
+
+## Shared Swift baseline
+
+Run `zsh swift-baseline.sh format` and `zsh swift-baseline.sh check` for the checked-in four-space, 110-column Swift style and focused SwiftLint rules. These explicit configurations supersede formatter defaults. See `AGENTS.md` for SOLID design, ownership and native Swift wrapper requirements. Vendored dependencies and generated app copies are excluded.

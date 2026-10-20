@@ -128,11 +128,14 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         let collection = browserViews.compactMap { $0 as? NSCollectionView }.first!
         collection.selectionIndexPaths = [IndexPath(item: 0, section: 0)]
         browser.collectionView(collection, didSelectItemsAt: collection.selectionIndexPaths)
-        let restoreButton = browserViews.compactMap { $0 as? NSButton }.first { $0.title == "Restore Snapshot" }!
+        let restoreButton = browserViews.compactMap { $0 as? NSButton }.first {
+            $0.title == "Restore Snapshot"
+        }!
         require(restoreButton.isEnabled)
         restoreButton.performClick(nil)
-        require(!browser.window!.isVisible && delegate.emulationPaused,
-                "Restoring from the browser must preserve an existing manual pause")
+        require(
+            !browser.window!.isVisible && delegate.emulationPaused,
+            "Restoring from the browser must preserve an existing manual pause")
         delegate.setEmulationPaused(false)
         print("PASS restoring through the browser preserves a prior manual pause")
         let working = delegate.currentDiskDirectory.appendingPathComponent(diskName)
@@ -227,12 +230,16 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         try delegate.importDiskImages([addedDisk])
         try delegate.restoreSnapshot(at: saved)
         require(delegate.machine.diskFiles.last == "Additional.po")
-        require(try Data(contentsOf: delegate.currentDiskDirectory.appendingPathComponent("Additional.po")) == addedBytes)
+        require(
+            try Data(contentsOf: delegate.currentDiskDirectory.appendingPathComponent("Additional.po"))
+                == addedBytes)
         print("PASS older snapshot restore retains disks imported after capture")
         if !floppy {
             let sessionDisk = incoming.appendingPathComponent("Session.hdv")
             try Data(repeating: 0, count: 1024 * 1024).write(to: sessionDisk)
-            require(try delegate.mountDroppedDisks([sessionDisk], permanently: false, chooseDrive: { _, drives in drives[0] }))
+            require(
+                try delegate.mountDroppedDisks(
+                    [sessionDisk], permanently: false, chooseDrive: { _, drives in drives[0] }))
             let sessionSnapshot = try delegate.saveSnapshot(title: "Session disks")
             let sessionMetadata = try PlayerSnapshot.read(at: sessionSnapshot)
             require(sessionMetadata.temporaryDiskFiles == ["Session.hdv"])
@@ -246,9 +253,13 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
             try delegate.restoreSnapshot(at: sessionSnapshot)
             require(delegate.machine.diskFiles.last == "Session.hdv")
             require(delegate.temporaryDiskNames.contains("Session.hdv"))
-            require(try Data(contentsOf: delegate.diskURL(named: "Session.hdv")) == Data(repeating: 0, count: 1024 * 1024))
+            require(
+                try Data(contentsOf: delegate.diskURL(named: "Session.hdv"))
+                    == Data(repeating: 0, count: 1024 * 1024))
             require(try delegate.changedTemporaryDisks().isEmpty)
-            print("PASS snapshots retain disposable media after its source is removed and restore it into a fresh disk library")
+            print(
+                "PASS snapshots retain disposable media after its source is removed and restore it into a fresh disk library"
+            )
             if let folder = delegate.temporaryDiskDirectory { try? manager.removeItem(at: folder) }
         }
         try manager.removeItem(at: saved)
