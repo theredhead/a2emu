@@ -93,6 +93,7 @@ struct ROMSetup {
         let candidates = try FileManager.default.contentsOfDirectory(
             at: shared, includingPropertiesForKeys: nil
         ).filter { $0.pathExtension == "rom" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+
         let valid = candidates.filter { url in
             guard let data = try? Data(contentsOf: url) else {
                 return false

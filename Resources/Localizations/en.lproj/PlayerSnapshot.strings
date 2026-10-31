@@ -34,4 +34,4 @@
 "thisSnapshotUsesAnUnsupportedRam" = "This snapshot uses an unsupported RAM configuration.";
 
 /* PlayerSnapshot: User-visible label, instruction, or error message. */
-"thisSnapshotWasSavedByA" = "This snapshot was saved by a different emulator build. Capture a new one with this player version.";
+"thisSnapshotWasSavedByA" = "This snapshot was saved by a different emulator build. Capture a new one with this JuiceBox version.";

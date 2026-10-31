@@ -11,7 +11,8 @@ test('counts, downloads, ranges, privacy boundaries and restart persistence',asy
   const root=join(folder,'public'),dataDir=join(folder,'data');
   await mkdir(join(root,'downloads'),{recursive:true});
   await writeFile(join(root,'index.html'),'<h1>a2emu</h1>');
-  await writeFile(join(root,'downloads','Apple-IIGS-Player-Builder-test-universal.zip'),'0123456789');
+  await writeFile(join(root,'downloads','AppleJuicer-test-universal.dmg'),'0123456789');
+  await writeFile(join(root,'downloads','Apple-IIGS-Player-Builder-legacy-universal.zip'),'legacy');
   let server;
   async function start(){server=await createSite({root,dataDir});server.listen(0,'127.0.0.1');await once(server,'listening');return `http://127.0.0.1:${server.address().port}`;}
   async function stop(){await new Promise(r=>server.close(r));}
@@ -28,14 +29,17 @@ test('counts, downloads, ranges, privacy boundaries and restart persistence',asy
     assert.equal((await visit('bad')).status,400);
     await visit('browser-session-bot',{'User-Agent':'SearchBot'});assert.equal((await stats()).visits,2);
     await Promise.all(Array.from({length:12},()=>visit()));assert.equal((await stats()).visits,2);assert.equal((await stats()).pageviews,15);
-    const url=base+'/downloads/Apple-IIGS-Player-Builder-test-universal.zip';
+    const url=base+'/downloads/AppleJuicer-test-universal.dmg';
     await fetch(url,{method:'HEAD'});assert.equal((await stats()).builderDownloads,0);
-    const download=await fetch(url);assert.equal(download.headers.get('content-type'),'application/zip');assert.equal(await download.text(),'0123456789');
+    const download=await fetch(url);assert.equal(download.headers.get('content-type'),'application/x-apple-diskimage');assert.equal(await download.text(),'0123456789');
     assert.equal((await stats()).builderDownloads,1);
     const range=await fetch(url,{headers:{Range:'bytes=2-5'}});assert.equal(range.status,206);assert.equal(await range.text(),'2345');assert.equal((await stats()).builderDownloads,1);
     assert.equal((await fetch(url,{headers:{Range:'bytes=20-30'}})).status,416);
     assert.equal((await fetch(base+'/missing')).status,404);
     await stop();base=await start();count=await stats();assert.equal(count.visits,2);assert.equal(count.builderDownloads,1);assert.equal(count.pageviews,15);
+    const legacy=await fetch(base+'/downloads/Apple-IIGS-Player-Builder-legacy-universal.zip');
+    assert.equal(legacy.headers.get('content-type'),'application/zip');await legacy.text();
+    assert.equal((await stats()).builderDownloads,2,'Historical ZIPs and AppleJuicer DMGs share the download total');
     const response=await fetch(base+'/');assert.equal(response.headers.get('set-cookie'),null);
   } finally {await stop();await rm(folder,{recursive:true,force:true});}
 });

@@ -1,13 +1,13 @@
 /* English source strings. Preserve numbered format placeholders when translating. */
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"chooseAnA2EmuPlayerApp" = "Choose an a2emu player app.";
+"chooseAnA2EmuPlayerApp" = "Choose a JuiceBox app.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
 "couldNotPrepareTheStartupSnapshot" = "Could not prepare the startup snapshot for signing.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"couldNotSignTheExportedPlayer" = "Could not sign the exported player.";
+"couldNotSignTheExportedPlayer" = "Could not sign the exported JuiceBox.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
 "eachDiskMustHaveADifferent" = "Each disk must have a different filename.";
@@ -19,10 +19,10 @@
 "theBundledStartupSnapshotUsesDifferent" = "The bundled startup snapshot uses different disks.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"theStartupSnapshotMustUseThis" = "The startup snapshot must use this player's disks and available drives.";
+"theStartupSnapshotMustUseThis" = "The startup snapshot must use this JuiceBox's disks and available drives.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"thisPlayerHasNoApplicationIdentifier" = "This player has no application identifier.";
+"thisPlayerHasNoApplicationIdentifier" = "This JuiceBox has no application identifier.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"thisPlayerIsMissingABundled" = "This player is missing a bundled disk image.";
+"thisPlayerIsMissingABundled" = "This JuiceBox is missing a bundled disk image.";

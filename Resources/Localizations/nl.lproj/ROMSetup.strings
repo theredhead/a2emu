@@ -16,7 +16,7 @@
 "installedRom" = "Geïnstalleerd ROM %1$@ — %2$@";
 
 /* ROMSetup: User-visible label, instruction, or error message. */
-"noAppleIigsRomIsBundled" = "Deze app bevat geen Apple IIgs-ROM. Kies een ROM om te downloaden of blader naar je eigen bestand. Geïnstalleerde ROMs worden gedeeld met je andere a2emu-spelers, zodat je ze maar één keer hoeft te installeren. Elke speler onthoudt zijn eigen ROM-keuze. Als je het ROM van deze speler wijzigt, wordt de emulator opnieuw gestart.";
+"noAppleIigsRomIsBundled" = "Deze app bevat geen Apple IIgs-ROM. Kies een ROM om te downloaden of blader naar je eigen bestand. Geïnstalleerde ROMs worden gedeeld met je andere JuiceBoxes, zodat je ze maar één keer hoeft te installeren. Elke JuiceBox onthoudt zijn eigen ROM-keuze. Als je het ROM van deze JuiceBox wijzigt, wordt de emulator opnieuw gestart.";
 
 /* ROMSetup: User-visible label, instruction, or error message. */
 "recommendedROM" = "ROM 03 (aanbevolen)";

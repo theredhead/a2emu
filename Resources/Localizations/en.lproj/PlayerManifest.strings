@@ -10,7 +10,7 @@
 "eightMHz" = "8 MHz";
 
 /* PlayerManifest: User-visible label, instruction, or error message. */
-"appleIiPlayer" = "Apple II Player";
+"appleIiPlayer" = "JuiceBox";
 
 /* PlayerManifest: User-visible label, instruction, or error message. */
 "chooseASupportedExpansionRamSize" = "Choose a supported expansion RAM size.";
@@ -37,7 +37,7 @@
 "smartportDrive" = "SmartPort Drive %1$ld";
 
 /* PlayerManifest: User-visible label, instruction, or error message. */
-"thePlayerMachineConfigurationIsInvalid" = "The player machine configuration is invalid.";
+"thePlayerMachineConfigurationIsInvalid" = "The JuiceBox machine configuration is invalid.";
 
 /* PlayerManifest: User-visible label, instruction, or error message. */
 "unlimited" = "Unlimited";

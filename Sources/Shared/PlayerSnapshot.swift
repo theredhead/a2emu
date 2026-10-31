@@ -50,6 +50,7 @@ struct PlayerSnapshot: Codable {
                     playerSnapshotIntl.snapshotsMustContainTheirOwnDisk)
             }
         }
+
         let metadataURL = url.appendingPathComponent("Snapshot.json")
         let metadataValues = try metadataURL.resourceValues(forKeys: [
             .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey,
@@ -60,6 +61,7 @@ struct PlayerSnapshot: Codable {
         guard (metadataValues.fileSize ?? 0) < 1_048_576 else {
             throw PlayerManifest.failure(playerSnapshotIntl.theSnapshotMetadataIsTooLarge)
         }
+
         let snapshot = try JSONDecoder().decode(Self.self, from: Data(contentsOf: metadataURL))
         let names = snapshot.diskFiles + [stateName, previewName]
         guard [1, 2].contains(snapshot.version), !snapshot.title.isEmpty, !snapshot.diskFiles.isEmpty,
@@ -99,10 +101,12 @@ struct PlayerSnapshot: Codable {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
+
         let stateURL = directory.appendingPathComponent(stateName)
         try snapshot.extract(stateName, from: url, to: stateURL)
         let state = try FileHandle(forReadingFrom: stateURL)
         defer { try? state.close() }
+
         let prefix = try state.read(upToCount: 73) ?? Data()
         let expected = try String(
             contentsOf: template.appendingPathComponent("Contents/Resources/Snapshot-Core-ID.txt"),
@@ -130,6 +134,7 @@ struct PlayerSnapshot: Codable {
     static func digest(_ file: URL) throws -> String {
         let handle = try FileHandle(forReadingFrom: file)
         defer { try? handle.close() }
+
         var hash = SHA256()
         while let bytes = try handle.read(upToCount: 1_048_576), !bytes.isEmpty { hash.update(data: bytes) }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
@@ -144,10 +149,12 @@ struct PlayerSnapshot: Codable {
         guard expanded.size > 0, expanded.size <= Self.maximumCompressedPayloadSize else {
             throw PlayerManifest.failure(playerSnapshotIntl.theExpandedSnapshotPayloadIsToo)
         }
+
         let packed = try Data(contentsOf: Self.payload(name, at: package), options: .mappedIfSafe)
         guard !packed.isEmpty, packed.count <= Self.maximumCompressedPayloadSize else {
             throw PlayerManifest.failure(playerSnapshotIntl.theCompressedSnapshotPayloadIsInvalid)
         }
+
         var bytes = Data(count: expanded.size)
         let decoded = bytes.withUnsafeMutableBytes { (output: UnsafeMutableRawBufferPointer) in
             packed.withUnsafeBytes { (input: UnsafeRawBufferPointer) in
@@ -172,19 +179,24 @@ struct PlayerSnapshot: Codable {
             }
             return memory
         }
+
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
+
         let state = directory.appendingPathComponent(Self.stateName)
         try extract(Self.stateName, from: package, to: state)
         let handle = try FileHandle(forReadingFrom: state)
         defer { try? handle.close() }
+
         let header = handle.readData(ofLength: 80)
         guard header.count == 80 else {
             throw PlayerManifest.failure(playerSnapshotIntl.theSnapshotHeaderIsIncomplete)
         }
+
         let total = (0..<4).reduce(0) { $0 | (Int(header[76 + $1]) << ($1 * 8)) }
         if total == 0xdf0000 { return 14336 }
+
         let base = total % (1024 * 1024) == 128 * 1024 ? 128 * 1024 : 1024 * 1024
         let memory = max(0, total - base) / 1024
         guard PlayerManifest.expansionMemoryChoices.contains(memory) else {
@@ -203,6 +215,7 @@ struct PlayerSnapshot: Codable {
         else {
             throw PlayerManifest.failure(playerSnapshotIntl.invalidMetadata)
         }
+
         var compressed: [String: ExpandedPayload] = [:]
         if compress {
             for name in disks + [stateName] {
@@ -210,6 +223,7 @@ struct PlayerSnapshot: Codable {
                 let size = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
                 // Bound peak memory; larger disks remain ordinary payloads in the same package.
                 guard size > 0, size <= maximumCompressedPayloadSize else { continue }
+
                 let bytes = try Data(contentsOf: file, options: .mappedIfSafe)
                 let packed = try (bytes as NSData).compressed(using: .lzfse) as Data
                 if packed.count < bytes.count {
@@ -218,8 +232,10 @@ struct PlayerSnapshot: Codable {
                 }
             }
         }
+
         var hashes: [String: String] = [:]
         for name in disks + [stateName, previewName] { hashes[name] = try digest(payload(name, at: url)) }
+
         var snapshot = PlayerSnapshot(
             version: compressed.isEmpty ? 1 : 2, id: UUID(), title: title, gameName: gameName,
             createdAt: Date(),

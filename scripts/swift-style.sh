@@ -5,11 +5,10 @@ repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$repo_root"
 case "${1:-check}" in
     format)
-        xcrun swift-format format --configuration .swift-format --in-place --recursive Sources
+        zsh swift-baseline.sh format
         ;;
     check)
-        xcrun swift-format lint --configuration .swift-format --strict --recursive Sources
-        swiftlint lint --config .swiftlint.yml --strict --no-cache
+        zsh swift-baseline.sh check
         ;;
     test)
         python3 scripts/test-swift-style.py

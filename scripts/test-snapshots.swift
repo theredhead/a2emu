@@ -13,6 +13,7 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         let temporary = manager.temporaryDirectory.appendingPathComponent("a2-snapshots-" + UUID().uuidString)
         try manager.createDirectory(at: temporary, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: temporary) }
+
         let rom = root.appendingPathComponent("TestAssets/ROMs/Apple-IIGS-ROM03.bin")
         let floppy = ProcessInfo.processInfo.environment["A2_SNAPSHOT_FLOPPY"] == "1"
         let diskName = floppy ? "Game.woz" : "Game.hdv"
@@ -35,6 +36,7 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         g_serial_cfg[1] = -1
         """.write(to: config, atomically: true, encoding: .utf8)
         config.path.withCString { config_set_config_kegs_name($0) }
+
         let delegate = AppDelegate()
         NSApp.delegate = delegate
         delegate.supportDirectory = temporary
@@ -121,9 +123,11 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
         print("PASS snapshot browser freezes live frame execution and releases its pause on close")
         delegate.setEmulationPaused(true)
         browser.showWindow(nil)
+
         func descendants(_ view: NSView) -> [NSView] {
             return [view] + view.subviews.flatMap { descendants($0) }
         }
+
         let browserViews = descendants(browser.window!.contentView!)
         let collection = browserViews.compactMap { $0 as? NSCollectionView }.first!
         collection.selectionIndexPaths = [IndexPath(item: 0, section: 0)]
@@ -171,6 +175,7 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
             _ = try PlayerSnapshot.read(at: badPackage)
             preconditionFailure("A modified package must fail validation")
         } catch {}
+
         var wrongBuild = original
         wrongBuild[8] ^= 0x01
         try wrongBuild.write(to: badState)
@@ -183,6 +188,7 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
             for name in metadata.diskFiles + [PlayerSnapshot.stateName, PlayerSnapshot.previewName] {
                 try metadata.extract(name, from: saved, to: PlayerSnapshot.payload(name, at: badDisks))
             }
+
             let truncated = try FileHandle(forWritingTo: PlayerSnapshot.payload(diskName, at: badDisks))
             try truncated.truncate(atOffset: 512)
             try truncated.close()
@@ -204,7 +210,8 @@ func require(_ condition: Bool, _ message: String = "Snapshot assertion failed")
             require(delegate.currentDiskDirectory == previousDirectory)
             print("PASS failed disk-layout restore rolls back the previous complete machine and disk mounts")
         }
-        let template = root.appendingPathComponent("build/Apple II Player.app")
+
+        let template = root.appendingPathComponent("build/JuiceBox.app")
         let exported = temporary.appendingPathComponent("Snapshot Player.app")
         try PlayerExporter.export(
             disks: [disk], slot: slot, template: template, destination: exported,

@@ -31,7 +31,7 @@ export async function createSite({root=fileURLToPath(new URL('./dist/',import.me
       db.exec('COMMIT');
     } catch(error) { db.exec('ROLLBACK');throw error; }
   }
-  const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.png':'image/png','.zip':'application/zip','.txt':'text/plain; charset=utf-8','.sha256':'text/plain; charset=utf-8','.xml':'application/xml'};
+  const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.png':'image/png','.zip':'application/zip','.dmg':'application/x-apple-diskimage','.txt':'text/plain; charset=utf-8','.sha256':'text/plain; charset=utf-8','.xml':'application/xml'};
   const json=(res,status,value)=>res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}).end(JSON.stringify(value));
   const server=createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
@@ -42,7 +42,7 @@ export async function createSite({root=fileURLToPath(new URL('./dist/',import.me
       if(url.pathname==='/healthz') {json(res,200,{ok:true});return;}
       if(url.pathname==='/api/stats' && req.method==='GET') {
         const files=downloadTotals.all();
-        json(res,200,{...total.get(),builderDownloads:files.filter(f=>/^Apple-(?:II-Wrapper|IIGS-Player)-Builder-.*\.zip$/.test(f.file)).reduce((sum,f)=>sum+f.count,0),downloads:files});return;
+        json(res,200,{...total.get(),builderDownloads:files.filter(f=>/^(?:Apple-(?:II-Wrapper|IIGS-Player)-Builder-.*\.zip|AppleJuicer-.*\.dmg)$/.test(f.file)).reduce((sum,f)=>sum+f.count,0),downloads:files});return;
       }
       if(url.pathname==='/api/visit' && req.method==='POST') {
         // Same-origin browser requests only. No IP address or user-agent is stored.
@@ -75,7 +75,7 @@ export async function createSite({root=fileURLToPath(new URL('./dist/',import.me
         status=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${info.size}`);
       }
       res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Length',Math.max(0,end-start+1));
-      if(path.includes(`${sep}downloads${sep}`) && extname(path)==='.zip') {
+      if(path.includes(`${sep}downloads${sep}`) && ['.zip','.dmg'].includes(extname(path))) {
         res.setHeader('Content-Disposition',`attachment; filename="${basename(path)}"`);
         if(req.method==='GET' && start===0 && !/bot|crawler|spider|preview/i.test(req.headers['user-agent'] || '')) {
           res.once('finish',()=>{try{incrementDownload.run(day(),basename(path));}catch{console.error('Download count could not be saved');}});

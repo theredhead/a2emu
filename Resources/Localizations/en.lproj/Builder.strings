@@ -1,10 +1,10 @@
 /* English source strings. Preserve numbered format placeholders when translating. */
 
 /* Builder: User-visible label, instruction, or error message. */
-"aboutAppleIigsPlayerBuilder" = "About Apple IIGS Player Builder";
+"aboutAppleIigsPlayerBuilder" = "About AppleJuicer";
 
 /* Builder: User-visible label, instruction, or error message. */
-"addToPlayerDisks" = "Add to this player's disks";
+"addToPlayerDisks" = "Add to this JuiceBox's disks";
 
 /* Builder: User-visible label, instruction, or error message. */
 "appName" = "App name:";
@@ -13,7 +13,7 @@
 "appNamePlaceholder" = "Name of the exported app";
 
 /* Builder: User-visible label, instruction, or error message. */
-"appleIigsPlayerBuilder" = "Apple IIGS Player Builder";
+"appleIigsPlayerBuilder" = "AppleJuicer";
 
 /* Builder: User-visible label, instruction, or error message. */
 "bundledStartupSnapshot" = "Bundled startup snapshot";
@@ -22,7 +22,7 @@
 "chooseADiskFirst" = "Choose a disk first.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"selectedDiskOverwriteError" = "Choose a new file instead of replacing a disk selected in this player.";
+"selectedDiskOverwriteError" = "Choose a new file instead of replacing a disk selected in this JuiceBox.";
 
 /* Builder: User-visible label, instruction, or error message. */
 "chooseDisks" = "Choose Disks…";
@@ -31,25 +31,25 @@
 "chooseDisksHint" = "Choose disk images to package.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"emptyPlayerHint" = "Choose disks, or drop an existing player here to edit it.";
+"emptyPlayerHint" = "Choose disks, or drop an existing JuiceBox here to edit it.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"choosePlayerIcon" = "Choose Player Icon…";
+"choosePlayerIcon" = "Choose JuiceBox Icon…";
 
 /* Builder: User-visible label, instruction, or error message. */
 "snapshotDiskSetHint" = "Clear the startup snapshot before changing its disk set.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"couldNotUpdatePlayer" = "Could not update player";
+"couldNotUpdatePlayer" = "Could not update JuiceBox";
 
 /* Builder: User-visible label, instruction, or error message. */
 "blankDiskExplanation" = "Create a writable disk in the chosen format, or leave it unformatted. No operating system files are included.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"createPlayer" = "Create Player…";
+"createPlayer" = "Create JuiceBox…";
 
 /* Builder: User-visible label, instruction, or error message. */
-"createPlayerHeading" = "Create a standalone Apple IIGS player";
+"createPlayerHeading" = "Create a standalone JuiceBox";
 
 /* Builder: Formatted message. count: numeric value */
 "diskImagesSelected" = "%1$ld disk images selected";
@@ -61,13 +61,13 @@
 "drives" = "%1$@ drives:";
 
 /* Builder: User-visible label, instruction, or error message. */
-"invalidDropError" = "Drop disk images, one snapshot, or one existing player.";
+"invalidDropError" = "Drop disk images, one snapshot, or one existing JuiceBox.";
 
 /* Builder: Formatted message. filename: runtime text; keep its placeholder */
 "edit" = "Edit %1$@";
 
 /* Builder: User-visible label, instruction, or error message. */
-"editThisAppleIigsPlayer" = "Edit this Apple IIGS player";
+"editThisAppleIigsPlayer" = "Edit this JuiceBox";
 
 /* Builder: Formatted message. filename: runtime text; keep its placeholder */
 "editing" = "Editing %1$@";
@@ -97,7 +97,7 @@
 "blankDiskTitle" = "New Blank Disk Image";
 
 /* Builder: User-visible label, instruction, or error message. */
-"newPlayer" = "New Player";
+"newPlayer" = "New JuiceBox";
 
 /* Builder: User-visible label, instruction, or error message. */
 "noneBuiltInOnly" = "None (built-in only)";
@@ -109,13 +109,13 @@
 "notInitiallyMounted" = "Not initially mounted";
 
 /* Builder: User-visible label, instruction, or error message. */
-"openPlayer" = "Open Player…";
+"openPlayer" = "Open JuiceBox…";
 
 /* Builder: User-visible label, instruction, or error message. */
 "startupSnapshotHint" = "Optional: restore the captured speed and disk state on every launch.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"quitPlayerBeforeSavingError" = "Quit this player before saving changes.";
+"quitPlayerBeforeSavingError" = "Quit this JuiceBox before saving changes.";
 
 /* Builder: User-visible label, instruction, or error message. */
 "removeSnapshotHint" = "Remove startup snapshot and use normal startup";
@@ -162,4 +162,10 @@
 "diskFormat" = "Format:";
 
 "runNow" = "Run Now";
-"runNowHint" = "Hold Option to test these settings in a temporary player. Its app and saved data are removed when it quits.";
+"runNowHint" = "Hold Option to test these settings in a temporary JuiceBox. Its app and saved data are removed when it quits.";
+
+"bootReady" = "Green: recognized ProDOS boot loader and startup file on the selected boot drive.";
+"bootNotReady" = "Red: the selected boot drive contains a blank disk, a data-only ProDOS disk, or incompatible media.";
+"bootMissingDisk" = "Red: select a boot device and mount a disk in its first drive.";
+"bootUnknown" = "Orange: bootability cannot be determined. Use Run Now to test custom loaders, encoded images, or unreadable media.";
+"bootSnapshot" = "Orange: a startup snapshot restores a running machine instead of booting a disk. Use Run Now to test it.";

@@ -151,6 +151,7 @@ final class PlayerMenu: NSObject, NSMenuDelegate {
         for item in menu.items where !item.isSeparatorItem {
             if let visible = visibility[ObjectIdentifier(item)] { item.isHidden = !visible() }
             if let submenu = item.submenu { refresh(submenu) }
+
             let available = availability[ObjectIdentifier(item)]?() ?? true
             if item.submenu != nil {
                 item.isEnabled = available

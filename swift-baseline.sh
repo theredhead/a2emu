@@ -3,8 +3,12 @@ set -eu
 cd "${0:A:h}"
 paths=('Sources' 'scripts')
 case "${1:-check}" in
-  format) xcrun swift-format format --configuration .swift-format --in-place --recursive "${paths[@]}" ;;
+  format)
+    python3 scripts/check-readability.py --fix
+    xcrun swift-format format --configuration .swift-format --in-place --recursive "${paths[@]}"
+    ;;
   check)
+    python3 scripts/check-readability.py
     xcrun swift-format lint --configuration .swift-format --strict --recursive "${paths[@]}"
     swiftlint lint --config .swiftlint.yml --strict --no-cache
     ;;

@@ -4,6 +4,7 @@ private let snapshotsIntl = SnapshotsIntl()
 
 extension AppDelegate {
     var snapshotsDirectory: URL { supportDirectory.appendingPathComponent("Snapshots", isDirectory: true) }
+
     var currentDiskDirectory: URL { snapshotDiskDirectory ?? supportDirectory }
 
     /// Reuses the writable disk set already mounted by the persisted core configuration.
@@ -32,6 +33,7 @@ extension AppDelegate {
         guard emulatorStarted, let view = mainWindowInfo.view else {
             throw PlayerManifest.failure(snapshotsIntl.startTheEmulatorBeforeSavingA)
         }
+
         let manager = FileManager.default
         try manager.createDirectory(at: snapshotsDirectory, withIntermediateDirectories: true)
         let staging = snapshotsDirectory.appendingPathComponent(".saving-" + UUID().uuidString)
@@ -90,6 +92,7 @@ extension AppDelegate {
     func snapshotFitsDiskSet(_ snapshot: PlayerSnapshot) -> Bool {
         let sessionNames = temporaryDiskNames.union(snapshot.temporaryDiskFiles ?? [])
         let saved = snapshot.diskFiles.filter { !sessionNames.contains($0) }
+
         let current = machine.diskFiles.filter { !sessionNames.contains($0) }
         return !saved.isEmpty && !current.isEmpty
             && (current.starts(with: saved) || saved.starts(with: current))
@@ -101,6 +104,7 @@ extension AppDelegate {
         guard snapshotFitsDiskSet(snapshot) else {
             throw PlayerManifest.failure(snapshotsIntl.thisSnapshotBelongsToAPlayer)
         }
+
         let manager = FileManager.default
         let working = supportDirectory.appendingPathComponent("Snapshot Disks", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -116,6 +120,7 @@ extension AppDelegate {
                 at: diskURL(named: name),
                 to: working.appendingPathComponent(name))
         }
+
         let state = working.appendingPathComponent("Restore.state")
         try snapshot.extract(PlayerSnapshot.stateName, from: url, to: state)
         try EmulatorCore.validateSnapshot(at: state)

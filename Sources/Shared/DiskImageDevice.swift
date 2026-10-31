@@ -22,6 +22,7 @@ enum DiskImageDevice {
         if extensionName == "nib" {
             return .floppy525
         }
+
         let fallback: DiskImageDevice = ["2mg", "2img"].contains(extensionName) ? .floppy35 : .floppy525
         guard let file = try? FileHandle(forReadingFrom: url) else {
             return fallback
@@ -43,6 +44,7 @@ enum DiskImageDevice {
             if word(12) == 2 {
                 return .floppy525
             }
+
             var dataSize = word(28)
             if dataSize == 0, word(12) == 1 {
                 dataSize = word(20) * 512
@@ -51,6 +53,7 @@ enum DiskImageDevice {
             if dataSize == 0x800c00 {
                 dataSize = 800 * 1024
             }
+
             let offset = word(24)
             guard dataSize > 0, offset >= 32, offset <= size, dataSize <= size - offset else {
                 return fallback
@@ -61,11 +64,13 @@ enum DiskImageDevice {
             var offset: UInt64 = 12
             while offset <= size, size - offset >= 10 {
                 guard (try? file.seek(toOffset: offset)) != nil else { break }
+
                 let chunk = file.readData(ofLength: 10)
                 guard chunk.count == 10 else { break }
                 if chunk.prefix(4) == Data("INFO".utf8) {
                     return chunk[9] == 2 ? .floppy35 : .floppy525
                 }
+
                 let length = (0..<4).reduce(UInt64(0)) { $0 | (UInt64(chunk[4 + $1]) << ($1 * 8)) }
                 guard length <= size - offset - 8 else { break }
                 offset += 8 + length

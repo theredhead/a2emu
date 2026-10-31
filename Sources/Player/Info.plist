@@ -5,19 +5,19 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>Apple II Player</string>
+	<string>JuiceBox</string>
 	<key>CFBundleIconFile</key>
 	<string>Player.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>nl.theredhead.a2emu-player</string>
+	<string>nl.theredhead.applejuicer.juicebox</string>
 	<key>CFBundleName</key>
-	<string>Apple II Player</string>
+	<string>JuiceBox</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.5.3</string>
+	<string>0.6.0</string>
 	<key>CFBundleVersion</key>
-	<string>12</string>
+	<string>13</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>NSHighResolutionCapable</key>
@@ -27,7 +27,7 @@
 
     <key>CFBundleDocumentTypes</key><array>
     <dict>
-        <key>CFBundleTypeName</key><string>Apple II Player Snapshot</string>
+        <key>CFBundleTypeName</key><string>JuiceBox Snapshot</string>
         <key>CFBundleTypeRole</key><string>None</string>
         <key>CFBundleTypeIconFile</key><string>Snapshot.icns</string>
         <key>LSTypeIsPackage</key><true/>
@@ -38,7 +38,7 @@
     <key>UTExportedTypeDeclarations</key>
     <array><dict>
         <key>UTTypeIdentifier</key><string>nl.theredhead.a2emu.snapshot</string>
-        <key>UTTypeDescription</key><string>Apple II Player Snapshot</string>
+        <key>UTTypeDescription</key><string>JuiceBox Snapshot</string>
         <key>UTTypeIconFile</key><string>Snapshot.icns</string>
         <key>UTTypeConformsTo</key><array><string>com.apple.package</string></array>
         <key>UTTypeTagSpecification</key><dict>

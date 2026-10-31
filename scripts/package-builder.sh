@@ -14,7 +14,7 @@ fi
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$repo_root/Sources/Player/Info.plist")"
 # Reject stale inputs before replacing any generated release staging files.
 for arch in arm64 x86_64; do
-  for app in 'Apple II Player.app' 'Apple IIGS Player Builder.app'; do
+  for app in 'JuiceBox.app' 'AppleJuicer.app'; do
     built_app="$repo_root/build/release-$arch/$app"
     built_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$built_app/Contents/Info.plist")"
     if [[ "$built_version" != "$version" ]]; then
@@ -25,7 +25,7 @@ for arch in arm64 x86_64; do
 done
 mkdir -p "$output_dir"
 output_dir="$(cd "$output_dir" && pwd)"
-release_stage="$output_dir/Apple-IIGS-Player-Builder-$version-universal"
+release_stage="$output_dir/AppleJuicer-$version-universal"
 rm -rf "$release_stage"
 mkdir -p "$release_stage"
 
@@ -53,15 +53,15 @@ verify_app() {
     fi
   done
 }
-builder="$release_stage/Apple IIGS Player Builder.app"
-universal_app 'Apple IIGS Player Builder.app' "$builder"
+builder="$release_stage/AppleJuicer.app"
+universal_app 'AppleJuicer.app' "$builder"
 resources="$builder/Contents/Resources"
 mkdir -p "$resources"
 player="$resources/PlayerTemplate.app"
-universal_app 'Apple II Player.app' "$player"
+universal_app 'JuiceBox.app' "$player"
 rm -f "$player/Contents/Resources/Player-Source.zip"
 codesign --force --deep --sign - "$player"
-verify_app "$player" 'Apple II Player'
+verify_app "$player" 'JuiceBox'
 cp "$repo_root/Assets/Builder.icns" "$resources/Builder.icns"
 cp "$repo_root/Assets/Snapshot.icns" "$resources/Snapshot.icns"
 cp "$repo_root/Assets/BuilderIcon.png" "$resources/BuilderIcon.png"
@@ -69,18 +69,21 @@ cp "$repo_root/Assets/PlayerIcon.png" "$resources/PlayerIcon.png"
 rm -f "$resources/Player-Source.zip"
 cp "$repo_root/LICENSE" "$resources/LICENSE.txt"
 codesign --force --deep --sign - "$builder"
-verify_app "$builder" 'Apple IIGS Player Builder'
+verify_app "$builder" 'AppleJuicer'
 cat > "$release_stage/Read me.txt" <<README
-Apple IIGS Player Builder $version
+AppleJuicer $version
 macOS 13+, Intel and Apple Silicon. Locally signed, not notarized.
+
+Drag AppleJuicer to Applications, then eject this disk image.
+AppleJuicer creates standalone JuiceBoxes from your disk images.
 
 Choose disk images, edit the app name and disk labels, and select available drives.
 Assign initial disks and choose the startup slot. A single drive is selected automatically.
 Slot 6: 5.25-inch floppy. Slot 5: 3.5-inch floppy. Slot 7: hard disk / SmartPort.
-Choose an initial speed and optionally Start in full screen, then Create Player.
+Choose an initial speed and optionally Start in full screen, then Create JuiceBox.
 Startup Snapshot optionally bundles a saved machine and disk state for every launch;
 it restores its captured speed. Clear it to use normal startup.
-Drop an existing player on the builder (or File > Open Player) to edit it, then Save.
+Drop an existing JuiceBox on AppleJuicer (or File > Open JuiceBox) to edit it, then Save.
 Quit the player before saving. Its saved disk data and application identity are preserved.
 
 Player menus:
@@ -97,12 +100,19 @@ ROM setup is offered if no compatible shared ROM is installed. No firmware ROM i
 ROMs are shared in Application Support/nl.theredhead.a2emu.player/ROMs.
 Each player can choose its own ROM through Configuration > Change ROM.
 
-Choose Player Icon searches DuckDuckGo for apple ][ and the first disk name.
+Choose JuiceBox Icon searches DuckDuckGo for apple ][ and the first disk name.
 Select a result or local image, drag and zoom the square crop, then Use This Crop.
 Configuration > Controls configures classic analog joystick or numeric-keypad/Apple-key mappings.
 Licenses and credits are included in the player (About > More), with a link to
 https://github.com/theredhead/a2emu for the builder and player project.
 README
-ditto -c -k --sequesterRsrc --keepParent "$release_stage" "$release_stage.zip"
-(cd "$output_dir" && shasum -a 256 "$(basename "$release_stage").zip" > "$(basename "$release_stage").sha256")
-printf '%s\n' "$release_stage.zip"
+ln -s /Applications "$release_stage/Applications"
+# Publish only a fully created and verified image, retaining any previous release on failure.
+image_stage="$(mktemp -d "$output_dir/.applejuicer-dmg.XXXXXX")"
+trap 'rm -rf "$image_stage"' EXIT
+hdiutil create -volname "AppleJuicer $version" -srcfolder "$release_stage" \
+  -fs HFS+ -format UDZO "$image_stage/release.dmg"
+hdiutil verify "$image_stage/release.dmg"
+mv -f "$image_stage/release.dmg" "$release_stage.dmg"
+(cd "$output_dir" && shasum -a 256 "$(basename "$release_stage").dmg" > "$(basename "$release_stage").sha256")
+printf '%s\n' "$release_stage.dmg"

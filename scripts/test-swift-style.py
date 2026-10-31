@@ -66,3 +66,37 @@ with tempfile.TemporaryDirectory(prefix="a2-swift-style-") as directory:
     subprocess.run(command, check=True)
 
 print("Style fixtures passed (documentation, imports, semicolons, Swift naming, and imported C names).")
+
+# Exercise the adopted ElseBox checker without touching production source files.
+with tempfile.TemporaryDirectory(prefix="a2-readability-") as directory:
+    root = Path(directory)
+    (root / "Sources").mkdir()
+    (root / "scripts").mkdir()
+    checker = root / "scripts" / "check-readability.py"
+    checker.write_text((ROOT / "scripts" / "check-readability.py").read_text())
+    fixture = root / "Sources" / "Fixture.swift"
+
+    def check_readability(*arguments):
+        return subprocess.run(
+            ["python3", str(checker), *arguments], capture_output=True, text=True)
+
+    fixture.write_text("@main final class Example {\n    func first() {}\n    func second() {}\n}\n")
+    result = check_readability()
+    assert result.returncode != 0 and "needs a purpose doc comment" in result.stdout
+    assert "separate declarations" in result.stdout
+    result = check_readability("--fix")
+    assert result.returncode != 0, "Whitespace fixes must not invent a class purpose"
+    assert "func first() {}\n\n    func second()" in fixture.read_text()
+    fixture.write_text("/// Owns the fixture workflow.\n" + fixture.read_text())
+    assert check_readability().returncode == 0
+    fixture.write_text("/// Owns the fixture workflow.\n\n@main final class Example {}\n")
+    assert check_readability().returncode != 0, "Detached purpose comments must fail"
+    fixture.write_text("/// Owns the fixture workflow.\n@MainActor\nfinal class Example {}\n")
+    assert check_readability().returncode == 0
+    helper = root / "scripts" / "Helper.swift"
+    helper.write_text("private final class Helper {}\n")
+    assert check_readability().returncode != 0, "Private helper classes in scripts need documentation too"
+    helper.write_text("/// Owns a helper resource.\nprivate final class Helper {}\n")
+    assert check_readability().returncode == 0
+
+print("Passed: purpose comments, inline attributes, helper coverage and whitespace-only readability fixes")

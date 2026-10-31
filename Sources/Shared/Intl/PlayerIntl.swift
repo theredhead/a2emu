@@ -110,7 +110,7 @@ final class PlayerIntl {
     var invalidDiskDrop: String {
         NSLocalizedString(
             "invalidDiskDrop", tableName: "Player", bundle: bundle,
-            value: "Drop disk image files to add them to this player.",
+            value: "Drop disk image files to add them to this JuiceBox.",
             comment: "Player: User-visible label, instruction, or error message.")
     }
 
@@ -157,7 +157,7 @@ final class PlayerIntl {
     var importLimitError: String {
         NSLocalizedString(
             "importLimitError", tableName: "Player", bundle: bundle,
-            value: "This player can import up to 256 additional disks.",
+            value: "This JuiceBox can import up to 256 additional disks.",
             comment: "Player: User-visible label, instruction, or error message.")
     }
 

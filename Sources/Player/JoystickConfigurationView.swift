@@ -24,6 +24,7 @@ enum JoystickControl: Int, CaseIterable {
 private final class JoystickHotspot: NSButton {
     let control: JoystickControl
     var selected = false { didSet { needsDisplay = true } }
+
     var active = false { didSet { needsDisplay = true } }
 
     init(control: JoystickControl, frame: NSRect) {
@@ -64,6 +65,7 @@ private final class JoystickHotspot: NSButton {
             ring.lineWidth = 3
             ring.stroke()
         }
+
         let glyphs = ["←", "→", "↑", "↓", "0", "1"]
         let text = glyphs[control.rawValue]
         let color: NSColor =
@@ -92,9 +94,11 @@ final class JoystickConfigurationView: NSView {
             for button in hotspots { button.selected = button.control == selectedControl }
         }
     }
+
     private var hotspots: [JoystickHotspot] = []
     private var stickPosition = NSPoint.zero
     private var captions: [String] = JoystickControl.allCases.map { $0.label }
+
     private var keyCodes: [Int]?
 
     override var isFlipped: Bool { true }
@@ -219,6 +223,7 @@ final class JoystickConfigurationView: NSView {
             colors[index].setFill()
             facet.fill()
         }
+
         let border = NSBezierPath(roundedRect: well, xRadius: 6, yRadius: 6)
         ink.withAlphaComponent(0.55).setStroke()
         border.lineWidth = 3

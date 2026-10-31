@@ -13,6 +13,7 @@ for(const url of urls){
  if(/^https?:/.test(url))continue;
  assert((await stat(resolve(root,url))).isFile(),`Missing local asset ${url}`);
 }
+assert(urls.some(u=>/^downloads\/AppleJuicer-.*-universal\.dmg$/.test(u)),'Missing universal AppleJuicer disk image');
 const checksum=urls.find(u=>u.endsWith('.sha256'));
 const [expected,name]=(await readFile(resolve(root,checksum),'utf8')).trim().split(/\s+/);
 const digest=createHash('sha256').update(await readFile(resolve(root,'downloads',name))).digest('hex');

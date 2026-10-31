@@ -47,6 +47,7 @@ struct PlayerExporter {
             try manifest.validate()
             try PlayerSnapshot.checkCore(at: snapshotURL, template: template)
         }
+
         let staging = destination.deletingLastPathComponent().appendingPathComponent(
             ".a2-export-\(UUID().uuidString).app")
         defer { try? manager.removeItem(at: staging) }
@@ -58,6 +59,7 @@ struct PlayerExporter {
                 try? manager.removeItem(at: resources.appendingPathComponent(name))
             }
         }
+
         let bundledSnapshot = resources.appendingPathComponent("Startup.a2snapshot")
         if manager.fileExists(atPath: bundledSnapshot.path) { try manager.removeItem(at: bundledSnapshot) }
         if let snapshot = startupSnapshot {
@@ -85,7 +87,7 @@ struct PlayerExporter {
         info["CFBundleName"] = appName
         info["CFBundleDisplayName"] = appName
         info["CFBundleIdentifier"] =
-            bundleIdentifier ?? "nl.theredhead.a2emu-player."
+            bundleIdentifier ?? "nl.theredhead.applejuicer.juicebox."
             + PlayerManifest.normalizedName(disks[0].deletingPathExtension().lastPathComponent)
         try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(
             to: plist, options: .atomic)
@@ -102,6 +104,8 @@ struct PlayerExporter {
         guard signing.terminationStatus == 0 else {
             throw PlayerManifest.failure(playerExporterIntl.couldNotSignTheExportedPlayer)
         }
+        // Copying the template retains its build date. Finder should show this export's creation date.
+        try manager.setAttributes([.creationDate: Date()], ofItemAtPath: staging.path)
         try manager.moveItem(at: staging, to: destination)
     }
 
@@ -144,6 +148,7 @@ struct PlayerExporter {
     ) throws {
         _ = try read(app: app)
         let manager = FileManager.default
+        let originalCreationDate = try app.resourceValues(forKeys: [.creationDateKey]).creationDate
         let info =
             try PropertyListSerialization.propertyList(
                 from: Data(contentsOf: app.appendingPathComponent("Contents/Info.plist")), format: nil)
@@ -152,19 +157,27 @@ struct PlayerExporter {
             throw PlayerManifest.failure(playerExporterIntl.thisPlayerHasNoApplicationIdentifier)
         }
 
+        let exportedIdentifier = identifier.replacingOccurrences(
+            of: "nl.theredhead.a2emu-player", with: "nl.theredhead.applejuicer.juicebox",
+            options: .anchored)
         let temporary = app.deletingLastPathComponent().appendingPathComponent(
             ".a2-update-\(UUID().uuidString).app")
         let backup = app.deletingLastPathComponent().appendingPathComponent(
             ".a2-backup-\(UUID().uuidString).app")
         defer { try? manager.removeItem(at: temporary) }
+
         let runtime = Bundle.main.resourceURL?.appendingPathComponent("PlayerTemplate.app")
         let template = runtime.flatMap { manager.fileExists(atPath: $0.path) ? $0 : nil } ?? app
         try export(
             disks: disks, slot: slot, template: template, destination: temporary, icon: icon,
             displayName: displayName, mounts: mounts, diskNames: diskNames, availableDrives: availableDrives,
-            initialSpeed: initialSpeed, startInFullScreen: startInFullScreen, bundleIdentifier: identifier,
+            initialSpeed: initialSpeed, startInFullScreen: startInFullScreen,
+            bundleIdentifier: exportedIdentifier,
             configurationRevision: UUID().uuidString, startupSnapshot: startupSnapshot,
             expansionMemoryKB: expansionMemoryKB)
+        if let creationDate = originalCreationDate {
+            try manager.setAttributes([.creationDate: creationDate], ofItemAtPath: temporary.path)
+        }
         try manager.moveItem(at: app, to: backup)
         do {
             try manager.moveItem(at: temporary, to: app)

@@ -3,9 +3,16 @@ import Cocoa
 private let aboutIntl = AboutIntl()
 private let commonIntl = CommonIntl()
 
+/// Presents application identity and credits, owning the reusable credits window and its visibility callbacks.
 final class AppAbout: NSObject, NSWindowDelegate {
     var creditsVisibilityChanged: ((Bool) -> Void)?
     private var creditsWindow: NSWindow?
+    private let iconResourceName: String
+
+    init(iconResourceName: String = "PlayerIcon") {
+        self.iconResourceName = iconResourceName
+        super.init()
+    }
 
     func show() {
         let panel = NSAlert()
@@ -14,9 +21,7 @@ final class AppAbout: NSObject, NSWindowDelegate {
         panel.informativeText =
             aboutIntl.versionInfo(version: version)
         // Supply the original image, avoiding the system's legacy icon container.
-        if let url = Bundle.main.url(forResource: "PlayerIcon", withExtension: "png")
-            ?? Bundle.main.url(forResource: "BuilderIcon", withExtension: "png")
-        {
+        if let url = Bundle.main.url(forResource: iconResourceName, withExtension: "png") {
             panel.icon = NSImage(contentsOf: url)
         }
         panel.addButton(withTitle: commonIntl.close)

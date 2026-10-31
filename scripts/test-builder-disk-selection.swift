@@ -13,6 +13,26 @@ var dropErrors: [String] = []
             count.addItems(withTitles: (0...limit).map(String.init))
             builder.driveCounts.append(count)
         }
+        builder.refreshBootReadiness()
+        precondition(builder.bootLight.contentTintColor == .systemRed)
+        builder.selectDisks([URL(fileURLWithPath: "/nonexistent/unknown.hdv")])
+        precondition(builder.bootLight.contentTintColor == .systemOrange)
+        builder.mountChoices[0].selectItem(at: 0)
+        builder.mountChanged(nil)
+        precondition(builder.bootLight.contentTintColor == .systemRed)
+        builder.driveCounts[2].selectItem(at: 2)
+        builder.drivesChanged(nil)
+        builder.mountChoices[0].selectItem(at: 2)
+        builder.mountChanged(nil)
+        precondition(
+            builder.bootLight.contentTintColor == .systemRed, "A disk in drive 2 cannot satisfy drive 1")
+        builder.startupSnapshot = URL(fileURLWithPath: "/nonexistent/saved.a2snapshot")
+        precondition(builder.bootLight.contentTintColor == .systemOrange)
+        builder.clearSnapshot(nil)
+        builder.slot.select(nil)
+        builder.refreshBootReadiness()
+        precondition(builder.bootLight.contentTintColor == .systemRed)
+        print("PASS boot light follows boot-device selection, first-drive mounts and startup snapshots")
         for (name, slot) in [("game.2mg", 5), ("game.hdv", 7), ("game.nib", 6)] {
             builder.selectDisks([URL(fileURLWithPath: "/nonexistent/" + name)])
             precondition(builder.speed.indexOfSelectedItem == (slot == 6 ? 0 : 1))
@@ -38,6 +58,7 @@ var dropErrors: [String] = []
             try! manifest.validate()
             precondition(manifest.expansionMemoryKB == memory)
         }
+
         var oldJSON =
             try! JSONSerialization.jsonObject(
                 with: JSONEncoder().encode(
@@ -49,6 +70,7 @@ var dropErrors: [String] = []
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try! FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporary) }
+
         let disk = temporary.appendingPathComponent("Drop.2mg")
         try! Data(repeating: 0, count: 819200).write(to: disk)
         builder.selectDisks([disk])

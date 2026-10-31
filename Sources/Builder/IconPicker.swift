@@ -24,7 +24,9 @@ final class SquareCropView: NSView {
     var offset = CGPoint.zero
     private var dragStart = CGPoint.zero
     private var originalOffset = CGPoint.zero
+
     override var isFlipped: Bool { false }
+
     private var imageRect: CGRect {
         guard let image = image, image.size.width > 0, image.size.height > 0 else {
             return .zero
@@ -185,6 +187,7 @@ final class IconPicker: NSObject, WKScriptMessageHandler, WKNavigationDelegate, 
                     query: new URL(location.href).searchParams.get('q'), urls: urls
                 });
             }
+
             let pending = null;
             function scheduleCollection() {
                 clearTimeout(pending);

@@ -268,7 +268,7 @@
 "rightTrigger" = "Right trigger";
 
 /* ControllerConfiguration: User-visible label, instruction, or error message. */
-"controllerSelectionHint" = "Select a controller for this running player. Automatic is restored on the next launch.";
+"controllerSelectionHint" = "Select a controller for this running JuiceBox. Automatic is restored on the next launch.";
 
 /* ControllerConfiguration: User-visible label, instruction, or error message. */
 "shift" = "Shift";

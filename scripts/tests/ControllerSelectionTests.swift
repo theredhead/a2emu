@@ -16,6 +16,7 @@ extension GCController {
             GCController.self, #selector(GCController.fixtureAvailableControllers))!
         method_exchangeImplementations(original, replacement)
         defer { method_exchangeImplementations(original, replacement) }
+
         let first = GCController.withExtendedGamepad()
         let second = GCController.withExtendedGamepad()
         first.extendedGamepad!.leftThumbstick.setValueForXAxis(-1, yAxis: 0)

@@ -10,6 +10,7 @@ import Cocoa
             "a2-player-state-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
+
         let libraryDirectory = directory.appendingPathComponent("DiskLibrary")
         try FileManager.default.createDirectory(at: libraryDirectory, withIntermediateDirectories: true)
         let sourceDirectory = directory.appendingPathComponent("DropSources")
@@ -41,6 +42,7 @@ import Cocoa
             precondition(
                 try! Data(contentsOf: currentWorking.appendingPathComponent(name)) == Data([1, 2, 3, 4]))
         }
+
         let reopened = AppDelegate()
         reopened.supportDirectory = libraryDirectory
         reopened.machine = try PlayerManifest.make(disks: ["Game.2mg"], slot: 5)
@@ -50,6 +52,7 @@ import Cocoa
             try library.importDiskImages([sourceDisk, directory.appendingPathComponent("missing.2mg")])
             preconditionFailure("Missing disk accepted")
         } catch { precondition(library.machine.diskFiles.count == 3) }
+
         let cancelled = try library.importDiskImages([sourceDisk]) { _ in nil }
         precondition(!cancelled && library.machine.diskFiles.count == 3)
         let beforeCancel = try FileManager.default.contentsOfDirectory(atPath: libraryDirectory.path).sorted()
@@ -163,6 +166,7 @@ import Cocoa
             try drops.mountDroppedDisks([extraSource], permanently: false)
             preconditionFailure("A 5.25-inch disk must not mount in a 3.5-inch drive")
         } catch { precondition(drops.machine.diskFiles.count == 3) }
+
         let originalConfig = drops.persistentDiskConfiguration(
             "s5d1 = \(drops.diskURL(named: "Occupied.2mg").path)\n")
         precondition(originalConfig.contains(dropLibrary.appendingPathComponent("Base.2mg").path))
@@ -191,6 +195,7 @@ import Cocoa
         delegate.addDiskMenus()
         let layout = delegate.playerMenu!
         let emulation = layout.submenu(.emulation)!
+
         func visibleTitles(_ menu: NSMenu) -> [String] {
             menu.items.filter { !$0.isHidden }.map { $0.isSeparatorItem ? "---" : $0.title }
         }
@@ -273,6 +278,7 @@ import Cocoa
         delegate.addDiskMenus()
         delegate.mountedImages = [floppy: 0, hard: 2]
         delegate.updateDiskChecks()
+
         func offered(_ address: DriveAddress) -> [Int] {
             delegate.diskMenuItems.compactMap { item, drive, index in
                 drive == address && !item.isHidden ? index : nil
@@ -341,6 +347,7 @@ import Cocoa
             precondition(
                 delegate.speedMenuItems.filter { $0.state == .on }.map { $0.tag } == [speed.rawValue])
         }
+
         let menu = layout.submenu(.emulation)!
         let speedMenu = layout.submenu(.speed)!
         let presetCount = speedMenu.numberOfItems
@@ -378,14 +385,30 @@ import Cocoa
             "PASS live speed indication, dynamic custom items, selection, deduplication, and session retention"
         )
 
-        let template = root.appendingPathComponent("build/Apple II Player.app")
+        let template = root.appendingPathComponent("build/JuiceBox.app")
         let disk = directory.appendingPathComponent("fixture.woz")
         try Data([0, 1, 2, 3]).write(to: disk)
+        let datedTemplate = directory.appendingPathComponent("DatedTemplate.app")
+        try FileManager.default.copyItem(at: template, to: datedTemplate)
+        let oldCreationDate = Date(timeIntervalSince1970: 946_684_800)
+        try FileManager.default.setAttributes(
+            [.creationDate: oldCreationDate], ofItemAtPath: datedTemplate.path)
         var revisions: [String] = []
         for (index, speed) in [EmulationSpeed.oneMHz, .twoPointEightMHz].enumerated() {
             let destination = directory.appendingPathComponent("Export-\(index).app")
+            let exportStarted = Date()
             try PlayerExporter.export(
-                disks: [disk], slot: 6, template: template, destination: destination, initialSpeed: speed)
+                disks: [disk], slot: 6, template: datedTemplate, destination: destination, initialSpeed: speed
+            )
+            let created = try destination.resourceValues(forKeys: [.creationDateKey]).creationDate!
+            precondition(created >= exportStarted.addingTimeInterval(-1) && created <= Date())
+            let info =
+                try PropertyListSerialization.propertyList(
+                    from: Data(contentsOf: destination.appendingPathComponent("Contents/Info.plist")),
+                    format: nil
+                ) as! [String: Any]
+            precondition(
+                (info["CFBundleIdentifier"] as? String) == "nl.theredhead.applejuicer.juicebox.fixture")
             let manifest = try PlayerExporter.read(app: destination)
             precondition(manifest.initialSpeed == speed)
             precondition(manifest.configurationRevision != nil)
@@ -394,7 +417,29 @@ import Cocoa
         precondition(
             revisions[0] != revisions[1],
             "A fresh export must reapply startup defaults even for the same game")
-        print("PASS fresh exports carry distinct startup-default revisions")
+        print("PASS fresh exports carry distinct startup-default revisions and current creation dates")
+        let updatedApp = directory.appendingPathComponent("Export-1.app")
+        try FileManager.default.setAttributes([.creationDate: oldCreationDate], ofItemAtPath: updatedApp.path)
+        let updatedInfoURL = updatedApp.appendingPathComponent("Contents/Info.plist")
+        var legacyInfo =
+            try PropertyListSerialization.propertyList(
+                from: Data(contentsOf: updatedInfoURL), format: nil) as! [String: Any]
+        legacyInfo["CFBundleIdentifier"] = "nl.theredhead.a2emu-player.fixture"
+        try PropertyListSerialization.data(fromPropertyList: legacyInfo, format: .xml, options: 0).write(
+            to: updatedInfoURL)
+        try PlayerExporter.update(
+            app: updatedApp, disks: [disk], slot: 6, icon: nil, displayName: "Updated JuiceBox",
+            mounts: [DiskMount(diskIndex: 0, address: DriveAddress(slot: 6, drive: 0))],
+            diskNames: ["Fixture"], availableDrives: [DriveAddress(slot: 6, drive: 0)],
+            initialSpeed: .twoPointEightMHz, startInFullScreen: false)
+        let updatedCreationDate = try updatedApp.resourceValues(forKeys: [.creationDateKey]).creationDate!
+        precondition(abs(updatedCreationDate.timeIntervalSince(oldCreationDate)) < 1)
+        let updatedInfo =
+            try PropertyListSerialization.propertyList(
+                from: Data(contentsOf: updatedInfoURL), format: nil) as! [String: Any]
+        precondition(
+            (updatedInfo["CFBundleIdentifier"] as? String) == "nl.theredhead.applejuicer.juicebox.fixture")
+        print("PASS updating a legacy player migrates its identifier and retains its creation date")
 
         let portable = AppDelegate()
         let portableStorage = directory.appendingPathComponent("PortableStorage")

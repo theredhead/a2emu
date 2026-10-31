@@ -81,6 +81,7 @@ class MainView: NSView {
         // Host shortcuts go through the menu, with keyDown as a fallback.
         if event.keyCode == 120 || event.keyCode == 99 { return false }
         guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return false }
+
         let keycode = event.keyCode
         let isRepeat = event.isARepeat
         let keyValue = unicodeKey(for: event)
@@ -123,6 +124,7 @@ class MainView: NSView {
             return
         }
         guard (NSApp.delegate as? AppDelegate)?.emulationPaused != true else { return }
+
         let keycode = event.keyCode
         let isRepeat = event.isARepeat
         let keyValue = unicodeKey(for: event)
@@ -138,6 +140,7 @@ class MainView: NSView {
     override func keyUp(with event: NSEvent) {
         // F2 and F3 belong to the host, never the emulated keyboard.
         if event.keyCode == 120 || event.keyCode == 99 { return }
+
         let keycode = event.keyCode
         let keyValue = unicodeKey(for: event)
         EmulatorCore.updateKey(

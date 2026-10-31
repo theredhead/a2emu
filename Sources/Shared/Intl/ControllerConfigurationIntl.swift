@@ -609,7 +609,7 @@ final class ControllerConfigurationIntl {
     var controllerSelectionHint: String {
         NSLocalizedString(
             "controllerSelectionHint", tableName: "ControllerConfiguration", bundle: bundle,
-            value: "Select a controller for this running player. Automatic is restored on the next launch.",
+            value: "Select a controller for this running JuiceBox. Automatic is restored on the next launch.",
             comment: "ControllerConfiguration: User-visible label, instruction, or error message.")
     }
 

@@ -7,6 +7,7 @@ import Cocoa
         precondition(Bundle.main.preferredLocalizations.first == "nl")
         precondition(CommonIntl().cancel == "Annuleer")
         var failures: [String] = []
+
         func inspect(_ view: NSView) {
             guard !view.isHidden else { return }
             if view is JoystickConfigurationView {
@@ -48,6 +49,7 @@ import Cocoa
             }
             for child in view.subviews { inspect(child) }
         }
+
         let builder = Builder()
         builder.applicationDidFinishLaunching(
             Notification(name: NSApplication.didFinishLaunchingNotification))

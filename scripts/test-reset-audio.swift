@@ -10,6 +10,7 @@ import Cocoa
             "a2-reset-audio-" + UUID().uuidString)
         try manager.createDirectory(at: temporary, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: temporary) }
+
         let disk = temporary.appendingPathComponent("Death Sword.2mg")
         try manager.copyItem(
             at: URL(
@@ -31,6 +32,7 @@ import Cocoa
         g_serial_cfg[1] = -1
         """.write(to: config, atomically: true, encoding: .utf8)
         config.path.withCString { config_set_config_kegs_name($0) }
+
         let delegate = AppDelegate()
         NSApp.delegate = delegate
         delegate.supportDirectory = temporary

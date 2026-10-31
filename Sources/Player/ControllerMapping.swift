@@ -104,6 +104,7 @@ struct ControllerMapping: Codable {
         else {
             return Self.defaults
         }
+
         let validCodes = Set(keyChoices.map { $0.1 } + [-1])
         guard
             value.diagonalKeyCodes == nil
@@ -145,6 +146,7 @@ struct ControllerMapping: Codable {
     var mouseDirections: [[Int]] {
         if let directions = mouseDirectionInputs { return directions }
         guard let source = mouseMovementSource else { return Array(repeating: [], count: 4) }
+
         let offset = [0, 18, 26][source]
         return (0..<4).map { [offset + $0] }
     }
@@ -158,6 +160,7 @@ struct ControllerMapping: Codable {
     func mouseVector(axes: [Int32], physicalButtons: UInt32) -> (x: Double, y: Double) {
         func strength(_ input: Int) -> Double {
             if (8..<18).contains(input) { return physicalButtons & (1 << (input - 8)) != 0 ? 1 : 0 }
+
             let source = input < 8 ? 0 : (input < 26 ? 1 : 2)
             let direction = input - [0, 18, 26][source]
             let x = Double(axes[source * 2]) / 32767
@@ -166,6 +169,7 @@ struct ControllerMapping: Codable {
             if direction < 4 { return cardinal[direction] }
             return min(cardinal[(direction - 4) % 2], cardinal[direction < 6 ? 2 : 3])
         }
+
         let amounts = mouseDirections.map { $0.map { strength($0) }.max() ?? 0 }
         return (amounts[1] - amounts[0], amounts[3] - amounts[2])
     }
@@ -179,6 +183,7 @@ struct ControllerMapping: Codable {
         if let keys = keyboardButtonKeyCodes {
             return keys + Array(repeating: -1, count: Self.buttonNames.count - keys.count)
         }
+
         let keys = keyCodes ?? Self.defaultKeyCodes
         var result = Array(repeating: -1, count: Self.buttonNames.count)
         result[button0] = keys[4]
@@ -224,6 +229,7 @@ struct ControllerMapping: Codable {
         let dpad = keyboardDpadKeys ?? Array(repeating: -1, count: 8)
         let owners = keyboardDpadAxisOwners ?? [-1, -1]
         var result = Set<Int32>()
+
         func press(_ x: Int32, _ y: Int32, _ keys: [Int]) {
             let horizontal = x < -16000 ? 0 : (x > 16000 ? 1 : nil)
             let vertical = y < -16000 ? 2 : (y > 16000 ? 3 : nil)
@@ -237,6 +243,7 @@ struct ControllerMapping: Codable {
             if let horizontal = horizontal, keys[horizontal] >= 0 { result.insert(Int32(keys[horizontal])) }
             if let vertical = vertical, keys[vertical] >= 0 { result.insert(Int32(keys[vertical])) }
         }
+
         let left = Array(sticks.prefix(8))
         let right = Array(sticks.suffix(8))
         press(leftX, leftY, left)
@@ -573,6 +580,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
         for view in [movementLabel, movement, invertX, invertY, deadZoneLabel, deadZone] {
             view.isHidden = keyboardBindings
         }
+
         let movementY: CGFloat =
             keyboardBindings ? 192 : (joystick.selectedControl.isDirection ? 406 : 288)
         movement.frame.origin.y = movementY
@@ -610,6 +618,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
                 + ControllerMapping.buttonNames
                 + directions.map { controllerConfigurationIntl.rightStick(direction: $0.lowercased()) }
                 + directions.map { controllerConfigurationIntl.dPadDirection(direction: $0.lowercased()) }
+
             var assigned = inputs.indices.filter { inputs[$0] == selectedKey }.map { names[$0] }
             if selectedKey == -2 {
                 assigned = (draft.mouseButtonInputs ?? []).map { ControllerMapping.buttonNames[$0] }
@@ -633,6 +642,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
                 bindingStatus.stringValue =
                     controllerConfigurationIntl.mouseMovementBindingHint
             }
+
             let statusBounds = NSRect(x: 0, y: 0, width: 412, height: 44)
             let statusHeight = min(44, bindingStatus.cell?.cellSize(forBounds: statusBounds).height ?? 18)
             bindingStatus.frame = NSRect(x: 500, y: 112 - statusHeight / 2, width: 412, height: statusHeight)
@@ -762,6 +772,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
             device.lastItem?.representedObject = identifier
             device.lastItem?.isEnabled = false
         }
+
         let selectedIndex =
             device.itemArray.firstIndex {
                 ($0.representedObject as? String) == (draftControllerID ?? "")
@@ -800,6 +811,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
                         bindingCapture.begin()
                         return
                     }
+
                     var buttons = Set(draft.mouseButtonInputs ?? [])
                     buttons.insert(input - 8)
                     draft.mouseButtonInputs = buttons.sorted()
@@ -826,6 +838,7 @@ final class ControllerMappingPanel: NSObject, NSWindowDelegate {
                     }
                 } else if selectedKey <= -4 {
                     var directions = draft.mouseDirections.map { $0.filter { $0 != input } }
+
                     let direction = -selectedKey - 4
                     if !directions[direction].contains(input) { directions[direction].append(input) }
                     draft.mouseDirectionInputs = directions

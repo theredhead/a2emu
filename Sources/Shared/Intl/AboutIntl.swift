@@ -24,7 +24,7 @@ final class AboutIntl {
     var appleIigsPlayerBuilderAndApple: String {
         NSLocalizedString(
             "appleIigsPlayerBuilderAndApple", tableName: "About", bundle: bundle,
-            value: "Apple IIGS Player Builder and Apple II Player",
+            value: "AppleJuicer and JuiceBox",
             comment: "About: User-visible label, instruction, or error message.")
     }
 
@@ -63,7 +63,7 @@ final class AboutIntl {
         NSLocalizedString(
             "integrationCredit", tableName: "About", bundle: bundle,
             value:
-                "Swift builder and player integration by theredhead. The builder and player project is available on GitHub.",
+                "Swift builder and JuiceBox integration by theredhead. The builder and JuiceBox project is available on GitHub.",
             comment: "About: User-visible label, instruction, or error message.")
     }
 
@@ -77,7 +77,7 @@ final class AboutIntl {
         NSLocalizedString(
             "licenseExplanation", tableName: "About", bundle: bundle,
             value:
-                "The builder, player and emulator components are distributed under GNU GPL version 3. Original copyright notices and component licenses are preserved in the project sources. ROM firmware and software you run are separate from the player.",
+                "The builder, JuiceBox and emulator components are distributed under GNU GPL version 3. Original copyright notices and component licenses are preserved in the project sources. ROM firmware and software you run are separate from the JuiceBox.",
             comment: "About: User-visible label, instruction, or error message.")
     }
 

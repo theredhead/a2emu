@@ -16,7 +16,7 @@
 "debugger" = "Debugger";
 
 /* Player: User-visible label, instruction, or error message. */
-"invalidDiskDrop" = "Drop disk image files to add them to this player.";
+"invalidDiskDrop" = "Drop disk image files to add them to this JuiceBox.";
 
 /* Player: Formatted message. name: runtime text; keep its placeholder */
 "diskNameCollision" = "“%1$@” is already in use or is not a valid disk filename. Enter a new name with the original disk extension; existing files will be kept.";
@@ -34,7 +34,7 @@
 "invalidDiskLibrary" = "The imported disk library is invalid.";
 
 /* Player: User-visible label, instruction, or error message. */
-"importLimitError" = "This player can import up to 256 additional disks.";
+"importLimitError" = "This JuiceBox can import up to 256 additional disks.";
 
 /* Player: User-visible label, instruction, or error message. */
 "useThisName" = "Use This Name";

@@ -30,7 +30,7 @@ final class IconPickerIntl {
 
     var choosePlayerIcon: String {
         NSLocalizedString(
-            "choosePlayerIcon", tableName: "IconPicker", bundle: bundle, value: "Choose Player Icon",
+            "choosePlayerIcon", tableName: "IconPicker", bundle: bundle, value: "Choose JuiceBox Icon",
             comment: "IconPicker: User-visible label, instruction, or error message.")
     }
 

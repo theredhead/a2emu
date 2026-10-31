@@ -8,6 +8,7 @@ final class KeyboardConfigurationView: NSView {
     static let bodyDepth: CGFloat = 230
     var keySelected: ((Int) -> Void)?
     var selectedKey = 49 { didSet { updateSelection() } }
+
     private var keys: [KeypadKey] = []
 
     override init(frame: NSRect) {
@@ -45,6 +46,7 @@ final class KeyboardConfigurationView: NSView {
                 x += width * 44
             }
         }
+
         let pad: [[(String, Int)]] = [
             [("clear", 71), ("=", 81), ("/", 75), ("*", 67)],
             [("7", 89), ("8", 91), ("9", 92), ("+", 69)],
@@ -95,6 +97,7 @@ final class KeyboardConfigurationView: NSView {
         let buttons = ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "Start", "Select"]
         let labels =
             directions.map { "L" + $0 } + buttons + directions.map { "R" + $0 } + directions.map { "D" + $0 }
+
         var assigned: [Int: [String]] = [:]
         let codes = mapping.keyboardInputKeys
         let owners = mapping.keyboardDpadAxisOwners ?? [-1, -1]
@@ -228,6 +231,7 @@ final class ADBMouseConfigurationView: NSView {
     }
 
     required init?(coder: NSCoder) { return nil }
+
     @objc private func selectControl(_ sender: NSButton) { controlSelected?(sender.tag) }
 
     func showAssignments(_ mapping: ControllerMapping, selectedControl: Int?) {

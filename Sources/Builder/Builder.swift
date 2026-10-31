@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 private let builderIntl = BuilderIntl()
 private let commonIntl = CommonIntl()
 
+/// Receives Finder and clipboard drag payloads and delegates import decisions to the builder.
 final class PlayerDropView: NSView {
     var openFiles: (([URL]) -> Void)?
     var openImage: ((NSImage) -> Void)?
@@ -28,7 +29,7 @@ final class PlayerDropView: NSView {
     }
 }
 
-/// Decorative artwork cropped to its right side and anchored to the window's bottom edge.
+/// Decorative artwork fitted proportionally and anchored to the window's bottom edge.
 final class BuilderArtworkView: NSView {
     private let artwork = Bundle.main.url(forResource: "BuilderIcon", withExtension: "png")
         .flatMap { NSImage(contentsOf: $0) }
@@ -36,15 +37,18 @@ final class BuilderArtworkView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard let artwork = artwork else { return }
-        let side = max(bounds.height, bounds.width)
+
+        let scale = min(bounds.width / artwork.size.width, bounds.height / artwork.size.height)
+        let size = NSSize(width: artwork.size.width * scale, height: artwork.size.height * scale)
         artwork.draw(
-            in: NSRect(x: bounds.maxX - side, y: bounds.minY, width: side, height: side),
+            in: NSRect(x: bounds.maxX - size.width, y: bounds.minY, width: size.width, height: size.height),
             from: .zero, operation: .sourceOver, fraction: 1)
     }
 }
 
+/// Coordinates the builder form, media selection and creation workflows on the main thread.
 @main final class Builder: NSObject, NSApplicationDelegate {
-    let aboutPanel = AppAbout()
+    let aboutPanel = AppAbout(iconResourceName: "BuilderIcon")
 
     @objc func showAbout(_ sender: Any?) {
         aboutPanel.show()
@@ -53,9 +57,14 @@ final class BuilderArtworkView: NSView {
     var window: NSWindow!
     var disks: [URL] = []
     private var snapshotDisksDirectory: URL?
+
     var startupSnapshot: URL? {
-        didSet { snapshotClearButton.isHidden = startupSnapshot == nil }
+        didSet {
+            snapshotClearButton.isHidden = startupSnapshot == nil
+            refreshBootReadiness()
+        }
     }
+
     let snapshotClearButton = NSButton(title: "", target: nil, action: nil)
     let snapshotLabel = NSTextField(labelWithString: builderIntl.normalStartup)
     var iconData: Data?
@@ -63,9 +72,10 @@ final class BuilderArtworkView: NSView {
     let iconPreview = NSImageView(frame: NSRect(x: 28, y: 76, width: 64, height: 64))
     let heading = NSTextField(labelWithString: builderIntl.createPlayerHeading)
     let appName = NSTextField(string: "")
-    let mountList = NSScrollView(frame: NSRect(x: 28, y: 198, width: 564, height: 180))
+    let mountList = NSScrollView(frame: NSRect(x: 28, y: 294, width: 564, height: 180))
     var listedDrives: [DriveAddress] = []
     var driveCounts: [NSPopUpButton] = []
+
     var configuredDrives: [DriveAddress] {
         zip([6, 5, 7], driveCounts).flatMap { slot, count in
             (0..<count.indexOfSelectedItem).map { DriveAddress(slot: slot, drive: $0) }
@@ -82,6 +92,7 @@ final class BuilderArtworkView: NSView {
     let memory = NSPopUpButton(frame: .zero)
     var editingPlayer: URL?
     var pendingPlayer: URL?
+    let bootLight = NSImageView(frame: NSRect(x: 376, y: 35, width: 14, height: 14))
     let exportButton = NSButton(title: builderIntl.createPlayer, target: nil, action: nil)
     private var modifierMonitor: Any?
     var delegateLifetime: Builder?
@@ -94,6 +105,7 @@ final class BuilderArtworkView: NSView {
                 func value(_ flag: String) -> String {
                     args[args.firstIndex(of: flag)! + 1]
                 }
+
                 let disk = URL(fileURLWithPath: value("--export"))
                 let bootSlot =
                     args.contains("--boot-slot")
@@ -171,36 +183,36 @@ final class BuilderArtworkView: NSView {
         title.font = .boldSystemFont(ofSize: 20)
         title.frame = NSRect(x: 28, y: 700, width: 560, height: 32)
         root.addSubview(title)
-        summary.frame = NSRect(x: 212, y: 658, width: 380, height: 32)
+        summary.frame = NSRect(x: 212, y: 250, width: 380, height: 32)
         summary.lineBreakMode = .byWordWrapping
         root.addSubview(summary)
         let choose = NSButton(
             title: builderIntl.chooseDisks, target: self, action: #selector(chooseDisks(_:)))
-        choose.frame = NSRect(x: 28, y: 658, width: 160, height: 32)
+        choose.frame = NSRect(x: 28, y: 250, width: 160, height: 32)
         choose.bezelStyle = .rounded
         root.addSubview(choose)
         align(summary, with: choose)
         let label = NSTextField(labelWithString: builderIntl.startUpFrom)
-        label.frame = NSRect(x: 28, y: 511, width: 110, height: 24)
+        label.frame = NSRect(x: 28, y: 607, width: 110, height: 24)
         root.addSubview(label)
-        slot.frame = NSRect(x: 140, y: 508, width: 452, height: 28)
+        slot.frame = NSRect(x: 140, y: 604, width: 452, height: 28)
         slot.addItems(withTitles: [
             builderIntl.bootFloppy525, builderIntl.bootFloppy35, builderIntl.bootSmartPort,
         ])
         root.addSubview(slot)
         let speedLabel = NSTextField(labelWithString: builderIntl.initialSpeed)
-        speedLabel.frame = NSRect(x: 28, y: 465, width: 110, height: 24)
+        speedLabel.frame = NSRect(x: 28, y: 561, width: 110, height: 24)
         root.addSubview(speedLabel)
-        speed.frame = NSRect(x: 140, y: 462, width: 128, height: 28)
+        speed.frame = NSRect(x: 140, y: 558, width: 128, height: 28)
         speed.addItems(withTitles: EmulationSpeed.allCases.map { $0.label })
         speed.selectItem(at: EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz)!)
         speed.target = self
         speed.action = #selector(speedChanged(_:))
         root.addSubview(speed)
         let memoryLabel = NSTextField(labelWithString: builderIntl.expansionRam)
-        memoryLabel.frame = NSRect(x: 284, y: 465, width: 112, height: 24)
+        memoryLabel.frame = NSRect(x: 284, y: 561, width: 112, height: 24)
         root.addSubview(memoryLabel)
-        memory.frame = NSRect(x: 398, y: 462, width: 194, height: 28)
+        memory.frame = NSRect(x: 398, y: 558, width: 194, height: 28)
         memory.addItems(
             withTitles: PlayerManifest.expansionMemoryChoices.map {
                 $0 == 0
@@ -218,23 +230,23 @@ final class BuilderArtworkView: NSView {
         slot.target = self
         slot.action = #selector(startupChanged(_:))
         let nameLabel = NSTextField(labelWithString: builderIntl.appName)
-        nameLabel.frame = NSRect(x: 28, y: 558, width: 110, height: 24)
+        nameLabel.frame = NSRect(x: 28, y: 654, width: 110, height: 24)
         root.addSubview(nameLabel)
-        appName.frame = NSRect(x: 140, y: 555, width: 452, height: 28)
+        appName.frame = NSRect(x: 140, y: 651, width: 452, height: 28)
         appName.placeholderString = builderIntl.appNamePlaceholder
         root.addSubview(appName)
         align(nameLabel, with: appName)
         let mounted = NSTextField(labelWithString: builderIntl.diskNamesAndInitialDrives)
-        mounted.frame = NSRect(x: 28, y: 379, width: 564, height: 24)
+        mounted.frame = NSRect(x: 28, y: 475, width: 564, height: 24)
         root.addSubview(mounted)
         for (index, title) in [commonIntl.floppy525Type, commonIntl.floppy35Type, "SmartPort"].enumerated() {
             let x = CGFloat(28 + index * 190)
             let label = NSTextField(labelWithString: builderIntl.drives(title: title))
             let labelWidth = max(102, ceil(label.intrinsicContentSize.width) + 4)
-            label.frame = NSRect(x: x, y: 410, width: labelWidth, height: 24)
+            label.frame = NSRect(x: x, y: 506, width: labelWidth, height: 24)
             root.addSubview(label)
             let count = NSPopUpButton(
-                frame: NSRect(x: x + labelWidth + 6, y: 407, width: 172 - labelWidth, height: 28))
+                frame: NSRect(x: x + labelWidth + 6, y: 503, width: 172 - labelWidth, height: 28))
             count.addItems(withTitles: (0...(index == 2 ? 16 : 2)).map { String($0) })
             count.selectItem(at: index == 0 ? 1 : 0)
             count.target = self
@@ -266,13 +278,16 @@ final class BuilderArtworkView: NSView {
         export.frame = NSRect(x: 402, y: 25, width: 190, height: 34)
         export.bezelStyle = .rounded
         root.addSubview(export)
+        bootLight.image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)
+        root.addSubview(bootLight)
+        refreshBootReadiness()
         let snapshotButton = NSButton(
             title: builderIntl.startupSnapshot, target: self, action: #selector(chooseSnapshot(_:)))
         snapshotButton.bezelStyle = .rounded
         snapshotButton.frame = NSRect(
-            x: 28, y: 610, width: max(160, ceil(snapshotButton.intrinsicContentSize.width)), height: 32)
+            x: 28, y: 202, width: max(160, ceil(snapshotButton.intrinsicContentSize.width)), height: 32)
         root.addSubview(snapshotButton)
-        snapshotLabel.frame = NSRect(x: 212, y: 614, width: 334, height: 24)
+        snapshotLabel.frame = NSRect(x: 212, y: 206, width: 334, height: 24)
         snapshotLabel.lineBreakMode = .byTruncatingMiddle
         root.addSubview(snapshotLabel)
         align(snapshotLabel, with: snapshotButton)
@@ -287,10 +302,10 @@ final class BuilderArtworkView: NSView {
         clearSnapshot.isHidden = startupSnapshot == nil
         clearSnapshot.toolTip = builderIntl.removeSnapshotHint
         clearSnapshot.bezelStyle = .rounded
-        clearSnapshot.frame = NSRect(x: 558, y: 614, width: 28, height: 24)
+        clearSnapshot.frame = NSRect(x: 558, y: 206, width: 28, height: 24)
         root.addSubview(clearSnapshot)
         snapshotButton.toolTip = builderIntl.startupSnapshotHint
-        for y: CGFloat in [598, 66] {
+        for y: CGFloat in [190, 66] {
             let separator = NSBox(frame: NSRect(x: 28, y: y, width: 564, height: 1))
             separator.boxType = .separator
             root.addSubview(separator)
@@ -348,6 +363,7 @@ final class BuilderArtworkView: NSView {
                 otherFiles.append(url)
             }
         }
+
         var ordered = players + snapshots + otherFiles
         if let image = firstImage { ordered.append(image) }
         processDroppedFiles(ordered, unhandled: [])
@@ -458,6 +474,7 @@ final class BuilderArtworkView: NSView {
 
     @objc func blankDiskCapacityChanged(_ sender: NSPopUpButton) {
         guard let formats = blankDiskFormatMenu else { return }
+
         let image = BlankDiskImage.allCases[sender.indexOfSelectedItem]
         for format in BlankDiskFormat.allCases {
             formats.item(at: format.rawValue)?.isEnabled = image.supports(format)
@@ -505,6 +522,7 @@ final class BuilderArtworkView: NSView {
         options.addSubview(add)
         alert.accessoryView = options
         guard alert.runModal() == .alertFirstButtonReturn else { return }
+
         let image = BlankDiskImage.allCases[capacity.indexOfSelectedItem]
         let filesystem = BlankDiskFormat.allCases[format.indexOfSelectedItem]
         let fileExtension = image.fileExtension(for: filesystem)
@@ -526,6 +544,7 @@ final class BuilderArtworkView: NSView {
                     disks.append(url)
                     rebuildMounts()
                     mountChoices.last?.selectItem(at: 0)
+                    refreshBootReadiness()
                     summary.stringValue = builderIntl.diskImagesSelected(count: disks.count)
                 }
             }
@@ -562,6 +581,7 @@ final class BuilderArtworkView: NSView {
         }
 
         let previousMounts = mountChoices.map { $0.indexOfSelectedItem }
+
         let previousSlot = slot.indexOfSelectedItem
         let previousSpeed = speed.indexOfSelectedItem
         // The snapshot describes an exact disk set; retain its working copies as selected media.
@@ -574,6 +594,7 @@ final class BuilderArtworkView: NSView {
             choice.selectItem(at: previousMounts.indices.contains(index) ? previousMounts[index] : 0)
         }
         summary.stringValue = builderIntl.diskImagesSelected(count: disks.count)
+        refreshBootReadiness()
     }
 
     /// Selects the initial boot drive from the first image; drive controls remain editable.
@@ -603,6 +624,53 @@ final class BuilderArtworkView: NSView {
         rebuildMounts()
     }
 
+    @objc func mountChanged(_ sender: Any?) {
+        refreshBootReadiness()
+    }
+
+    /// Reports only the selected slot's first drive; later disks cannot make that drive bootable.
+    func refreshBootReadiness() {
+        let status: DiskBootability
+        let explanation: String
+        if startupSnapshot != nil {
+            status = .unknown
+            explanation = builderIntl.bootSnapshot
+        } else if ![0, 1, 2].contains(slot.indexOfSelectedItem) {
+            status = .notBootable
+            explanation = builderIntl.bootMissingDisk
+        } else {
+            let bootDrive = DriveAddress(slot: [6, 5, 7][slot.indexOfSelectedItem], drive: 0)
+            let candidates = mountChoices.enumerated().filter { _, choice in
+                let index = choice.indexOfSelectedItem - 1
+                return listedDrives.indices.contains(index) && listedDrives[index] == bootDrive
+            }.map { $0.offset }
+            if !configuredDrives.contains(bootDrive) || candidates.isEmpty {
+                status = .notBootable
+                explanation = builderIntl.bootMissingDisk
+            } else if candidates.count != 1 || !disks.indices.contains(candidates[0]) {
+                status = .unknown
+                explanation = builderIntl.bootUnknown
+            } else {
+                let disk = disks[candidates[0]]
+                status =
+                    DiskImageDevice.detect(disk).slot == bootDrive.slot
+                    ? DiskBootability.inspect(disk) : .notBootable
+                switch status {
+                case .bootable: explanation = builderIntl.bootReady
+                case .notBootable: explanation = builderIntl.bootNotReady
+                case .unknown: explanation = builderIntl.bootUnknown
+                }
+            }
+        }
+        switch status {
+        case .bootable: bootLight.contentTintColor = .systemGreen
+        case .notBootable: bootLight.contentTintColor = .systemRed
+        case .unknown: bootLight.contentTintColor = .systemOrange
+        }
+        bootLight.toolTip = explanation
+        bootLight.setAccessibilityLabel(explanation)
+    }
+
     @objc func speedChanged(_ sender: Any?) {
         hasChosenSpeed = true
     }
@@ -612,6 +680,7 @@ final class BuilderArtworkView: NSView {
         guard !disks.isEmpty, !hasChosenSpeed, startupSnapshot == nil, slot.indexOfSelectedItem >= 0 else {
             return
         }
+
         let bootSlot = [6, 5, 7][slot.indexOfSelectedItem]
         let defaultSpeed: EmulationSpeed = bootSlot == 6 ? .oneMHz : .twoPointEightMHz
         if let index = EmulationSpeed.allCases.firstIndex(of: defaultSpeed) {
@@ -663,11 +732,14 @@ final class BuilderArtworkView: NSView {
             if let desired = desired, let address = configuredDrives.firstIndex(of: desired) {
                 choice.selectItem(at: address + 1)
             }
+            choice.target = self
+            choice.action = #selector(mountChanged(_:))
             content.addSubview(choice)
             align(label, with: choice)
             mountChoices.append(choice)
         }
         mountList.documentView = content
+        refreshBootReadiness()
     }
 
     @objc func paste(_ sender: Any?) {
@@ -695,6 +767,7 @@ final class BuilderArtworkView: NSView {
             }
             return
         }
+
         let picker = IconPicker()
         iconPicker = picker
         picker.cropClosed = completion
@@ -730,6 +803,7 @@ final class BuilderArtworkView: NSView {
 
     func applicationDidBecomeActive(_ notification: Notification) {
         refreshExportButton(optionHeld: NSEvent.modifierFlags.contains(.option))
+        refreshBootReadiness()
     }
 
     @objc func createPlayer(_ sender: Any?) {
@@ -827,7 +901,7 @@ final class BuilderArtworkView: NSView {
                 availableDrives: configuredDrives,
                 initialSpeed: EmulationSpeed.allCases[speed.indexOfSelectedItem],
                 startInFullScreen: fullScreen.state == .on,
-                bundleIdentifier: "nl.theredhead.a2emu-player.preview." + UUID().uuidString,
+                bundleIdentifier: "nl.theredhead.applejuicer.juicebox.preview." + UUID().uuidString,
                 startupSnapshot: startupSnapshot,
                 expansionMemoryKB: PlayerManifest.expansionMemoryChoices[memory.indexOfSelectedItem])
             let process = Process()
@@ -933,6 +1007,7 @@ final class BuilderArtworkView: NSView {
                 mountChoices[index].selectItem(
                     at: address.flatMap { configuredDrives.firstIndex(of: $0) }.map { $0 + 1 } ?? 0)
             }
+            refreshBootReadiness()
             iconData = try? Data(contentsOf: resources.appendingPathComponent("PlayerIcon.png"))
             iconPreview.image =
                 iconData.flatMap { NSImage(data: $0) } ?? NSWorkspace.shared.icon(forFile: url.path)

@@ -20,11 +20,11 @@ The container runs as a non-root user. Compose includes health checks, restart p
 
 ## Counters and storage
 
-`GET /api/stats` returns page views, visits, total builder-download requests and counts per ZIP file. The download section displays visits and builder downloads. `GET /healthz` is the health endpoint.
+`GET /api/stats` returns page views, visits, total builder-download requests and counts per download file. The download section displays visits and builder downloads. `GET /healthz` is the health endpoint.
 
 A visit is one browser-tab session per UTC day, not a unique person. The frontend keeps a random token in sessionStorage; the server stores only its daily hash. Daily deduplication records are deleted after their day; aggregate totals remain. No cookies, IP addresses or user agents are stored. Recognizable bots are excluded. If storage or JavaScript is disabled, visit counts are approximate.
 
-Downloads count ZIP responses that finish serving, including a range request starting at byte zero. HEAD requests, cache checks, and continuation ranges are excluded. This measures served requests, not unique people or proof of installation.
+Downloads count ZIP or DMG responses that finish serving, including a range request starting at byte zero. HEAD requests, cache checks, and continuation ranges are excluded. This measures served requests, not unique people or proof of installation.
 
 SQLite lives at `/data/counts.sqlite`, persisted by the `a2emu-data` named volume declared in Compose. Counts survive restarts and container/image updates. The image itself has no implicit VOLUME declaration, so a standalone run without a mount remains self-contained and resets on replacement.
 
@@ -52,4 +52,4 @@ PUBLIC_DIR="$PWD/Website/dist" DATA_DIR=/tmp/a2emu-preview-data PORT=4173 node W
 
 The static-only preview script remains available as `node scripts/preview-website.mjs`; counters stay hidden without the backend.
 
-Edit `Website/index.html`, `style.css`, or `app.js`, then package again. Downloads are versioned. Source links point to https://github.com/theredhead/a2emu; source archives are not included in the website package. The screenshot shows an exported player; the game shown is not included.
+Edit `Website/index.html`, `style.css`, or `app.js`, then package again. Downloads are versioned. Source links point to https://github.com/theredhead/a2emu; source archives are not included in the website package. The screenshot shows an exported JuiceBox; the game shown is not included.

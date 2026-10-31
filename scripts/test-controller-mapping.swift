@@ -25,6 +25,7 @@ import Cocoa
             ControllerMapping.activeInputs(x: -32767, y: -32767, physicalButtons: 1 << 9) == [4, 17])
         let keyboardView = KeyboardConfigurationView(frame: NSRect(x: 0, y: 0, width: 884, height: 288))
         let caps = keyboardView.subviews.compactMap { $0 as? NSButton }
+
         var selected: Int?
         keyboardView.keySelected = { selected = $0 }
         caps.first { $0.accessibilityLabel() == "Space" }!.performClick(nil)
@@ -96,17 +97,20 @@ import Cocoa
         let domain = UserDefaults.argumentDomain
         let original = defaults.volatileDomain(forName: domain)
         defer { defaults.setVolatileDomain(original, forName: domain) }
+
         func load(_ mapping: ControllerMapping) throws -> ControllerMapping {
             defaults.setVolatileDomain(
                 [ControllerMapping.defaultsKey: try JSONEncoder().encode(mapping)], forName: domain)
             return ControllerMapping.load()
         }
+
         let choices = ControllerMapping.keyChoices
         precondition(Set(choices.map { $0.1 }).count == choices.count, "Keys must have unique codes")
         for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
             precondition(choices.contains { $0.0 == String(letter) })
         }
         for digit in 0...9 { precondition(choices.contains { $0.0 == String(digit) }) }
+
         var keyboard = ControllerMapping()
         keyboard.keyboardMode = true
         keyboard.keyCodes = [0, 2, 13, 1, 55, 58]
@@ -181,6 +185,7 @@ import Cocoa
         fullKeyboard.subviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == "Space" }!
             .performClick(nil)
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+
         func workingMapping() -> ControllerMapping {
             return Mirror(reflecting: panel).children.first { $0.label == "draft" }!.value
                 as! ControllerMapping
@@ -216,6 +221,7 @@ import Cocoa
             try bitmap.representation(using: .png, properties: [:])!.write(
                 to: URL(fileURLWithPath: "/private/tmp/a2-keyboard-panel.png"))
         }
+
         let mouse = root.subviews.compactMap { $0 as? ADBMouseConfigurationView }.first!
         mouse.subviews.compactMap { $0 as? NSButton }.first {
             $0.accessibilityLabel() == "Bind ADB mouse button"

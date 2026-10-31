@@ -10,6 +10,7 @@ enum EmulationSpeed: Int, Codable, CaseIterable {
     case twoPointEightMHz = 2
     case eightMHz = 3
     case unlimited = 0
+
     var label: String {
         switch self {
         case .oneMHz: return playerManifestIntl.oneMHz
@@ -24,6 +25,7 @@ enum EmulationSpeed: Int, Codable, CaseIterable {
 struct DriveAddress: Codable, Hashable {
     let slot: Int
     let drive: Int
+
     static var all: [DriveAddress] {
         [5, 6, 7].flatMap { slot in (0..<(slot == 7 ? 16 : 2)).map { DriveAddress(slot: slot, drive: $0) } }
     }

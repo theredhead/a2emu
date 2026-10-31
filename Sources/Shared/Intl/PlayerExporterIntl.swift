@@ -11,7 +11,7 @@ final class PlayerExporterIntl {
     var chooseAnA2EmuPlayerApp: String {
         NSLocalizedString(
             "chooseAnA2EmuPlayerApp", tableName: "PlayerExporter", bundle: bundle,
-            value: "Choose an a2emu player app.",
+            value: "Choose a JuiceBox app.",
             comment: "PlayerExporter: User-visible label, instruction, or error message.")
     }
 
@@ -25,7 +25,7 @@ final class PlayerExporterIntl {
     var couldNotSignTheExportedPlayer: String {
         NSLocalizedString(
             "couldNotSignTheExportedPlayer", tableName: "PlayerExporter", bundle: bundle,
-            value: "Could not sign the exported player.",
+            value: "Could not sign the exported JuiceBox.",
             comment: "PlayerExporter: User-visible label, instruction, or error message.")
     }
 
@@ -53,21 +53,21 @@ final class PlayerExporterIntl {
     var theStartupSnapshotMustUseThis: String {
         NSLocalizedString(
             "theStartupSnapshotMustUseThis", tableName: "PlayerExporter", bundle: bundle,
-            value: "The startup snapshot must use this player's disks and available drives.",
+            value: "The startup snapshot must use this JuiceBox's disks and available drives.",
             comment: "PlayerExporter: User-visible label, instruction, or error message.")
     }
 
     var thisPlayerHasNoApplicationIdentifier: String {
         NSLocalizedString(
             "thisPlayerHasNoApplicationIdentifier", tableName: "PlayerExporter", bundle: bundle,
-            value: "This player has no application identifier.",
+            value: "This JuiceBox has no application identifier.",
             comment: "PlayerExporter: User-visible label, instruction, or error message.")
     }
 
     var thisPlayerIsMissingABundled: String {
         NSLocalizedString(
             "thisPlayerIsMissingABundled", tableName: "PlayerExporter", bundle: bundle,
-            value: "This player is missing a bundled disk image.",
+            value: "This JuiceBox is missing a bundled disk image.",
             comment: "PlayerExporter: User-visible label, instruction, or error message.")
     }
 }

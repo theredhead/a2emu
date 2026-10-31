@@ -7,7 +7,7 @@
 "appleIigsEmulationByKentDickey" = "Apple IIgs-emulatie door Kent Dickey.";
 
 /* About: User-visible label, instruction, or error message. */
-"appleIigsPlayerBuilderAndApple" = "Apple IIGS Player Builder en Apple II Player";
+"appleIigsPlayerBuilderAndApple" = "AppleJuicer en JuiceBox";
 
 /* About: User-visible label, instruction, or error message. */
 "crossPlatformWorkByDagenBrock" = "Ondersteuning voor meerdere platforms door Dagen Brock en de GSplus-bijdragers, voortbouwend op KEGS.";
@@ -31,7 +31,7 @@
 "thanksTo" = "Met dank aan…";
 
 /* About: User-visible label, instruction, or error message. */
-"licenseExplanation" = "De builder, speler en emulatoronderdelen worden verspreid onder GNU GPL versie 3. De oorspronkelijke auteursrechtvermeldingen en onderdeellicenties blijven behouden in de projectbroncode. ROM-firmware en de software die je draait, staan los van de speler.";
+"licenseExplanation" = "De builder, JuiceBox en emulatoronderdelen worden verspreid onder GNU GPL versie 3. De oorspronkelijke auteursrechtvermeldingen en onderdeellicenties blijven behouden in de projectbroncode. ROM-firmware en de software die je draait, staan los van de JuiceBox.";
 
 /* About: Formatted message. version: runtime text; keep its placeholder */
 "versionInfo" = "Versie %1$@\n\nGemaakt met KEGS en GSplus.";

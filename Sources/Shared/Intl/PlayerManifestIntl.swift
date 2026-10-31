@@ -28,7 +28,7 @@ final class PlayerManifestIntl {
 
     var appleIiPlayer: String {
         NSLocalizedString(
-            "appleIiPlayer", tableName: "PlayerManifest", bundle: bundle, value: "Apple II Player",
+            "appleIiPlayer", tableName: "PlayerManifest", bundle: bundle, value: "JuiceBox",
             comment: "PlayerManifest: User-visible label, instruction, or error message.")
     }
 
@@ -96,7 +96,7 @@ final class PlayerManifestIntl {
     var thePlayerMachineConfigurationIsInvalid: String {
         NSLocalizedString(
             "thePlayerMachineConfigurationIsInvalid", tableName: "PlayerManifest", bundle: bundle,
-            value: "The player machine configuration is invalid.",
+            value: "The JuiceBox machine configuration is invalid.",
             comment: "PlayerManifest: User-visible label, instruction, or error message.")
     }
 

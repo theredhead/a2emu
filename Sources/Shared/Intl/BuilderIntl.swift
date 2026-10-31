@@ -41,13 +41,13 @@ final class BuilderIntl {
     var aboutAppleIigsPlayerBuilder: String {
         NSLocalizedString(
             "aboutAppleIigsPlayerBuilder", tableName: "Builder", bundle: bundle,
-            value: "About Apple IIGS Player Builder",
+            value: "About AppleJuicer",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
     var addToPlayerDisks: String {
         NSLocalizedString(
-            "addToPlayerDisks", tableName: "Builder", bundle: bundle, value: "Add to this player's disks",
+            "addToPlayerDisks", tableName: "Builder", bundle: bundle, value: "Add to this JuiceBox's disks",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -66,7 +66,7 @@ final class BuilderIntl {
     var appleIigsPlayerBuilder: String {
         NSLocalizedString(
             "appleIigsPlayerBuilder", tableName: "Builder", bundle: bundle,
-            value: "Apple IIGS Player Builder",
+            value: "AppleJuicer",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -85,7 +85,7 @@ final class BuilderIntl {
     var selectedDiskOverwriteError: String {
         NSLocalizedString(
             "selectedDiskOverwriteError", tableName: "Builder", bundle: bundle,
-            value: "Choose a new file instead of replacing a disk selected in this player.",
+            value: "Choose a new file instead of replacing a disk selected in this JuiceBox.",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -104,13 +104,13 @@ final class BuilderIntl {
     var emptyPlayerHint: String {
         NSLocalizedString(
             "emptyPlayerHint", tableName: "Builder", bundle: bundle,
-            value: "Choose disks, or drop an existing player here to edit it.",
+            value: "Choose disks, or drop an existing JuiceBox here to edit it.",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
     var choosePlayerIcon: String {
         NSLocalizedString(
-            "choosePlayerIcon", tableName: "Builder", bundle: bundle, value: "Choose Player Icon…",
+            "choosePlayerIcon", tableName: "Builder", bundle: bundle, value: "Choose JuiceBox Icon…",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -123,7 +123,7 @@ final class BuilderIntl {
 
     var couldNotUpdatePlayer: String {
         NSLocalizedString(
-            "couldNotUpdatePlayer", tableName: "Builder", bundle: bundle, value: "Could not update player",
+            "couldNotUpdatePlayer", tableName: "Builder", bundle: bundle, value: "Could not update JuiceBox",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -133,6 +133,44 @@ final class BuilderIntl {
             value:
                 "Create a writable disk in the chosen format, or leave it unformatted. No operating system files are included.",
             comment: "Builder: User-visible label, instruction, or error message.")
+    }
+
+    var bootReady: String {
+        return NSLocalizedString(
+            "bootReady", tableName: "Builder", bundle: bundle,
+            value: "Green: recognized ProDOS boot loader and startup file on the selected boot drive.",
+            comment: "Boot readiness indicator tooltip and accessibility description.")
+    }
+
+    var bootNotReady: String {
+        return NSLocalizedString(
+            "bootNotReady", tableName: "Builder", bundle: bundle,
+            value:
+                "Red: the selected boot drive contains a blank disk, a data-only ProDOS disk, or incompatible media.",
+            comment: "Boot readiness indicator tooltip and accessibility description.")
+    }
+
+    var bootMissingDisk: String {
+        return NSLocalizedString(
+            "bootMissingDisk", tableName: "Builder", bundle: bundle,
+            value: "Red: select a boot device and mount a disk in its first drive.",
+            comment: "Boot readiness indicator tooltip and accessibility description.")
+    }
+
+    var bootUnknown: String {
+        return NSLocalizedString(
+            "bootUnknown", tableName: "Builder", bundle: bundle,
+            value:
+                "Orange: bootability cannot be determined. Use Run Now to test custom loaders, encoded images, or unreadable media.",
+            comment: "Boot readiness indicator tooltip and accessibility description.")
+    }
+
+    var bootSnapshot: String {
+        return NSLocalizedString(
+            "bootSnapshot", tableName: "Builder", bundle: bundle,
+            value:
+                "Orange: a startup snapshot restores a running machine instead of booting a disk. Use Run Now to test it.",
+            comment: "Boot readiness indicator tooltip and accessibility description.")
     }
 
     var runNow: String {
@@ -145,20 +183,20 @@ final class BuilderIntl {
         NSLocalizedString(
             "runNowHint", tableName: "Builder", bundle: bundle,
             value:
-                "Hold Option to test these settings in a temporary player. Its app and saved data are removed when it quits.",
+                "Hold Option to test these settings in a temporary JuiceBox. Its app and saved data are removed when it quits.",
             comment: "Tooltip for the create/save player button.")
     }
 
     var createPlayer: String {
         NSLocalizedString(
-            "createPlayer", tableName: "Builder", bundle: bundle, value: "Create Player…",
+            "createPlayer", tableName: "Builder", bundle: bundle, value: "Create JuiceBox…",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
     var createPlayerHeading: String {
         NSLocalizedString(
             "createPlayerHeading", tableName: "Builder", bundle: bundle,
-            value: "Create a standalone Apple IIGS player",
+            value: "Create a standalone JuiceBox",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -189,7 +227,7 @@ final class BuilderIntl {
     var invalidDropError: String {
         NSLocalizedString(
             "invalidDropError", tableName: "Builder", bundle: bundle,
-            value: "Drop disk images, one snapshot, or one existing player.",
+            value: "Drop disk images, one snapshot, or one existing JuiceBox.",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -204,7 +242,7 @@ final class BuilderIntl {
     var editThisAppleIigsPlayer: String {
         NSLocalizedString(
             "editThisAppleIigsPlayer", tableName: "Builder", bundle: bundle,
-            value: "Edit this Apple IIGS player",
+            value: "Edit this JuiceBox",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -273,7 +311,7 @@ final class BuilderIntl {
 
     var newPlayer: String {
         NSLocalizedString(
-            "newPlayer", tableName: "Builder", bundle: bundle, value: "New Player",
+            "newPlayer", tableName: "Builder", bundle: bundle, value: "New JuiceBox",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -297,7 +335,7 @@ final class BuilderIntl {
 
     var openPlayer: String {
         NSLocalizedString(
-            "openPlayer", tableName: "Builder", bundle: bundle, value: "Open Player…",
+            "openPlayer", tableName: "Builder", bundle: bundle, value: "Open JuiceBox…",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 
@@ -311,7 +349,7 @@ final class BuilderIntl {
     var quitPlayerBeforeSavingError: String {
         NSLocalizedString(
             "quitPlayerBeforeSavingError", tableName: "Builder", bundle: bundle,
-            value: "Quit this player before saving changes.",
+            value: "Quit this JuiceBox before saving changes.",
             comment: "Builder: User-visible label, instruction, or error message.")
     }
 

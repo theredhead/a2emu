@@ -15,6 +15,7 @@ final class GamepadInput {
     var controllerDisconnected: (() -> Void)?
     var mouseEvent: ((Int32, Int32, Bool?) -> Void)?
     var mouseClock: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+
     private var mouseTimestamp: TimeInterval?
     private var mouseRemainderX: Double = 0
     private var mouseRemainderY: Double = 0
@@ -40,6 +41,7 @@ final class GamepadInput {
     /// Lists every supported native and direct-input connection with stable session IDs.
     func availableControllers() -> [ControllerChoice] {
         let available = GCController.controllers().filter { $0.extendedGamepad != nil }
+
         let ordered =
             nativeControllers.filter { old in available.contains { $0 === old } }
             + available.filter { new in !nativeControllers.contains { $0 === new } }
@@ -55,6 +57,7 @@ final class GamepadInput {
                 )
             )
         }
+
         let nativeNames = Set(choices.map { $0.name })
         for index in 0..<ControllerHardware.count {
             let name = ControllerHardware.name(at: index)
@@ -63,7 +66,9 @@ final class GamepadInput {
             choices.append(
                 ControllerChoice(id: "hid:\(ControllerHardware.identifier(at: index))", name: label))
         }
+
         let counts = Dictionary(grouping: choices, by: { $0.name }).mapValues { $0.count }
+
         var occurrences: [String: Int] = [:]
         return choices.map { choice in
             occurrences[choice.name, default: 0] += 1
@@ -134,6 +139,7 @@ final class GamepadInput {
         buttons: UInt32, x: Int32, y: Int32, keys: Set<Int32>, inputs: Set<Int>
     )? {
         guard let pad = currentProfile(controllerID: controllerID)?.pad else { return nil }
+
         let state = mappedState(for: pad, mapping: mapping)
         var inputs = ControllerMapping.activeInputs(
             x: state.x, y: state.y, physicalButtons: physicalButtons(for: pad))
@@ -250,11 +256,13 @@ final class GamepadInput {
             releaseMouse()
             return
         }
+
         let now = mouseClock()
         let elapsed = min(0.05, max(0, now - (mouseTimestamp ?? now)))
         mouseTimestamp = now
         let buttons = physicalButtons(for: pad)
         let pressed = (mapping.mouseButtonInputs ?? []).contains { buttons & (1 << $0) != 0 }
+
         let buttonChange: Bool? = pressed == mousePressed ? nil : pressed
         mousePressed = pressed
         let vector = mapping.mouseVector(

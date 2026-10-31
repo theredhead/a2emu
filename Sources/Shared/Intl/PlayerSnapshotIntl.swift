@@ -93,7 +93,7 @@ final class PlayerSnapshotIntl {
         NSLocalizedString(
             "thisSnapshotWasSavedByA", tableName: "PlayerSnapshot", bundle: bundle,
             value:
-                "This snapshot was saved by a different emulator build. Capture a new one with this player version.",
+                "This snapshot was saved by a different emulator build. Capture a new one with this JuiceBox version.",
             comment: "PlayerSnapshot: User-visible label, instruction, or error message.")
     }
 }

@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 private let commonIntl = CommonIntl()
 private let snapshotBrowserIntl = SnapshotBrowserIntl()
 
+/// Paints the snapshot collection background using the current system appearance.
 private final class SnapshotBackground: NSView {
     override func draw(_ dirtyRect: NSRect) {
         NSColor.windowBackgroundColor.setFill()
@@ -11,6 +12,7 @@ private final class SnapshotBackground: NSView {
     }
 }
 
+/// Owns the preview and metadata views for one reusable snapshot collection item.
 private final class SnapshotCard: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier("SnapshotCard")
     private let preview = NSImageView()
@@ -98,6 +100,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         remove.target = self
         remove.action = #selector(deleteSnapshot(_:))
         for button in [save, importButton, reveal, restore, remove] { button.bezelStyle = .rounded }
+
         let heading = NSTextField(labelWithString: snapshotBrowserIntl.yourSavedMoments)
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         let help = NSTextField(
@@ -164,6 +167,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
 
     func reload() {
         guard let player = player else { return }
+
         let manager = FileManager.default
         do {
             try manager.createDirectory(at: player.snapshotsDirectory, withIntermediateDirectories: true)
@@ -179,6 +183,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
                     bytes.count < 1_048_576,
                     let snapshot = try? JSONDecoder().decode(PlayerSnapshot.self, from: bytes)
                 else { return nil }
+
                 var displayURL = url
                 if url.deletingLastPathComponent() == player.snapshotsDirectory,
                     UUID(uuidString: url.deletingPathExtension().lastPathComponent) != nil
@@ -239,6 +244,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
 
     @objc private func saveSnapshot(_ sender: Any?) {
         guard let player = player else { return }
+
         let alert = NSAlert()
         alert.messageText = snapshotBrowserIntl.saveSnapshotTitle
         alert.informativeText = snapshotBrowserIntl.saveInstructions
@@ -249,6 +255,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         alert.accessoryView = name
         alert.window.initialFirstResponder = name
         guard alert.runModal() == .alertFirstButtonReturn else { return }
+
         let title = name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
         status.stringValue = snapshotBrowserIntl.savingSnapshot
@@ -276,6 +283,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
 
     @objc private func importSnapshot(_ sender: Any?) {
         guard let player = player else { return }
+
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.treatsFilePackagesAsDirectories = false
@@ -286,6 +294,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
             guard player.snapshotFitsDiskSet(snapshot) else {
                 throw PlayerManifest.failure(snapshotBrowserIntl.thisSnapshotUsesADifferentSet)
             }
+
             let destination = player.snapshotsDirectory.appendingPathComponent(
                 snapshot.fileName)
             guard !FileManager.default.fileExists(atPath: destination.path) else {
@@ -306,6 +315,7 @@ final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSC
         guard let url = selectedURL, url.deletingLastPathComponent() == player?.snapshotsDirectory else {
             return
         }
+
         let alert = NSAlert()
         alert.messageText = snapshotBrowserIntl.moveThisSnapshotToTheTrash
         alert.informativeText = snapshotBrowserIntl.deleteExplanation

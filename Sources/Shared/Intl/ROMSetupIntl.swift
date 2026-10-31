@@ -48,7 +48,7 @@ final class ROMSetupIntl {
         NSLocalizedString(
             "noAppleIigsRomIsBundled", tableName: "ROMSetup", bundle: bundle,
             value:
-                "No Apple IIgs ROM is bundled with this app. Choose a ROM to download, or browse for your own file. Installed ROMs are shared with your other a2emu players, so you only need to install them once. Each player keeps its own ROM choice. Changing this player’s ROM restarts the emulator.",
+                "No Apple IIgs ROM is bundled with this app. Choose a ROM to download, or browse for your own file. Installed ROMs are shared with your other a2emu JuiceBoxes, so you only need to install them once. Each JuiceBox keeps its own ROM choice. Changing this JuiceBox’s ROM restarts the emulator.",
             comment: "ROMSetup: User-visible label, instruction, or error message.")
     }
 

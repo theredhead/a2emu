@@ -36,6 +36,7 @@ import WebKit
         precondition(picker.query.cell?.sendsActionOnEndEditing == false)
         let data = try! Data(contentsOf: URL(fileURLWithPath: "Assets/PlayerIcon.png"))
         let url = "data:image/png;base64," + data.base64EncodedString()
+
         func waitForGrid(_ attempt: Int) {
             guard attempt < 100 else { fatalError("Grid did not finish loading") }
             if !picker.gridReady {

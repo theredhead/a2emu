@@ -1,19 +1,25 @@
-# Apple IIGS Player Builder
+# AppleJuicer
 
 Turn Apple II and IIGS disk images into standalone Mac apps, powered by GSplus/KEGS.
 Runs on macOS 13 or later, on Intel and Apple Silicon.
 
-## Create a player
+## Create a JuiceBox
 
 1. Choose or drop your disk images and enter an app name.
 2. Review the detected boot device and initial disk assignments. Leave extra disks
    unmounted to swap them in while playing.
 3. Choose the initial speed, expansion RAM, fullscreen preference and optional icon.
-4. Click **Create Player…** and choose where to save the app.
+4. Click **Create JuiceBox…** and choose where to save the app.
 
-Hold **Option** to change **Create Player…** (or **Save** while editing) to **Run Now**.
-This launches a temporary player with the current settings without asking for a save location.
-Its app and test saved data are removed when the player quits; your source disks and existing player are preserved.
+The light beside **Create JuiceBox…** shows boot readiness for drive 1 of the chosen
+startup device: red for no mounted boot disk or a known blank/data disk, green for a
+recognized ProDOS loader and readable startup file, and orange when the check is
+inconclusive. Custom loaders, WOZ/NIB images and startup snapshots stay orange;
+use **Run Now** to test them. The light is advisory and does not block creation.
+
+Hold **Option** to change **Create JuiceBox…** (or **Save** while editing) to **Run Now**.
+This launches a temporary JuiceBox with the current settings without asking for a save location.
+Its app and test saved data are removed when the JuiceBox quits; your source disks and existing JuiceBox are preserved.
 
 
 You can also choose or drop a startup snapshot. Its bundled disks, game name, RAM
@@ -23,15 +29,19 @@ The builder starts at 2.8 MHz and detects the first disk’s likely drive type. 
 5.25-inch boots default to 1.0 MHz; 3.5-inch and SmartPort boots default to 2.8 MHz.
 Expansion RAM is additional to the ROM model’s built-in memory and defaults to 8 MB.
 
-On first launch, the player offers ROM setup. No firmware or game disks are bundled
-with the builder. Compatible installed ROMs are shared between players; use
+On first launch, the JuiceBox offers ROM setup. No firmware or game disks are bundled
+with the builder. Compatible installed ROMs are shared between JuiceBoxes; use
 **Configuration → Change ROM…** to choose another.
 
-To edit a player, quit it, then drop its app onto the builder or choose
-**File → Open Player…**. Save updates the app while preserving its saved disks.
+To edit a JuiceBox, quit it, then drop its app onto the builder or choose
+**File → Open JuiceBox…**. Save updates the app while preserving its saved disks and original creation date.
+New JuiceBoxes show their export date in Finder.
 
 Use **File → New Blank Disk Image…** to create a ProDOS-formatted floppy or SmartPort
 disk, a DOS 3.3 data disk (140 KB), or an unformatted image. No operating system is included.
+
+The universal release is `AppleJuicer-0.6.0-universal.dmg`. Open the disk image and drag
+**AppleJuicer** to **Applications**, then eject the image.
 
 ## First launch
 
@@ -40,16 +50,16 @@ builder, use **System Settings → Privacy & Security → Open Anyway**. Alterna
 after moving it to Applications, run:
 
 ```sh
-xattr -dr com.apple.quarantine "/Applications/Apple IIGS Player Builder.app"
+xattr -dr com.apple.quarantine "/Applications/AppleJuicer.app"
 ```
 
-Use the app’s actual path if it is somewhere else. Exported players transferred to
+Use the app’s actual path if it is somewhere else. Exported JuiceBoxes transferred to
 another Mac may need the same first-launch approval.
 
 ## Playing
 
 - **Disks:** each drive lists compatible images that are not mounted elsewhere.
-  Drop an image onto the player to use a disposable copy in the first free compatible
+  Drop an image onto the JuiceBox to use a disposable copy in the first free compatible
   drive, or choose which disk to eject if those drives are occupied. Hold Option while
   dropping to add the image and its drive assignment permanently to the portable app.
   Changed disposable disks can be saved back to their original files using
@@ -67,7 +77,7 @@ another Mac may need the same first-launch approval.
   or D-pad, or select an arrow to bind a mouse direction individually.
 - **Configuration → Speed:** change the running speed; the checkmark follows the emulator.
 - **Emulation → Pause / Resume** (**Command-P**): pause or continue. Losing the active
-  controller also pauses the game. Player dialogs pause while open; closing them
+  controller also pauses the game. JuiceBox dialogs pause while open; closing them
   preserves any manual or controller-disconnect pause.
 - **Emulation → Reset:** restart the machine with the current disks and speed.
 - **View → Save Screenshot** (**F3**): save a PNG to
@@ -76,18 +86,18 @@ another Mac may need the same first-launch approval.
 Hold **Option** while opening **Configuration** to reveal the advanced configuration
 and **Show Debugger** commands.
 
-Player disk changes and snapshots are kept in Application Support, separately from
-its bundled originals. **Disks → Show Saved Disk** opens that player’s folder.
+JuiceBox disk changes and snapshots are kept in Application Support, separately from
+its bundled originals. **Disks → Show Saved Disk** opens that JuiceBox’s folder.
 
 ## Snapshots
 
 Open **Emulation → Snapshots…** (**F2**) to save, browse, restore, import or delete snapshots.
 Emulation pauses while this window is open. Closing it resumes play unless the
-player was already paused or another pause occurred while browsing.
+JuiceBox was already paused or another pause occurred while browsing.
 Each snapshot includes its machine state, preview and game disks. New saves use
 compression and have descriptive filenames and Finder preview icons.
 
-To start a player from a snapshot, choose the matching disks in the same order in
+To start a JuiceBox from a snapshot, choose the matching disks in the same order in
 the builder, then choose **Startup Snapshot…**. The exported app restores it on every
 launch. Its captured RAM size and speed take precedence over normal startup settings.
 Clear the snapshot selection to boot normally.

@@ -7,7 +7,7 @@ See [MODIFICATIONS.txt](MODIFICATIONS.txt) for adaptation notes.
 ## Build and package
 
 Requires Xcode command line tools, CMake, Ninja and SDL3. Upstream configuration
-requires SDL3; the native player does not link it.
+requires SDL3; the native JuiceBox does not link it.
 
 ```sh
 git clone https://github.com/digarok/gsplus.git Vendor/gsplus
@@ -17,7 +17,9 @@ scripts/build-release.sh
 
 Set `SDL3_PREFIX` for a different SDL3 installation. Package existing architecture
 builds with `scripts/package-builder.sh`, optionally adding `--output-dir DIRECTORY`.
-The universal builder embeds a player template. Source links point to GitHub;
+The release is a compressed `AppleJuicer-<version>-universal.dmg` containing
+`AppleJuicer.app` and an Applications shortcut. Both AppleJuicer and its embedded JuiceBox
+template contain Intel and Apple Silicon executables. Source links point to GitHub;
 source archives are not embedded. `scripts/bundle-source.sh` is available separately.
 Firmware, game images, local test fixtures and generated releases are excluded from Git.
 
@@ -39,6 +41,23 @@ labels, and UpperCamelCase for types. Keep explicit returns and straightforward 
 Layout and Swift naming belong to swift-format; SwiftLint checks likely mistakes
 without imposing competing layout or shorthand rules. Vendor code and generated
 bundles are excluded.
+
+The ElseBox readability additions are recorded in `AGENTS.md`. Every class, including
+private helpers, must document its purpose and ownership above its declaration and
+attributes. Methods and computed members need a separating blank line. Stored
+properties and method bodies should form short, coherent paragraphs.
+
+`python3 scripts/check-readability.py` checks comment presence and spacing; its `--fix`
+mode inserts whitespace only and is part of `zsh swift-baseline.sh format`. Both
+`swift-baseline.sh check` and `scripts/swift-style.sh check` run the readability check.
+Comments still need review for meaning. Classes approaching roughly 200 lines prompt a
+responsibility review, without a hard limit or extensions used to hide size. Extract
+cohesive decisions, resources, UI components and workflows using explicit ownership
+and narrow dependencies. Existing local rules continue to apply alongside these additions.
+
+When Swift files move, update the CMake and test-script source lists, then run the
+format/check commands above, relevant tests and
+`cmake --build build --target a2emu-builder a2emu-player`.
 
 `EmulatorCore` and `ControllerHardware` isolate the imported emulator/HID C symbols.
 Keep native names in these boundaries and Swift names at call sites. The core is
@@ -73,7 +92,7 @@ uses `TestAssets/Rastan/Rastan.app`, or `A2_SNAPSHOT_TEST_PLAYER`. The reset tes
 `A2_RESET_TEST_DISK`. Hardware controller and audio checks remain useful alongside
 these device-independent tests.
 
-## Player menus
+## JuiceBox menus
 
 Edit the tree in `Sources/Player/PlayerMenuLayout.swift` using `.command(...)`,
 `.menu(...)` and `.separator`. Entries support native actions, shortcuts, targets,
@@ -89,10 +108,11 @@ mode, and the next ordinary opening hides them again. `PlayerMenu.swift` renders
 
 ## Configuration and snapshots
 
-The builder identifier is `nl.theredhead.a2emu-wrapper-builder`; exported identifiers
-start with `nl.theredhead.a2emu-player`. Keep them stable across display-name changes.
-The player seeds `config.kegs` and applies each exported configuration revision once,
-then preserves player-side changes. ROMs are shared under
+The builder identifier is `nl.theredhead.applejuicer`; exported identifiers
+start with `nl.theredhead.applejuicer.juicebox`. Keep the game suffix stable across display-name changes. Older a2emu player identifiers
+are renamed when updated; existing saved-data folders and controller preferences remain readable.
+The JuiceBox seeds `config.kegs` and applies each exported configuration revision once,
+then preserves JuiceBox-side changes. ROMs are shared under
 `~/Library/Application Support/nl.theredhead.a2emu.player/ROMs`.
 
 `Sources/SnapshotCore` wraps unmodified upstream translation units and enumerates

@@ -21,6 +21,7 @@ import Cocoa
                 try manager.copyItem(at: resources.appendingPathComponent(name), to: destination)
             }
         }
+
         let memoryKB = ProcessInfo.processInfo.environment["A2_MEMORY_TEST_KB"].flatMap(Int.init)
         let romName =
             ProcessInfo.processInfo.environment["A2_MEMORY_TEST_ROM"] == "1"
@@ -38,6 +39,7 @@ import Cocoa
         g_serial_cfg[1] = -1
         """.write(to: config, atomically: true, encoding: .utf8)
         config.path.withCString { config_set_config_kegs_name($0) }
+
         let delegate = AppDelegate()
         NSApp.delegate = delegate
         delegate.supportDirectory = temporary
@@ -85,6 +87,7 @@ import Cocoa
         }.count
         precondition(coreSamples > 500, "The core framebuffer must be rebuilt, not just the saved preview")
         let before = try delegate.mainWindowInfo.view!.saveScreenshot(in: temporary)
+
         func litSamples(_ url: URL) throws -> Int {
             let image = NSBitmapImageRep(data: try Data(contentsOf: url))!
             var count = 0
@@ -96,6 +99,7 @@ import Cocoa
             }
             return count
         }
+
         let beforeSamples = try litSamples(before)
         precondition(beforeSamples > 1500, "A fresh restore must repaint the complete Rastan screen")
         print("PASS fresh-process full screen redraw and second-disk mount", before.path)

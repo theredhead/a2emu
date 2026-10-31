@@ -5,6 +5,7 @@ import Foundation
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
+
         func check(_ name: String, size: Int, header: Data = Data(), slot: Int) throws {
             let url = directory.appendingPathComponent(name)
             try header.write(to: url)
@@ -13,12 +14,16 @@ import Foundation
             try file.close()
             precondition(DiskImageDevice.detect(url).slot == slot, name)
         }
+
         func twoMG(_ size: Int, format: Int = 1, blockFallback: Bool = false) -> Data {
             var header = Data(repeating: 0, count: 64)
             header.replaceSubrange(0..<4, with: Data("2IMG".utf8))
+
             func word(_ offset: Int, _ value: Int) {
                 for index in 0..<4 { header[offset + index] = UInt8((value >> (index * 8)) & 255) }
             }
+            header[8] = 64
+            header[10] = 1
             word(12, format)
             word(20, size / 512)
             word(24, 64)
@@ -91,6 +96,7 @@ import Foundation
             }
             precondition(free == blocks - reserved)
         }
+
         let dos = directory.appendingPathComponent("DOS33.do")
         try BlankDiskImage.floppy525.write(to: dos, format: .dos33)
         let dosBytes = try Data(contentsOf: dos)
@@ -111,6 +117,7 @@ import Foundation
             let free = dosBytes[vtoc + 0x38 + track * 4] == 255
             precondition(free == (track >= 3 && track != 17))
         }
+
         let protected = directory.appendingPathComponent("Protected.2mg")
         try Data([1, 2, 3]).write(to: protected)
         do {
@@ -125,6 +132,68 @@ import Foundation
             "PASS ProDOS directory chains and complete allocation maps at every capacity; DOS catalog and geometry; incompatible-format safety"
         )
         print("PASS blank floppy and SmartPort capacities, zero-filled sectors and 2IMG header")
+        let blank = directory.appendingPathComponent("empty.po")
+        try BlankDiskImage.floppy525.write(to: blank)
+        precondition(DiskBootability.inspect(blank) == .notBootable)
+        let rawBlank = directory.appendingPathComponent("raw.po")
+        try BlankDiskImage.floppy525.write(to: rawBlank, format: .unformatted)
+        precondition(DiskBootability.inspect(rawBlank) == .notBootable)
+        let startup = directory.appendingPathComponent("startup.po")
+        var bootData = try Data(contentsOf: blank)
+        let entry = 1024 + 43
+        bootData[entry] = 0x16
+        bootData.replaceSubrange((entry + 1)..<(entry + 7), with: Data("PRODOS".utf8))
+        bootData[entry + 16] = 0xff
+        bootData[entry + 17] = 7
+        bootData[entry + 19] = 1
+        bootData[entry + 22] = 2
+        bootData[7 * 512] = 0x4c
+        bootData[7 * 512 + 1] = 3
+        bootData[7 * 512 + 2] = 0x20
+        try bootData.write(to: startup)
+        precondition(DiskBootability.inspect(startup) == .bootable)
+        let chained = directory.appendingPathComponent("chained.po")
+        var chainedData = bootData
+        let directoryEntry = Data(chainedData[entry..<(entry + 39)])
+        chainedData.replaceSubrange(entry..<(entry + 39), with: Data(count: 39))
+        chainedData.replaceSubrange((3 * 512 + 4)..<(3 * 512 + 43), with: directoryEntry)
+        try chainedData.write(to: chained)
+        precondition(DiskBootability.inspect(chained) == .bootable)
+        let bootContainer = directory.appendingPathComponent("startup.2mg")
+        var containerData = twoMG(bootData.count)
+        containerData.append(bootData)
+        try containerData.write(to: bootContainer)
+        precondition(DiskBootability.inspect(bootContainer) == .bootable)
+        let brokenChain = directory.appendingPathComponent("loop.po")
+        var loopData = try Data(contentsOf: blank)
+        loopData[3 * 512 + 2] = 2
+        try loopData.write(to: brokenChain)
+        precondition(DiskBootability.inspect(brokenChain) == .unknown)
+        let realBootDisk = URL(fileURLWithPath: "TestAssets/ShuffleBoot/Shufflepuck-GSOS.hdv")
+        if FileManager.default.fileExists(atPath: realBootDisk.path) {
+            precondition(DiskBootability.inspect(realBootDisk) == .bootable)
+        }
+        bootData[entry + 17] = 255
+        bootData[entry + 18] = 255
+        try bootData.write(to: startup)
+        precondition(
+            DiskBootability.inspect(startup) == .unknown, "Out-of-range startup data cannot be green")
+        let custom = directory.appendingPathComponent("custom.po")
+        bootData[0] = 1
+        bootData[1] = 0x4c
+        try bootData.write(to: custom)
+        precondition(DiskBootability.inspect(custom) == .unknown)
+        let encoded = directory.appendingPathComponent("encoded.woz")
+        try bootData.write(to: encoded)
+        precondition(DiskBootability.inspect(encoded) == .unknown)
+        let container = directory.appendingPathComponent("data.2mg")
+        try BlankDiskImage.floppy35.write(to: container)
+        precondition(DiskBootability.inspect(container) == .notBootable)
+        let missing = directory.appendingPathComponent("missing.po")
+        precondition(DiskBootability.inspect(missing) == .unknown)
+        print(
+            "PASS boot readiness: blank/data disks, standard startup files, corrupt pointers, custom loaders, 2IMG and encoded media"
+        )
         print("Disk image device detection passed.")
     }
 }

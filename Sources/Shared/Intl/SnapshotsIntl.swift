@@ -30,14 +30,14 @@ final class SnapshotsIntl {
     var thisSnapshotBelongsToAPlayer: String {
         NSLocalizedString(
             "thisSnapshotBelongsToAPlayer", tableName: "Snapshots", bundle: bundle,
-            value: "This snapshot belongs to a player with a different set of disks.",
+            value: "This snapshot belongs to a JuiceBox with a different set of disks.",
             comment: "Snapshots: User-visible label, instruction, or error message.")
     }
 
     var thisSnapshotHasAMountedDisk: String {
         NSLocalizedString(
             "thisSnapshotHasAMountedDisk", tableName: "Snapshots", bundle: bundle,
-            value: "This snapshot has a mounted disk that is not part of this player.",
+            value: "This snapshot has a mounted disk that is not part of this JuiceBox.",
             comment: "Snapshots: User-visible label, instruction, or error message.")
     }
 }

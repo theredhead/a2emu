@@ -47,6 +47,7 @@ extension AppDelegate {
     func writePlayerConfiguration() {
         EmulatorCore.writeConfiguration()
         guard !temporaryDiskNames.isEmpty else { return }
+
         let config = supportDirectory.appendingPathComponent("config.kegs")
         guard let text = try? String(contentsOf: config, encoding: .utf8) else { return }
         try? persistentDiskConfiguration(text).write(to: config, atomically: true, encoding: .utf8)
@@ -56,12 +57,14 @@ extension AppDelegate {
         let lines = text.components(separatedBy: .newlines).compactMap { line -> String? in
             let parts = line.components(separatedBy: "=")
             guard parts.count >= 2 else { return line }
+
             let key = parts[0].trimmingCharacters(in: .whitespaces)
             let path = parts.dropFirst().joined(separator: "=").trimmingCharacters(in: .whitespaces)
             guard key.hasPrefix("s"), key.count >= 4,
                 let slot = Int(key.dropFirst().prefix(1)), let drive = Int(key.dropFirst(3)),
                 temporaryDiskNames.contains(URL(fileURLWithPath: path).lastPathComponent)
             else { return line }
+
             let address = DriveAddress(slot: slot, drive: drive - 1)
             guard let previous = temporaryDrivePaths[address], !previous.isEmpty else { return nil }
             return "\(key) = \(previous)"
@@ -80,17 +83,20 @@ extension AppDelegate {
     ) throws -> Bool {
         let manager = FileManager.default
         if emulatorStarted { refreshMountedImagesFromCore() }
+
         let extensions = ["woz", "dsk", "do", "po", "2mg", "2img", "hdv", "nib"]
         for source in urls {
             guard extensions.contains(source.pathExtension.lowercased()),
                 (try source.resourceValues(forKeys: [.isRegularFileKey])).isRegularFile == true
             else { throw PlayerManifest.failure(diskDropIntl.invalidDiskDrop) }
+
             let slot = DiskImageDevice.detect(source).slot
             let compatible = machine.drives.filter { $0.slot == slot }.sorted { $0.drive < $1.drive }
             guard !compatible.isEmpty else {
                 throw PlayerManifest.failure(
                     diskDropIntl.noCompatibleDrive(filename: source.lastPathComponent))
             }
+
             let address: DriveAddress
             if let free = compatible.first(where: { mountedImages[$0] == nil }) {
                 address = free
@@ -102,6 +108,7 @@ extension AppDelegate {
                 guard let selected = chooseDropDrive(source, compatible: compatible) else { return false }
                 address = selected
             }
+
             var name = source.lastPathComponent
             while !PlayerSnapshot.safeName(name) || machine.diskFiles.contains(name)
                 || manager.fileExists(atPath: supportDirectory.appendingPathComponent(name).path)
@@ -115,6 +122,7 @@ extension AppDelegate {
                     name += "." + source.pathExtension.lowercased()
                 }
             }
+
             var updated = machine!
             updated.diskFiles.append(name)
             if let labels = updated.diskNames { updated.diskNames = labels + [name] }
@@ -125,6 +133,7 @@ extension AppDelegate {
                 try manager.createDirectory(at: directory, withIntermediateDirectories: true)
                 temporaryDiskDirectory = directory
             }
+
             let staged = temporaryDiskDirectory!.appendingPathComponent(name)
             try manager.copyItem(at: source, to: staged)
             var committed = false
@@ -166,6 +175,7 @@ extension AppDelegate {
                 EmulatorCore.ejectDisk(slot: Int32(address.slot), drive: Int32(address.drive))
                 EmulatorCore.mountDisk(at: diskURL(named: name), in: address)
             }
+
             var mounted = mountedImages
             mounted[address] = index
             addDiskMenus()
@@ -223,6 +233,7 @@ extension AppDelegate {
                     try data.write(to: destination, options: .atomic)
                 }
             }
+
             var saved = false
             if let original = temporaryDiskOriginalPaths[name] {
                 do {
@@ -263,6 +274,7 @@ extension AppDelegate {
     ) throws -> Bool {
         let changed = try changedTemporaryDisks()
         guard !changed.isEmpty else { return true }
+
         let choice: TemporaryMediaQuitChoice
         if let choose = choose {
             choice = choose(changed)
@@ -334,10 +346,12 @@ extension AppDelegate {
                     at: filename == name ? source : diskURL(named: filename), to: destination)
             }
         }
+
         let labels = names.map { filename -> String in
             guard let index = machine.diskFiles.firstIndex(of: filename) else { return filename }
             return machine.diskName(at: index)
         }
+
         var mounts = original.mounts.filter { $0.address != address }
         mounts.append(DiskMount(diskIndex: names.count - 1, address: address))
         guard

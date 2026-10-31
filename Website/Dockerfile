@@ -1,6 +1,6 @@
-FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:26.12.1-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
 LABEL org.opencontainers.image.title="a2emu" \
-      org.opencontainers.image.description="Apple IIGS Player Builder website and downloads" \
+      org.opencontainers.image.description="AppleJuicer website and JuiceBox downloads" \
       org.opencontainers.image.url="https://a2emu.theredhead.nl" \
       org.opencontainers.image.licenses="GPL-3.0-only"
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data

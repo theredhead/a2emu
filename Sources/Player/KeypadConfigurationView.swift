@@ -29,10 +29,14 @@ struct KeyAssignmentBadge {
 final class KeypadKey: NSButton {
     var compact = false
     var returnNotch: CGFloat?
+
     override var isFlipped: Bool { return returnNotch == nil ? super.isFlipped : false }
+
     let code: Int
     var selected = false { didSet { needsDisplay = true } }
+
     var active = false { didSet { needsDisplay = true } }
+
     var assignmentBadges: [KeyAssignmentBadge] = [] { didSet { needsDisplay = true } }
 
     init(title: String, code: Int, frame: NSRect) {
@@ -51,6 +55,7 @@ final class KeypadKey: NSButton {
         guard let notch = returnNotch else {
             return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
         }
+
         let path = NSBezierPath()
         path.move(to: NSPoint(x: rect.minX, y: rect.minY))
         path.line(to: NSPoint(x: rect.maxX, y: rect.minY))
@@ -89,6 +94,7 @@ final class KeypadKey: NSButton {
             ring.lineWidth = 2
             ring.stroke()
         }
+
         let color: NSColor = selected ? .white : NSColor(calibratedWhite: 0.20, alpha: 1)
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(

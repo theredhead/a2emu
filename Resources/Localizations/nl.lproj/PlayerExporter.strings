@@ -1,13 +1,13 @@
 /* Dutch translations. Preserve numbered format placeholders when translating. */
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"chooseAnA2EmuPlayerApp" = "Kies een a2emu-spelerapp.";
+"chooseAnA2EmuPlayerApp" = "Kies een JuiceBox-app.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
 "couldNotPrepareTheStartupSnapshot" = "Startmomentopname voorbereiden voor ondertekening mislukt.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"couldNotSignTheExportedPlayer" = "De geëxporteerde speler ondertekenen is mislukt.";
+"couldNotSignTheExportedPlayer" = "De geëxporteerde JuiceBox ondertekenen is mislukt.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
 "eachDiskMustHaveADifferent" = "Elke schijf moet een andere bestandsnaam hebben.";
@@ -19,10 +19,10 @@
 "theBundledStartupSnapshotUsesDifferent" = "De meegeleverde startmomentopname gebruikt andere schijven.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"theStartupSnapshotMustUseThis" = "De startmomentopname moet de schijven en beschikbare stations van deze speler gebruiken.";
+"theStartupSnapshotMustUseThis" = "De startmomentopname moet de schijven en beschikbare stations van deze JuiceBox gebruiken.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"thisPlayerHasNoApplicationIdentifier" = "Deze speler heeft geen app-identificatie.";
+"thisPlayerHasNoApplicationIdentifier" = "Deze JuiceBox heeft geen app-identificatie.";
 
 /* PlayerExporter: User-visible label, instruction, or error message. */
-"thisPlayerIsMissingABundled" = "Bij deze speler ontbreekt een meegeleverde schijfkopie.";
+"thisPlayerIsMissingABundled" = "Bij deze JuiceBox ontbreekt een meegeleverde schijfkopie.";

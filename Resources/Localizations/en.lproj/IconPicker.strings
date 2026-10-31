@@ -10,7 +10,7 @@
 "chooseLocalImage" = "Choose Local Image…";
 
 /* IconPicker: User-visible label, instruction, or error message. */
-"choosePlayerIcon" = "Choose Player Icon";
+"choosePlayerIcon" = "Choose JuiceBox Icon";
 
 /* IconPicker: User-visible label, instruction, or error message. */
 "clickAnImageResultOrChoose" = "Click an image result, or choose a local image.";

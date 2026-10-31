@@ -39,6 +39,7 @@ import Foundation
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporary) }
+
         let localized = temporary.appendingPathComponent("test.lproj")
         try FileManager.default.createDirectory(at: localized, withIntermediateDirectories: true)
         try "\"recoveryFailure\" = \"ERROR %2$@ | PATH %1$@\";".write(

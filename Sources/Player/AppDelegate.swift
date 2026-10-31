@@ -153,6 +153,16 @@ class EmulatorWindow {
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDelegate {
     static func main() {
+        if let identifier = Bundle.main.bundleIdentifier,
+            identifier.hasPrefix("nl.theredhead.applejuicer.juicebox")
+        {
+            // Read existing controller preferences until the user saves settings in the new domain.
+            UserDefaults.standard.addSuite(
+                named: identifier.replacingOccurrences(
+                    of: "nl.theredhead.applejuicer.juicebox", with: "nl.theredhead.a2emu-player",
+                    options: .anchored))
+        }
+
         let delegate = AppDelegate()
         NSApplication.shared.delegate = delegate
         _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
@@ -318,6 +328,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     var integerResize = false
     var changingFullScreen = false
     var integerResizeItem: NSMenuItem?
+
     var nativeDisplaySize: NSSize {
         NSSize(
             width: max(1, Int(EmulatorCore.emulatedImageWidth(mainWindowInfo.imagePointer))),
@@ -423,9 +434,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     var snapshotDiskDirectory: URL?
     var snapshotNeedsVideoRefresh = false
     var snapshotBrowser: SnapshotBrowser?
+
     /// Only preview bundles in the system temporary directory may remove their containing folder.
     private var temporaryRunDirectory: URL? {
         guard CommandLine.arguments.contains("--temporary-player") else { return nil }
+
         let directory = Bundle.main.bundleURL.deletingLastPathComponent().resolvingSymlinksInPath()
         guard directory.lastPathComponent.hasPrefix("a2-preview-"),
             directory.deletingLastPathComponent()
@@ -451,9 +464,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
         let manager = FileManager.default
         let base = try manager.url(
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let identifier = Bundle.main.bundleIdentifier!
+        let current = base.appendingPathComponent(identifier, isDirectory: true)
+        let legacyIdentifier = identifier.replacingOccurrences(
+            of: "nl.theredhead.applejuicer.juicebox", with: "nl.theredhead.a2emu-player",
+            options: .anchored)
+        let legacy = base.appendingPathComponent(legacyIdentifier, isDirectory: true)
+        // Keep existing absolute disk paths valid when an older player is rebranded.
+        let saved =
+            manager.fileExists(atPath: current.path) || !manager.fileExists(atPath: legacy.path)
+            ? current : legacy
         supportDirectory =
             temporaryRunDirectory?.appendingPathComponent("Support", isDirectory: true)
-            ?? base.appendingPathComponent(Bundle.main.bundleIdentifier!, isDirectory: true)
+            ?? saved
         try manager.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
         let resource = Bundle.main.resourceURL!
         machine = try JSONDecoder().decode(
@@ -523,12 +546,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     /// Restores the player's additional disk library without modifying its signed app bundle.
     func loadImportedDisks() throws {
         guard FileManager.default.fileExists(atPath: importedDisksURL.path) else { return }
+
         let names = try JSONDecoder().decode([String].self, from: Data(contentsOf: importedDisksURL))
         guard names.count <= 256, Set(names).count == names.count,
             names.allSatisfy({ PlayerSnapshot.safeName($0) && !machine.diskFiles.contains($0) })
         else {
             throw PlayerManifest.failure(playerIntl.invalidDiskLibrary)
         }
+
         var updated = machine!
         updated.diskFiles += names
         if let labels = updated.diskNames { updated.diskNames = labels + names }
@@ -548,18 +573,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                     && (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
             })
         else { throw PlayerManifest.failure(playerIntl.invalidDiskDrop) }
+
         var imported =
             manager.fileExists(atPath: importedDisksURL.path)
             ? try JSONDecoder().decode([String].self, from: Data(contentsOf: importedDisksURL)) : []
         guard imported.count + urls.count <= 256 else {
             throw PlayerManifest.failure(playerIntl.importLimitError)
         }
+
         let staging = supportDirectory.appendingPathComponent(".importing-" + UUID().uuidString)
         try manager.createDirectory(at: staging, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: staging) }
+
         var copied: [URL] = []
         var committed = false
         defer { if !committed { for url in copied { try? manager.removeItem(at: url) } } }
+
         var names: [String] = []
         for source in urls {
             var name = source.lastPathComponent
@@ -582,6 +611,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                     name += "." + source.pathExtension.lowercased()
                 }
             }
+
             let destination = supportDirectory.appendingPathComponent(name)
             let staged = staging.appendingPathComponent(UUID().uuidString)
             try manager.copyItem(at: source, to: staged)
@@ -596,6 +626,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             imported.append(name)
             names.append(name)
         }
+
         var updated = machine!
         updated.diskFiles += names
         if let labels = updated.diskNames { updated.diskNames = labels + names }
@@ -625,6 +656,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
     func requestDiskImportName(_ name: String) -> String? {
         setDialogOpen(true, reason: "Rename Disk")
         defer { setDialogOpen(false, reason: "Rename Disk") }
+
         let alert = PlayerDiskAlert()
         alert.messageText = playerIntl.chooseADifferentDiskName
         alert.informativeText =
@@ -757,6 +789,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
             menu.insertItem(item, at: next.map { menu.index(of: $0) } ?? menu.numberOfItems)
             customSpeedItems[EmulatorCore.acceleratorSpeedMHz] = item
         }
+
         let unknown = knownLimit == nil || (customZip && EmulatorCore.acceleratorSpeedMHz <= 0)
         if unknown {
             if unknownSpeedItem == nil {
@@ -850,6 +883,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 EmulatorCore.setKeyboardFocus(mainWindowInfo.window?.isKeyWindow == true)
             }
         }
+
         let reason = pauseReason ?? dialogPauseReasons.sorted().first
         mainWindowInfo.window?.title =
             paused
@@ -868,6 +902,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
     func addDiskMenus() {
         guard let layout = playerMenu else { return }
+
         let visible = machine.drives.count > 1 || machine.diskFiles.count > 1
         layout.replaceContents(
             of: .disks,
@@ -906,6 +941,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
                 }
             }
         }
+
         let contents = PlayerMenuLayout.disks(
             for: machine, canSaveTemporaryMedia: { [weak self] in self?.temporaryMediaHaveChanges == true })
         layout.replaceContents(of: .disks, with: contents.entries)
@@ -938,6 +974,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDele
 
         updateDiskChecks()
         guard !diskMenuItems[sender.tag].0.isHidden else { return }
+
         let (_, address, index) = diskMenuItems[sender.tag]
         if let index = index, temporaryDiskNames.contains(machine.diskFiles[index]) {
             if temporaryDrivePaths[address] == nil {

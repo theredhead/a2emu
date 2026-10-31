@@ -7,7 +7,7 @@
 "startTheEmulatorBeforeSavingA" = "Start de emulator voordat je een momentopname bewaart.";
 
 /* Snapshots: User-visible label, instruction, or error message. */
-"thisSnapshotBelongsToAPlayer" = "Deze momentopname hoort bij een speler met een andere schijvenset.";
+"thisSnapshotBelongsToAPlayer" = "Deze momentopname hoort bij een JuiceBox met een andere schijvenset.";
 
 /* Snapshots: User-visible label, instruction, or error message. */
-"thisSnapshotHasAMountedDisk" = "Deze momentopname bevat een geplaatste schijf die niet bij deze speler hoort.";
+"thisSnapshotHasAMountedDisk" = "Deze momentopname bevat een geplaatste schijf die niet bij deze JuiceBox hoort.";

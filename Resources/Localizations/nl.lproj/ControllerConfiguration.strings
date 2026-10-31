@@ -268,7 +268,7 @@
 "rightTrigger" = "Rechter trigger";
 
 /* ControllerConfiguration: User-visible label, instruction, or error message. */
-"controllerSelectionHint" = "Kies een controller voor deze speler. Bij de volgende start wordt Automatisch hersteld.";
+"controllerSelectionHint" = "Kies een controller voor deze JuiceBox. Bij de volgende start wordt Automatisch hersteld.";
 
 /* ControllerConfiguration: User-visible label, instruction, or error message. */
 "shift" = "Shift";

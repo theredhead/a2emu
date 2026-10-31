@@ -1,10 +1,10 @@
 /* Dutch translations. Preserve numbered format placeholders when translating. */
 
 /* Builder: User-visible label, instruction, or error message. */
-"aboutAppleIigsPlayerBuilder" = "Over Apple IIGS Player Builder";
+"aboutAppleIigsPlayerBuilder" = "Over AppleJuicer";
 
 /* Builder: User-visible label, instruction, or error message. */
-"addToPlayerDisks" = "Voeg toe aan de schijven van deze speler";
+"addToPlayerDisks" = "Voeg toe aan de schijven van deze JuiceBox";
 
 /* Builder: User-visible label, instruction, or error message. */
 "appName" = "Appnaam:";
@@ -13,7 +13,7 @@
 "appNamePlaceholder" = "Naam van de geëxporteerde app";
 
 /* Builder: User-visible label, instruction, or error message. */
-"appleIigsPlayerBuilder" = "Apple IIGS Player Builder";
+"appleIigsPlayerBuilder" = "AppleJuicer";
 
 /* Builder: User-visible label, instruction, or error message. */
 "bundledStartupSnapshot" = "Meegeleverde startmomentopname";
@@ -22,7 +22,7 @@
 "chooseADiskFirst" = "Kies eerst een schijf.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"selectedDiskOverwriteError" = "Kies een nieuw bestand in plaats van een schijf te vervangen die in deze speler is geselecteerd.";
+"selectedDiskOverwriteError" = "Kies een nieuw bestand in plaats van een schijf te vervangen die in deze JuiceBox is geselecteerd.";
 
 /* Builder: User-visible label, instruction, or error message. */
 "chooseDisks" = "Kies schijven…";
@@ -31,25 +31,25 @@
 "chooseDisksHint" = "Kies schijfkopieën om mee te nemen.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"emptyPlayerHint" = "Kies schijven of sleep hier een bestaande speler naartoe om die te bewerken.";
+"emptyPlayerHint" = "Kies schijven of sleep hier een bestaande JuiceBox naartoe om die te bewerken.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"choosePlayerIcon" = "Kies spelericoon…";
+"choosePlayerIcon" = "Kies JuiceBox-icoon…";
 
 /* Builder: User-visible label, instruction, or error message. */
 "snapshotDiskSetHint" = "Verwijder de startmomentopname voordat je de schijvenset wijzigt.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"couldNotUpdatePlayer" = "Speler bijwerken mislukt";
+"couldNotUpdatePlayer" = "JuiceBox bijwerken mislukt";
 
 /* Builder: User-visible label, instruction, or error message. */
 "blankDiskExplanation" = "Maak een beschrijfbare schijf in het gekozen formaat, of laat deze ongeformatteerd. Er worden geen besturingssysteembestanden toegevoegd.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"createPlayer" = "Maak speler…";
+"createPlayer" = "Maak JuiceBox…";
 
 /* Builder: User-visible label, instruction, or error message. */
-"createPlayerHeading" = "Maak een zelfstandige Apple IIGS-speler";
+"createPlayerHeading" = "Maak een zelfstandige JuiceBox";
 
 /* Builder: Formatted message. count: numeric value */
 "diskImagesSelected" = "%1$ld schijfkopieën geselecteerd";
@@ -61,13 +61,13 @@
 "drives" = "%1$@ stations:";
 
 /* Builder: User-visible label, instruction, or error message. */
-"invalidDropError" = "Sleep schijfkopieën, één momentopname of één bestaande speler hiernaartoe.";
+"invalidDropError" = "Sleep schijfkopieën, één momentopname of één bestaande JuiceBox hiernaartoe.";
 
 /* Builder: Formatted message. filename: runtime text; keep its placeholder */
 "edit" = "Bewerk %1$@";
 
 /* Builder: User-visible label, instruction, or error message. */
-"editThisAppleIigsPlayer" = "Bewerk deze Apple IIGS-speler";
+"editThisAppleIigsPlayer" = "Bewerk deze JuiceBox";
 
 /* Builder: Formatted message. filename: runtime text; keep its placeholder */
 "editing" = "%1$@ bewerken";
@@ -97,7 +97,7 @@
 "blankDiskTitle" = "Nieuwe lege schijfkopie";
 
 /* Builder: User-visible label, instruction, or error message. */
-"newPlayer" = "Nieuwe speler";
+"newPlayer" = "Nieuwe JuiceBox";
 
 /* Builder: User-visible label, instruction, or error message. */
 "noneBuiltInOnly" = "Geen (alleen ingebouwd)";
@@ -109,13 +109,13 @@
 "notInitiallyMounted" = "Niet geplaatst bij opstarten";
 
 /* Builder: User-visible label, instruction, or error message. */
-"openPlayer" = "Open speler…";
+"openPlayer" = "Open JuiceBox…";
 
 /* Builder: User-visible label, instruction, or error message. */
 "startupSnapshotHint" = "Optioneel: herstel bij elke start de vastgelegde snelheid en schijfstatus.";
 
 /* Builder: User-visible label, instruction, or error message. */
-"quitPlayerBeforeSavingError" = "Stop deze speler voordat je wijzigingen bewaart.";
+"quitPlayerBeforeSavingError" = "Stop deze JuiceBox voordat je wijzigingen bewaart.";
 
 /* Builder: User-visible label, instruction, or error message. */
 "removeSnapshotHint" = "Verwijder de startmomentopname en start normaal op";
@@ -162,4 +162,10 @@
 "diskFormat" = "Formaat:";
 
 "runNow" = "Nu uitvoeren";
-"runNowHint" = "Houd Option ingedrukt om deze instellingen in een tijdelijke speler te testen. De app en opgeslagen gegevens worden verwijderd bij het afsluiten.";
+"runNowHint" = "Houd Option ingedrukt om deze instellingen in een tijdelijke JuiceBox te testen. De app en opgeslagen gegevens worden verwijderd bij het afsluiten.";
+
+"bootReady" = "Groen: herkende ProDOS-opstartcode en opstartbestand in het geselecteerde opstartstation.";
+"bootNotReady" = "Rood: het geselecteerde opstartstation bevat een lege schijf, een ProDOS-gegevensschijf of ongeschikte media.";
+"bootMissingDisk" = "Rood: kies een opstartapparaat en plaats een schijf in het eerste station.";
+"bootUnknown" = "Oranje: opstartbaarheid is onbekend. Gebruik Nu uitvoeren om aangepaste opstartcode, gecodeerde of onleesbare schijfkopieën te testen.";
+"bootSnapshot" = "Oranje: een startmomentopname herstelt een draaiende machine in plaats van vanaf een schijf op te starten. Gebruik Nu uitvoeren om dit te testen.";

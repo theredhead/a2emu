@@ -16,7 +16,7 @@
 "debugger" = "Debugger";
 
 /* Player: User-visible label, instruction, or error message. */
-"invalidDiskDrop" = "Sleep schijfkopieën hiernaartoe om ze aan deze speler toe te voegen.";
+"invalidDiskDrop" = "Sleep schijfkopieën hiernaartoe om ze aan deze JuiceBox toe te voegen.";
 
 /* Player: Formatted message. name: runtime text; keep its placeholder */
 "diskNameCollision" = "‘%1$@’ is al in gebruik of is geen geldige schijfnaam. Voer een nieuwe naam in met de oorspronkelijke bestandsextensie; bestaande bestanden blijven behouden.";
@@ -34,7 +34,7 @@
 "invalidDiskLibrary" = "De bibliotheek met geïmporteerde schijven is ongeldig.";
 
 /* Player: User-visible label, instruction, or error message. */
-"importLimitError" = "Je kunt maximaal 256 extra schijven aan deze speler toevoegen.";
+"importLimitError" = "Je kunt maximaal 256 extra schijven aan deze JuiceBox toevoegen.";
 
 /* Player: User-visible label, instruction, or error message. */
 "useThisName" = "Gebruik deze naam";

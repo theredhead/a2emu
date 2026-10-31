@@ -10,7 +10,7 @@
 "chooseLocalImage" = "Kies lokale afbeelding…";
 
 /* IconPicker: User-visible label, instruction, or error message. */
-"choosePlayerIcon" = "Kies spelericoon";
+"choosePlayerIcon" = "Kies JuiceBox-icoon";
 
 /* IconPicker: User-visible label, instruction, or error message. */
 "clickAnImageResultOrChoose" = "Klik op een zoekresultaat of kies een lokale afbeelding.";
