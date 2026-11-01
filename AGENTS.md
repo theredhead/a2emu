@@ -32,3 +32,14 @@ all project rules above; local rules without an ElseBox counterpart remain in fo
 - After changes, run `zsh swift-baseline.sh format`, `zsh swift-baseline.sh check`, relevant
   tests, and `cmake --build build --target a2emu-builder a2emu-player`.
 - All first-party app, helper, and test bundle identifiers use the `nl.theredhead` base.
+
+## Architecture enforcement
+
+Follow the responsibility and ownership map in `ARCHITECTURE.md`. First-party Swift
+belongs in the product's `Application`, `Domain`, `Infrastructure`, or `Presentation`
+folders; typed shared localization remains in `Shared/Intl`. Run
+`python3 scripts/check-architecture.py` (included in the baseline check) and
+`bash scripts/test-architecture.sh` after changing a boundary. Keep CMake source
+roots and `scripts/swift-sources.sh` aligned so app builds and regression harnesses
+compile the same implementations. Preserve snapshot core compatibility and persisted
+encodings during architectural work.

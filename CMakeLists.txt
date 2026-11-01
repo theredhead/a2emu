@@ -50,30 +50,11 @@ target_compile_options(gsplus_core PRIVATE -fno-common)
 set_source_files_properties(Vendor/gsplus/gsplus/src/joystick_driver.c
     DIRECTORY "${CMAKE_SOURCE_DIR}/Vendor/gsplus/gsplus/src"
     PROPERTIES COMPILE_OPTIONS "-UMAC")
-add_executable(a2emu-player MACOSX_BUNDLE
-    ${intl_sources}
-    Sources/Shared/PlayerManifest.swift
-    Sources/Shared/DiskImageDevice.swift
-    Sources/Shared/PlayerSnapshot.swift
-    Sources/Player/EmulatorCore.swift
-    Sources/Player/DiskDrops.swift
-    Sources/Player/Snapshots.swift
-    Sources/Player/SnapshotBrowser.swift
-    Sources/Player/EmulatorReset.c
-    Sources/Player/HIDGamepad.c
-    Sources/Player/JoystickConfigurationView.swift
-    Sources/Player/KeypadConfigurationView.swift
-    Sources/Player/KeyboardConfigurationView.swift
-    Sources/Player/ControllerMapping.swift
-    Sources/Player/ControllerHardware.swift
-    Sources/Player/GamepadInput.swift
-    Sources/Shared/About.swift
-    Sources/Player/PlayerMenu.swift
-    Sources/Player/PlayerMenuLayout.swift
-    Sources/Player/AppDelegate.swift
-    Sources/Player/ROMSetup.swift
-    Sources/Player/MainView.swift
-    Sources/SnapshotCore/MacSnapshotAudio.c)
+file(GLOB_RECURSE shared_swift_sources CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Sources/Shared/*.swift")
+file(GLOB_RECURSE player_swift_sources CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Sources/Player/*.swift")
+file(GLOB_RECURSE builder_swift_sources CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Sources/Builder/*.swift")
+add_executable(a2emu-player MACOSX_BUNDLE ${shared_swift_sources} ${player_swift_sources}
+    Sources/Player/EmulatorReset.c Sources/Player/HIDGamepad.c Sources/SnapshotCore/MacSnapshotAudio.c)
 target_compile_options(a2emu-player PRIVATE
     "$<$<COMPILE_LANGUAGE:Swift>:-target;${CMAKE_OSX_ARCHITECTURES}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}>"
     "$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header;${CMAKE_SOURCE_DIR}/Sources/Player/Bridging-Header.h;-swift-version;4;-Xcc;-I${CMAKE_SOURCE_DIR}/Vendor/gsplus/gsplus/src>")
@@ -98,7 +79,7 @@ add_custom_command(TARGET a2emu-player POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_BUNDLE_DIR:a2emu-player>/Contents/Resources/Player-Source.zip"
     COMMAND codesign --force --sign - "$<TARGET_BUNDLE_DIR:a2emu-player>")
 
-add_executable(a2emu-builder MACOSX_BUNDLE ${intl_sources} Sources/Shared/DiskImageDevice.swift Sources/Shared/PlayerSnapshot.swift Sources/Shared/About.swift Sources/Builder/IconPicker.swift Sources/Builder/IconEncoder.swift Sources/Builder/Builder.swift Sources/Builder/BlankDiskImage.swift Sources/Builder/DiskBootability.swift Sources/Builder/ProDOSBootLoader.swift Sources/Builder/PlayerExporter.swift Sources/Shared/PlayerManifest.swift)
+add_executable(a2emu-builder MACOSX_BUNDLE ${shared_swift_sources} ${builder_swift_sources})
 target_compile_options(a2emu-builder PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:-target;${CMAKE_OSX_ARCHITECTURES}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET};-swift-version;4>")
 target_link_libraries(a2emu-builder PRIVATE "-framework Cocoa" "-framework WebKit")
 set_target_properties(a2emu-builder PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Sources/Builder/Info.plist.in" OUTPUT_NAME "AppleJuicer" MACOSX_BUNDLE_GUI_IDENTIFIER "nl.theredhead.applejuicer" MACOSX_BUNDLE_BUNDLE_NAME "AppleJuicer" MACOSX_BUNDLE_SHORT_VERSION_STRING "${A2EMU_VERSION}" MACOSX_BUNDLE_BUNDLE_VERSION "4" MACOSX_BUNDLE_ICON_FILE "Builder.icns")

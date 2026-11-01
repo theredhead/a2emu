@@ -100,8 +100,8 @@ import Cocoa
 
         func load(_ mapping: ControllerMapping) throws -> ControllerMapping {
             defaults.setVolatileDomain(
-                [ControllerMapping.defaultsKey: try JSONEncoder().encode(mapping)], forName: domain)
-            return ControllerMapping.load()
+                [ControllerSettingsStore.defaultsKey: try JSONEncoder().encode(mapping)], forName: domain)
+            return ControllerSettingsStore().load()
         }
 
         let choices = ControllerMapping.keyChoices

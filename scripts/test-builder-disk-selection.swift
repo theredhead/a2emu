@@ -6,53 +6,53 @@ var dropErrors: [String] = []
     static func main() {
         _ = NSApplication.shared
         let builder = Builder()
-        builder.speed.addItems(withTitles: EmulationSpeed.allCases.map { $0.label })
-        builder.slot.addItems(withTitles: ["5.25", "3.5", "SmartPort"])
+        builder.form.speed.addItems(withTitles: EmulationSpeed.allCases.map { $0.label })
+        builder.form.slot.addItems(withTitles: ["5.25", "3.5", "SmartPort"])
         for limit in [2, 2, 16] {
             let count = NSPopUpButton(frame: .zero)
             count.addItems(withTitles: (0...limit).map(String.init))
-            builder.driveCounts.append(count)
+            builder.form.driveCounts.append(count)
         }
         builder.refreshBootReadiness()
-        precondition(builder.bootLight.contentTintColor == .systemRed)
+        precondition(builder.form.bootLight.contentTintColor == .systemRed)
         builder.selectDisks([URL(fileURLWithPath: "/nonexistent/unknown.hdv")])
-        precondition(builder.bootLight.contentTintColor == .systemOrange)
-        builder.mountChoices[0].selectItem(at: 0)
+        precondition(builder.form.bootLight.contentTintColor == .systemOrange)
+        builder.form.mountChoices[0].selectItem(at: 0)
         builder.mountChanged(nil)
-        precondition(builder.bootLight.contentTintColor == .systemRed)
-        builder.driveCounts[2].selectItem(at: 2)
+        precondition(builder.form.bootLight.contentTintColor == .systemRed)
+        builder.form.driveCounts[2].selectItem(at: 2)
         builder.drivesChanged(nil)
-        builder.mountChoices[0].selectItem(at: 2)
+        builder.form.mountChoices[0].selectItem(at: 2)
         builder.mountChanged(nil)
         precondition(
-            builder.bootLight.contentTintColor == .systemRed, "A disk in drive 2 cannot satisfy drive 1")
+            builder.form.bootLight.contentTintColor == .systemRed, "A disk in drive 2 cannot satisfy drive 1")
         builder.startupSnapshot = URL(fileURLWithPath: "/nonexistent/saved.a2snapshot")
-        precondition(builder.bootLight.contentTintColor == .systemOrange)
+        precondition(builder.form.bootLight.contentTintColor == .systemOrange)
         builder.clearSnapshot(nil)
-        builder.slot.select(nil)
+        builder.form.slot.select(nil)
         builder.refreshBootReadiness()
-        precondition(builder.bootLight.contentTintColor == .systemRed)
+        precondition(builder.form.bootLight.contentTintColor == .systemRed)
         print("PASS boot light follows boot-device selection, first-drive mounts and startup snapshots")
         for (name, slot) in [("game.2mg", 5), ("game.hdv", 7), ("game.nib", 6)] {
             builder.selectDisks([URL(fileURLWithPath: "/nonexistent/" + name)])
-            precondition(builder.speed.indexOfSelectedItem == (slot == 6 ? 0 : 1))
-            precondition(builder.configuredDrives == [DriveAddress(slot: slot, drive: 0)])
-            precondition(builder.mountChoices[0].indexOfSelectedItem == 1)
-            precondition([6, 5, 7][builder.slot.indexOfSelectedItem] == slot)
+            precondition(builder.form.speed.indexOfSelectedItem == (slot == 6 ? 0 : 1))
+            precondition(builder.form.configuredDrives == [DriveAddress(slot: slot, drive: 0)])
+            precondition(builder.form.mountChoices[0].indexOfSelectedItem == 1)
+            precondition([6, 5, 7][builder.form.slot.indexOfSelectedItem] == slot)
         }
-        builder.slot.selectItem(at: 2)
+        builder.form.slot.selectItem(at: 2)
         builder.startupChanged(nil)
-        precondition(builder.configuredDrives == [DriveAddress(slot: 7, drive: 0)])
-        precondition(builder.speed.indexOfSelectedItem == 1)
-        builder.speed.selectItem(at: 0)
+        precondition(builder.form.configuredDrives == [DriveAddress(slot: 7, drive: 0)])
+        precondition(builder.form.speed.indexOfSelectedItem == 1)
+        builder.form.speed.selectItem(at: 0)
         builder.speedChanged(nil)
         builder.selectDisks([URL(fileURLWithPath: "/nonexistent/game.hdv")])
-        precondition(builder.speed.indexOfSelectedItem == 0, "Explicit 1 MHz must survive detection")
-        builder.speed.selectItem(at: 3)
+        precondition(builder.form.speed.indexOfSelectedItem == 0, "Explicit 1 MHz must survive detection")
+        builder.form.speed.selectItem(at: 3)
         builder.speedChanged(nil)
         builder.selectDisks([URL(fileURLWithPath: "/nonexistent/game.2mg")])
         precondition(
-            builder.speed.indexOfSelectedItem == 3, "Explicit unlimited speed must survive detection")
+            builder.form.speed.indexOfSelectedItem == 3, "Explicit unlimited speed must survive detection")
         for memory in PlayerManifest.expansionMemoryChoices {
             let manifest = try! PlayerManifest.make(disks: ["Game.2mg"], slot: 5, expansionMemoryKB: memory)
             try! manifest.validate()
@@ -74,26 +74,26 @@ var dropErrors: [String] = []
         let disk = temporary.appendingPathComponent("Drop.2mg")
         try! Data(repeating: 0, count: 819200).write(to: disk)
         builder.selectDisks([disk])
-        builder.diskNameFields[0].stringValue = "Custom disk"
-        builder.mountChoices[0].selectItem(at: 0)
-        builder.appName.stringValue = "Custom player"
+        builder.form.diskNameFields[0].stringValue = "Custom disk"
+        builder.form.mountChoices[0].selectItem(at: 0)
+        builder.form.appName.stringValue = "Custom player"
         let extraDisk = temporary.appendingPathComponent("Extra.hdv")
         try! Data(repeating: 0, count: 1024).write(to: extraDisk)
-        let originalSlot = builder.slot.indexOfSelectedItem
-        let originalSpeed = builder.speed.indexOfSelectedItem
-        let originalDrives = builder.configuredDrives
+        let originalSlot = builder.form.slot.indexOfSelectedItem
+        let originalSpeed = builder.form.speed.indexOfSelectedItem
+        let originalDrives = builder.form.configuredDrives
         builder.acceptDroppedFiles([extraDisk, disk, extraDisk])
         precondition(builder.disks == [disk, extraDisk])
-        precondition(builder.diskNameFields[0].stringValue == "Custom disk")
-        precondition(builder.mountChoices.allSatisfy { $0.indexOfSelectedItem == 0 })
-        precondition(builder.appName.stringValue == "Custom player")
-        precondition(builder.slot.indexOfSelectedItem == originalSlot)
-        precondition(builder.speed.indexOfSelectedItem == originalSpeed)
-        precondition(builder.configuredDrives == originalDrives)
+        precondition(builder.form.diskNameFields[0].stringValue == "Custom disk")
+        precondition(builder.form.mountChoices.allSatisfy { $0.indexOfSelectedItem == 0 })
+        precondition(builder.form.appName.stringValue == "Custom player")
+        precondition(builder.form.slot.indexOfSelectedItem == originalSlot)
+        precondition(builder.form.speed.indexOfSelectedItem == originalSpeed)
+        precondition(builder.form.configuredDrives == originalDrives)
         builder.acceptDroppedFiles([disk, extraDisk])
         precondition(builder.disks == [disk, extraDisk])
         print("PASS disk drops append unique files and preserve existing names, mounts and settings")
-        builder.memory.addItems(withTitles: PlayerManifest.expansionMemoryChoices.map(String.init))
+        builder.form.memory.addItems(withTitles: PlayerManifest.expansionMemoryChoices.map(String.init))
         let image = NSImage(size: NSSize(width: 32, height: 32))
         image.lockFocus()
         NSColor.red.setFill()
@@ -146,18 +146,20 @@ var dropErrors: [String] = []
             mounts: [DiskMount(diskIndex: 1, address: DriveAddress(slot: 5, drive: 1))],
             compress: true, expansionMemoryKB: 1024)
         builder.acceptDroppedFiles([disk, package])
-        precondition(builder.appName.stringValue == "Snapshot Game")
+        precondition(builder.form.appName.stringValue == "Snapshot Game")
         precondition(builder.disks.map { $0.lastPathComponent } == names + [disk.lastPathComponent])
         precondition(builder.startupSnapshot == nil)
         precondition(try! Data(contentsOf: builder.disks[0]) == bytes)
         precondition(
-            builder.configuredDrives == [DriveAddress(slot: 5, drive: 0), DriveAddress(slot: 5, drive: 1)])
-        precondition(builder.mountChoices[0].indexOfSelectedItem == 0)
-        precondition(builder.mountChoices[1].indexOfSelectedItem == 2)
-        precondition(PlayerManifest.expansionMemoryChoices[builder.memory.indexOfSelectedItem] == 1024)
-        precondition(builder.memory.isEnabled && builder.speed.isEnabled)
+            builder.form.configuredDrives == [
+                DriveAddress(slot: 5, drive: 0), DriveAddress(slot: 5, drive: 1),
+            ])
+        precondition(builder.form.mountChoices[0].indexOfSelectedItem == 0)
+        precondition(builder.form.mountChoices[1].indexOfSelectedItem == 2)
+        precondition(PlayerManifest.expansionMemoryChoices[builder.form.memory.indexOfSelectedItem] == 1024)
+        precondition(builder.form.memory.isEnabled && builder.form.speed.isEnabled)
         builder.acceptDroppedFiles([package])
-        precondition(!builder.memory.isEnabled && !builder.speed.isEnabled)
+        precondition(!builder.form.memory.isEnabled && !builder.form.speed.isEnabled)
         let workingDisk = builder.disks[0]
         let damaged = package.appendingPathComponent("Snapshot.json")
         try! Data().write(to: damaged)
@@ -171,20 +173,23 @@ var dropErrors: [String] = []
         builder.acceptDroppedFiles([disk])
         precondition(builder.disks.count == 3 && builder.disks[0] == workingDisk)
         precondition(FileManager.default.fileExists(atPath: workingDisk.path))
-        precondition(builder.mountChoices.map { $0.indexOfSelectedItem } == [0, 2, 0])
-        precondition(builder.startupSnapshot == nil && builder.memory.isEnabled && builder.speed.isEnabled)
+        precondition(builder.form.mountChoices.map { $0.indexOfSelectedItem } == [0, 2, 0])
+        precondition(
+            builder.startupSnapshot == nil && builder.form.memory.isEnabled && builder.form.speed.isEnabled)
         builder.selectDisks([disk])
-        precondition(builder.startupSnapshot == nil && builder.memory.isEnabled && builder.speed.isEnabled)
+        precondition(
+            builder.startupSnapshot == nil && builder.form.memory.isEnabled && builder.form.speed.isEnabled)
         precondition(!FileManager.default.fileExists(atPath: workingDisk.path))
         print(
             "PASS disk drops, compressed snapshot setup, exact mounts, failure isolation and working-copy cleanup"
         )
-        builder.window = NSWindow(
+        builder.form.window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1003, height: 760),
             styleMask: [.titled], backing: .buffered, defer: false)
         builder.newPlayer(nil)
         precondition(
-            builder.speed.indexOfSelectedItem == EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz))
+            builder.form.speed.indexOfSelectedItem
+                == EmulationSpeed.allCases.firstIndex(of: .twoPointEightMHz))
         print("PASS New Player restores the 2.8 MHz IIGS default")
         print("PASS RAM choices and backward-compatible player manifests")
         print("Builder boot selection, speed defaults, initial mount and manual override passed.")

@@ -80,10 +80,10 @@ import Cocoa
         delegate.refreshSnapshotDisplayIfNeeded()
         for _ in 0..<30 { precondition(run_16ms() == 0) }
         delegate.mainWindowInfo.update()
-        let image = delegate.mainWindowInfo.imagePointer.pointee
-        let pixelCount = Int(image.a2_width_full * image.a2_height)
+        let pixels = EmulatorCore.framePixels(delegate.mainWindowInfo.imagePointer)
+        let pixelCount = pixels.count
         let coreSamples = stride(from: 0, to: pixelCount, by: 16).filter {
-            image.wptr[$0] & 0x00ff_ffff != 0
+            pixels[$0] & 0x00ff_ffff != 0
         }.count
         precondition(coreSamples > 500, "The core framebuffer must be rebuilt, not just the saved preview")
         let before = try delegate.mainWindowInfo.view!.saveScreenshot(in: temporary)
@@ -103,10 +103,10 @@ import Cocoa
         let beforeSamples = try litSamples(before)
         precondition(beforeSamples > 1500, "A fresh restore must repaint the complete Rastan screen")
         print("PASS fresh-process full screen redraw and second-disk mount", before.path)
-        adb_mainwin_focus(1)
-        adb_physical_key_update(delegate.mainWindowInfo.imagePointer, 40, 107, 0)
+        EmulatorCore.setKeyboardFocus(true)
+        EmulatorCore.updateKey(delegate.mainWindowInfo.imagePointer, keyCode: 40, unicode: 107, isUp: false)
         for _ in 0..<3 { precondition(run_16ms() == 0) }
-        adb_physical_key_update(delegate.mainWindowInfo.imagePointer, 40, 107, 1)
+        EmulatorCore.updateKey(delegate.mainWindowInfo.imagePointer, keyCode: 40, unicode: 107, isUp: true)
         for _ in 0..<30 { precondition(run_16ms() == 0) }
         delegate.mainWindowInfo.update()
         let after = try delegate.mainWindowInfo.view!.saveScreenshot(in: temporary)

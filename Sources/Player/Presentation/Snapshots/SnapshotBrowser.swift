@@ -1,0 +1,303 @@
+import Cocoa
+import UniformTypeIdentifiers
+
+private let commonIntl = CommonIntl()
+private let snapshotBrowserIntl = SnapshotBrowserIntl()
+
+/// Paints the snapshot collection background using the current system appearance.
+private final class SnapshotBackground: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.windowBackgroundColor.setFill()
+        dirtyRect.fill()
+    }
+}
+
+/// Owns the preview and metadata views for one reusable snapshot collection item.
+private final class SnapshotCard: NSCollectionViewItem {
+    static let identifier = NSUserInterfaceItemIdentifier("SnapshotCard")
+    private let preview = NSImageView()
+    private let name = NSTextField(labelWithString: "")
+    private let date = NSTextField(labelWithString: "")
+
+    override func loadView() {
+        let card = NSBox()
+        card.boxType = .custom
+        card.cornerRadius = 10
+        card.borderWidth = 2
+        card.fillColor = .controlBackgroundColor
+        preview.imageScaling = .scaleProportionallyUpOrDown
+        preview.wantsLayer = true
+        preview.layer?.backgroundColor = NSColor.black.cgColor
+        name.font = .systemFont(ofSize: 13, weight: .semibold)
+        name.lineBreakMode = .byTruncatingTail
+        date.font = .systemFont(ofSize: 11)
+        date.textColor = .secondaryLabelColor
+        let stack = NSStackView(views: [preview, name, date])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 7
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 10),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -10),
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 10),
+            preview.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            preview.heightAnchor.constraint(equalToConstant: 152),
+            name.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            date.widthAnchor.constraint(equalTo: stack.widthAnchor),
+        ])
+        view = card
+        updateSelection()
+    }
+
+    func configure(_ snapshot: PlayerSnapshot, at url: URL) {
+        name.stringValue = snapshot.title
+        date.stringValue = DateFormatter.localizedString(
+            from: snapshot.createdAt, dateStyle: .medium, timeStyle: .medium)
+        preview.image = NSImage(contentsOf: url.appendingPathComponent(PlayerSnapshot.previewName))
+        view.toolTip = snapshot.gameName + " · " + date.stringValue
+    }
+
+    override var isSelected: Bool { didSet { updateSelection() } }
+
+    private func updateSelection() {
+        (view as? NSBox)?.borderColor = isSelected ? .controlAccentColor : .clear
+    }
+}
+
+/// Owns snapshot selection and presentation; catalogue I/O and running-session actions are explicit dependencies.
+final class SnapshotBrowser: NSWindowController, NSCollectionViewDataSource, NSCollectionViewDelegate,
+    NSWindowDelegate
+{
+    private weak var player: SnapshotBrowserSession?
+    private let collection = NSCollectionView()
+    private let status = NSTextField(labelWithString: "")
+    private let restore = NSButton(title: snapshotBrowserIntl.restoreSnapshot, target: nil, action: nil)
+    private let remove = NSButton(title: commonIntl.deleteAction, target: nil, action: nil)
+    private var snapshots: [(URL, PlayerSnapshot)] = []
+    private var isPresented = false
+
+    init(player: SnapshotBrowserSession) {
+        self.player = player
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 850, height: 610),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
+        window.contentView = SnapshotBackground(frame: NSRect(x: 0, y: 0, width: 850, height: 610))
+        window.title = snapshotBrowserIntl.windowTitle(gameName: PlayerManifest.displayName)
+        window.minSize = NSSize(width: 590, height: 420)
+        super.init(window: window)
+        window.delegate = self
+        window.isReleasedWhenClosed = false
+        let save = NSButton(
+            title: snapshotBrowserIntl.saveSnapshot, target: self, action: #selector(saveSnapshot(_:)))
+        let importButton = NSButton(
+            title: commonIntl.importAction, target: self, action: #selector(importSnapshot(_:)))
+        let reveal = NSButton(
+            title: snapshotBrowserIntl.showInFinder, target: self, action: #selector(revealSnapshots(_:)))
+        restore.target = self
+        restore.action = #selector(restoreSnapshot(_:))
+        remove.target = self
+        remove.action = #selector(deleteSnapshot(_:))
+        for button in [save, importButton, reveal, restore, remove] { button.bezelStyle = .rounded }
+
+        let heading = NSTextField(labelWithString: snapshotBrowserIntl.yourSavedMoments)
+        heading.font = .systemFont(ofSize: 24, weight: .bold)
+        let help = NSTextField(
+            wrappingLabelWithString:
+                snapshotBrowserIntl.browserInstructions)
+        help.textColor = .secondaryLabelColor
+        let actions = NSStackView(views: [save, importButton, reveal])
+        actions.spacing = 10
+        let layout = NSCollectionViewFlowLayout()
+        layout.itemSize = NSSize(width: 246, height: 226)
+        layout.minimumInteritemSpacing = 14
+        layout.minimumLineSpacing = 14
+        layout.sectionInset = NSEdgeInsets(top: 8, left: 0, bottom: 12, right: 0)
+        collection.frame = NSRect(x: 0, y: 0, width: 802, height: 350)
+        collection.autoresizingMask = [.width]
+        collection.collectionViewLayout = layout
+        collection.isSelectable = true
+        collection.allowsMultipleSelection = false
+        collection.backgroundColors = [.windowBackgroundColor]
+        collection.register(SnapshotCard.self, forItemWithIdentifier: SnapshotCard.identifier)
+        collection.dataSource = self
+        collection.delegate = self
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.documentView = collection
+        let footer = NSStackView(views: [status, remove, restore])
+        footer.spacing = 10
+        status.textColor = .secondaryLabelColor
+        status.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let stack = NSStackView(views: [heading, help, actions, scroll, footer])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 14
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        window.contentView!.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: window.contentView!.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: window.contentView!.trailingAnchor, constant: -24),
+            stack.topAnchor.constraint(equalTo: window.contentView!.topAnchor, constant: 24),
+            stack.bottomAnchor.constraint(equalTo: window.contentView!.bottomAnchor, constant: -20),
+            scroll.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            footer.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 230),
+        ])
+        window.center()
+    }
+
+    required init?(coder: NSCoder) { fatalError("Use init(player:)") }
+
+    /// Holds the emulator paused through browsing, sheets and repeated requests to show this window.
+    override func showWindow(_ sender: Any?) {
+        if !isPresented {
+            isPresented = true
+            player?.setSnapshotBrowserOpen(true)
+        }
+        super.showWindow(sender)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard isPresented else { return }
+        isPresented = false
+        player?.setSnapshotBrowserOpen(false)
+    }
+
+    func reload() {
+        guard let player = player else { return }
+
+        do {
+            let catalog = try player.snapshotLibrary.catalog()
+            snapshots = catalog.entries
+            for url in catalog.renamed { player.setSnapshotFinderIcon(at: url) }
+            collection.selectionIndexPaths = []
+            collection.reloadData()
+            status.stringValue =
+                snapshots.isEmpty
+                ? snapshotBrowserIntl.noSnapshotsYetSaveYourFirst
+                : snapshotBrowserIntl.savedSnapshotCount(count: snapshots.count)
+            updateButtons()
+        } catch { showError(error) }
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
+        snapshots.count
+    }
+
+    func collectionView(
+        _ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath
+    ) -> NSCollectionViewItem {
+        let item =
+            collectionView.makeItem(withIdentifier: SnapshotCard.identifier, for: indexPath) as! SnapshotCard
+        let (url, snapshot) = snapshots[indexPath.item]
+        item.configure(snapshot, at: url)
+        return item
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
+        updateButtons()
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
+        updateButtons()
+    }
+
+    private var selectedURL: URL? {
+        guard let index = collection.selectionIndexPaths.first?.item, snapshots.indices.contains(index) else {
+            return nil
+        }
+        return snapshots[index].0
+    }
+
+    private func updateButtons() {
+        restore.isEnabled = selectedURL != nil
+        remove.isEnabled = selectedURL?.deletingLastPathComponent() == player?.snapshotsDirectory
+    }
+
+    @objc private func saveSnapshot(_ sender: Any?) {
+        guard let player = player else { return }
+
+        let alert = NSAlert()
+        alert.messageText = snapshotBrowserIntl.saveSnapshotTitle
+        alert.informativeText = snapshotBrowserIntl.saveInstructions
+        alert.addButton(withTitle: commonIntl.save)
+        alert.addButton(withTitle: commonIntl.cancel)
+        let name = NSTextField(string: snapshotBrowserIntl.savedGame)
+        name.frame = NSRect(x: 0, y: 0, width: 320, height: 24)
+        alert.accessoryView = name
+        alert.window.initialFirstResponder = name
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let title = name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+        status.stringValue = snapshotBrowserIntl.savingSnapshot
+        window?.displayIfNeeded()
+        do {
+            let url = try player.saveSnapshot(title: title)
+            reload()
+            if let index = snapshots.firstIndex(where: { $0.0 == url }) {
+                collection.selectionIndexPaths = [IndexPath(item: index, section: 0)]
+                updateButtons()
+            }
+        } catch { showError(error) }
+    }
+
+    @objc private func restoreSnapshot(_ sender: Any?) {
+        guard let url = selectedURL, let player = player else { return }
+        status.stringValue = snapshotBrowserIntl.restoringSnapshot
+        window?.displayIfNeeded()
+        do {
+            try player.restoreSnapshot(at: url, applyAdditionalStartupMounts: false)
+            window?.close()
+            player.focusGameWindow()
+        } catch { showError(error) }
+    }
+
+    @objc private func importSnapshot(_ sender: Any?) {
+        guard let player = player else { return }
+
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.treatsFilePackagesAsDirectories = false
+        panel.allowedContentTypes = [UTType(exportedAs: "nl.theredhead.a2emu.snapshot")]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let destination = try player.snapshotLibrary.importSnapshot(
+                at: url,
+                accepts: { player.snapshotFitsDiskSet($0) })
+            player.setSnapshotFinderIcon(at: destination)
+            reload()
+        } catch { showError(error) }
+    }
+
+    @objc private func revealSnapshots(_ sender: Any?) {
+        guard let player = player else { return }
+        NSWorkspace.shared.open(player.snapshotsDirectory)
+    }
+
+    @objc private func deleteSnapshot(_ sender: Any?) {
+        guard let url = selectedURL, url.deletingLastPathComponent() == player?.snapshotsDirectory else {
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = snapshotBrowserIntl.moveThisSnapshotToTheTrash
+        alert.informativeText = snapshotBrowserIntl.deleteExplanation
+        alert.addButton(withTitle: snapshotBrowserIntl.moveToTrash)
+        alert.addButton(withTitle: commonIntl.cancel)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do {
+            try player?.snapshotLibrary.trash(url)
+            reload()
+        } catch { showError(error) }
+    }
+
+    private func showError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = snapshotBrowserIntl.snapshotCouldNotBeCompleted
+        alert.informativeText = error.localizedDescription
+        alert.runModal()
+    }
+}

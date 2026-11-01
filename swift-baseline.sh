@@ -9,6 +9,7 @@ case "${1:-check}" in
     ;;
   check)
     python3 scripts/check-readability.py
+    python3 scripts/check-architecture.py
     xcrun swift-format lint --configuration .swift-format --strict --recursive "${paths[@]}"
     swiftlint lint --config .swiftlint.yml --strict --no-cache
     ;;

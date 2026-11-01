@@ -25,6 +25,12 @@ Firmware, game images, local test fixtures and generated releases are excluded f
 
 Website packaging and Docker deployment are documented in [Website/README.md](Website/README.md).
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for product/layer ownership and dependency rules.
+CMake and `scripts/swift-sources.sh` discover Swift files by architectural root.
+`bash scripts/test-architecture.sh` verifies the extracted service boundaries.
+
 ## Swift style
 
 Use `xcrun swift-format`, SwiftLint and Python 3 for the documentation-check fixtures:
@@ -78,6 +84,7 @@ script describes its required fixtures or environment overrides.
 
 | Command | Coverage |
 | --- | --- |
+| `bash scripts/test-architecture.sh` | Isolated storage identity, configuration revisions, preview cleanup, firmware transfer and pause ownership |
 | `scripts/test-controller-mapping.sh` | Directions, diagonals, center/button behavior, settings validation |
 | `scripts/test-controller-selection.sh` | Native/HID routing, device selection and disconnects |
 | `scripts/test-disk-image-device.sh` | Media detection, initial mounting, speed defaults and RAM choices |
@@ -94,7 +101,7 @@ these device-independent tests.
 
 ## JuiceBox menus
 
-Edit the tree in `Sources/Player/PlayerMenuLayout.swift` using `.command(...)`,
+Edit the tree in `Sources/Player/Presentation/Menu/PlayerMenuLayout.swift` using `.command(...)`,
 `.menu(...)` and `.separator`. Entries support native actions, shortcuts, targets,
 tooltips, children, and `visibleWhen` / `enabledWhen` predicates. Predicates refresh
 when menus open and combine with native action validation.

@@ -247,13 +247,14 @@ import Cocoa
         delegate.machine = try PlayerManifest.make(disks: ["a.woz", "b.woz"], slot: 6)
         delegate.addDiskMenus()
         layout.menuWillOpen(emulation)
-        precondition(!layout.item(.disks)!.isHidden && delegate.diskMenuItems.count == 6)
+        precondition(!layout.item(.disks)!.isHidden && delegate.diskMenu.diskMenuItems.count == 6)
         precondition(
-            delegate.diskMenuItems.enumerated().allSatisfy { index, choice in
+            delegate.diskMenu.diskMenuItems.enumerated().allSatisfy { index, choice in
                 choice.0.tag == index && choice.0.target === delegate
             })
         delegate.addDiskMenus()
-        precondition(delegate.diskMenuItems.count == 6 && visibleTitles(layout.submenu(.disks)!).count == 4)
+        precondition(
+            delegate.diskMenu.diskMenuItems.count == 6 && visibleTitles(layout.submenu(.disks)!).count == 4)
         delegate.machine = try PlayerManifest.make(disks: ["test.woz"], slot: 6)
         delegate.addDiskMenus()
         layout.item(.emulation)!.title = "Emulation"
@@ -280,7 +281,7 @@ import Cocoa
         delegate.updateDiskChecks()
 
         func offered(_ address: DriveAddress) -> [Int] {
-            delegate.diskMenuItems.compactMap { item, drive, index in
+            delegate.diskMenu.diskMenuItems.compactMap { item, drive, index in
                 drive == address && !item.isHidden ? index : nil
             }
         }
@@ -289,9 +290,9 @@ import Cocoa
         precondition(offered(large) == [1])
         precondition(offered(hard) == [2, 4])
         precondition(offered(otherHard) == [4])
-        let current = delegate.diskMenuItems.first { $0.1 == hard && $0.2 == 2 }!.0
+        let current = delegate.diskMenu.diskMenuItems.first { $0.1 == hard && $0.2 == 2 }!.0
         precondition(current.state == .on && !current.isHidden)
-        let occupied = delegate.diskMenuItems.first { $0.1 == otherHard && $0.2 == 2 }!.0
+        let occupied = delegate.diskMenu.diskMenuItems.first { $0.1 == otherHard && $0.2 == 2 }!.0
         delegate.swapDisk(occupied)
         precondition(
             delegate.mountedImages == [floppy: 0, hard: 2], "Hidden choices must not move mounted disks")
@@ -302,7 +303,7 @@ import Cocoa
         delegate.mountedImages = [otherHard: 4]
         delegate.updateDiskChecks()
         precondition(offered(hard) == [2] && offered(otherHard) == [2, 4])
-        precondition(delegate.diskMenuItems.filter { $0.2 == nil }.allSatisfy { !$0.0.isHidden })
+        precondition(delegate.diskMenu.diskMenuItems.filter { $0.2 == nil }.allSatisfy { !$0.0.isHidden })
         print(
             "PASS disk menus filter actual media types, preserve the current disk and prevent duplicate mounts"
         )
@@ -345,7 +346,9 @@ import Cocoa
             precondition(g_limit_speed == speed.rawValue && g_zip_speed_mhz == 8)
             delegate.updateSpeedChecks()
             precondition(
-                delegate.speedMenuItems.filter { $0.state == .on }.map { $0.tag } == [speed.rawValue])
+                delegate.speedMenu.speedMenuItems.filter { $0.state == .on }.map { $0.tag } == [
+                    speed.rawValue
+                ])
         }
 
         let menu = layout.submenu(.emulation)!
@@ -355,7 +358,7 @@ import Cocoa
             g_limit_speed = 3
             g_zip_speed_mhz = Int32(mhz)
             delegate.updateSpeedChecks()
-            precondition(delegate.speedMenuItems.allSatisfy { $0.state == .off })
+            precondition(delegate.speedMenu.speedMenuItems.allSatisfy { $0.state == .off })
             let custom = speedMenu.items.first { $0.title == "\(mhz) MHz" }!
             precondition(custom.state == .on && custom.isEnabled && custom.action != nil)
             precondition(speedMenu.numberOfItems == presetCount + index + 1)
@@ -370,7 +373,7 @@ import Cocoa
         g_limit_speed = 7
         delegate.updateSpeedChecks()
         precondition(speedMenu.items.contains { $0.title == "Custom speed (mode 7)" && $0.state == .on })
-        precondition(delegate.speedMenuItems.allSatisfy { $0.state == .off })
+        precondition(delegate.speedMenu.speedMenuItems.allSatisfy { $0.state == .off })
         g_limit_speed = 2
         delegate.updateSpeedChecks()
         precondition(speedMenu.numberOfItems == presetCount + 3)
@@ -380,7 +383,7 @@ import Cocoa
         precondition(g_zip_speed_mhz == 16 && sixteen.state == .on)
         g_limit_speed = 2
         delegate.updateSpeedChecks()
-        precondition(delegate.speedMenuItems.filter { $0.state == .on }.map { $0.tag } == [2])
+        precondition(delegate.speedMenu.speedMenuItems.filter { $0.state == .on }.map { $0.tag } == [2])
         print(
             "PASS live speed indication, dynamic custom items, selection, deduplication, and session retention"
         )
@@ -505,17 +508,20 @@ import Cocoa
         )
 
         let view = MainView(frame: NSRect(x: 0, y: 0, width: 4, height: 3))
+        view.session = delegate
         let screenshots = directory.appendingPathComponent("Screenshots")
         do {
             _ = try view.saveScreenshot(in: screenshots)
             preconditionFailure("An unavailable frame must fail")
         } catch {}
-        view.bitmapContext = CGContext(
+
+        let screenshotContext = CGContext(
             data: nil, width: 4, height: 3, bitsPerComponent: 8, bytesPerRow: 16,
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-        view.bitmapContext.setFillColor(NSColor.red.cgColor)
-        view.bitmapContext.fill(CGRect(x: 0, y: 0, width: 4, height: 3))
+        screenshotContext.setFillColor(NSColor.red.cgColor)
+        screenshotContext.fill(CGRect(x: 0, y: 0, width: 4, height: 3))
+        view.framebuffer = EmulatorFramebuffer(context: screenshotContext)
         let first = try view.saveScreenshot(in: screenshots)
         let second = try view.saveScreenshot(in: screenshots)
         precondition(first != second)

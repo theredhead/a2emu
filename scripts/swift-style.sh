@@ -12,6 +12,7 @@ case "${1:-check}" in
         ;;
     test)
         python3 scripts/test-swift-style.py
+        python3 scripts/test-architecture-checks.py
         ;;
     *)
         printf 'Usage: %s [format|check|test]\n' "$0" >&2
